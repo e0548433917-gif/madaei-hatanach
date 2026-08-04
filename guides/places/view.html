@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מקומות בתנ״ך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/map.css">
+</head>
+<body>
+<div style="position:fixed;top:14px;left:14px;z-index:9999;"><button onclick="if(window.parent!==window){window.parent.postMessage({__madaeiHatanachBack:true},'*');}else{window.location.href='../../index.html';}" style="border:none;background:#2a2016;color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;">→ חזרה לתמונ״ך</button></div>
+
+<button id="lightbulb-btn" title="שליחת משוב על התוסף">💡 להארות</button>
+<div id="copyright-badge">© כל הזכויות שמורות · E0548433917@outlook.com</div>
+
+<header class="hero">
+  <div class="eyebrow">מסע במקומות שבין דפי המקרא, התלמוד והמדרש</div>
+  <h1>מדריך מקומות בתנ״ך</h1>
+  <p class="sub" id="heroSub">ערים, הרים, נהרות, מדבריות וארצות המוזכרים בתנ״ך ובספרות חז״ל — לחצו על כל כרטיס להרחבה.</p>
+  <span class="badge-note" id="badgeNote"></span>
+  <span id="lookupStatus" class="lookup-status" style="display:none;"></span>
+  <span class="disclosure-line">נוצר באמצעות Claude ע״י חד בדרא · המקומות והפסוקים נבחרו על סמך סריקה של הספרייה המקומית באוצריא (תנ״ך, תלמוד ומדרש) ואינם ממצים את כל האזכורים.</span>
+</header>
+
+<div class="controls">
+  <div class="controls-inner">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="text" placeholder="חיפוש מקום, פסוק או תיאור…">
+    </div>
+    <div class="chips" id="chips"></div>
+    <button id="addNewBtn" type="button" style="border:1px solid var(--line);background:var(--card);color:var(--ink-soft);padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">＋ הוספת ערך חדש</button>
+  </div>
+</div>
+
+<section class="map-section" id="mapSection" aria-label="מפת המקומות">
+  <div class="map-frame">
+    <div class="map-head">
+      <h2>🗺️ מפת המקומות</h2>
+      <div class="map-legend" id="mapLegend"></div>
+      <div class="map-sub">מפה מוטמעת הפועלת גם ללא חיבור לאינטרנט (נתוני Natural Earth). לחצו על סמן לפרטי המקום; הסינון והחיפוש למטה מסננים גם את המפה. המיקומים משוערים לפי שיטות הזיהוי.</div>
+    </div>
+    <div id="worldMap"></div>
+  </div>
+</section>
+
+<main id="main"></main>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="closeBtn">✕</button>
+    <div class="modal-actions"><button class="modal-icon-btn" id="printBtn" title="הדפסת הכרטיס">🖨️</button></div>
+    <div id="modalInner"></div>
+  </div>
+</div>
+
+<script src="js/vendor/leaflet.js"></script>
+<script src="js/vendor/leaflet.markercluster.js"></script>
+<script src="data/geo-basemap.js"></script>
+<script src="data/places.js"></script>
+<script src="js/map.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

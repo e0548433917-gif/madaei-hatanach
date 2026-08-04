@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<!-- בלי זה מסכי טלפון מרנדרים ברוחב וירטואלי של 980px ומקטינים הכול - הטקסט יוצא זעיר -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>תמונ״ך</title>
+<link rel="stylesheet" href="shell/router.css">
+<!-- מפה אופלין (Leaflet + Natural Earth) - נטענת כאן פעם אחת, בלי אינטרנט, לשימוש בכרטיסי מקומות -->
+<link rel="stylesheet" href="guides/places/css/map.css">
+</head>
+<body>
+<script src="guides/places/js/vendor/leaflet.js"></script>
+<script src="guides/places/data/geo-basemap.js"></script>
+<script src="guides/places/js/map.js"></script>
+
+<div id="landing">
+  <h1>תמונ״ך</h1>
+
+  <!-- שורת חיפוש ראשית: מריצה את אותו מנוע הזיהוי של תפריט ההקשר בספרייה.
+       הקלדה = השלמה חיה משמות הערכים; Enter = זיהוי מלא של הטקסט (גם פסוק מודבק). -->
+  <div id="homeSearchWrap">
+    <span id="homeSearchIcon">🔍</span>
+    <input type="search" id="homeSearch" autocomplete="off" spellcheck="false"
+           placeholder="חיפוש ערך בכל המדריכים — או הדביקו פסוק שלם לזיהוי…">
+    <button id="homeSearchBtn" type="button" title="זיהוי">זיהוי</button>
+    <div id="homeSearchDrop"></div>
+  </div>
+
+  <div class="cards" id="cardsGrid">
+    <div class="card" data-cat="people"><img class="icon-img" src="icon/cats/people.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;👤&lt;/span&gt;'"><span class="label">אישים בתנ״ך</span></div>
+    <div class="card" data-cat="places"><img class="icon-img" src="icon/cats/places.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📍&lt;/span&gt;'"><span class="label">מקומות בתנ״ך</span></div>
+    <div class="card" data-cat="animal"><img class="icon-img" src="icon/cats/animal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🐾&lt;/span&gt;'"><span class="label">בע״ח בתנ״ך</span></div>
+    <div class="card" data-cat="flora"><img class="icon-img" src="icon/cats/flora.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🌿&lt;/span&gt;'"><span class="label">צומח בתנ״ך</span></div>
+    <div class="card" data-cat="domem"><img class="icon-img" src="icon/cats/domem.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;💎&lt;/span&gt;'"><span class="label">דומם בתנ״ך</span></div>
+    <div class="card" data-cat="beithamikdash"><img class="icon-img" src="icon/cats/beithamikdash.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🏛️&lt;/span&gt;'"><span class="label">בית המקדש</span></div>
+    <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
+  </div>
+  <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
+</div>
+
+<div id="frameWrap">
+  <div id="frameBar">
+    <button id="backBtn" type="button">→ חזרה</button>
+    <span id="frameTitle"></span>
+  </div>
+  <iframe id="guideFrame" src="about:blank"></iframe>
+</div>
+
+<div id="guideView">
+  <div id="guideViewBar">
+    <button id="guideBackBtn" type="button">→ חזרה</button>
+    <span id="guideViewTitle"></span>
+    <input type="text" id="guideSearchBox" placeholder="חיפוש...">
+    <button id="guideAddNewBtn" type="button">＋ הוספת ערך חדש</button>
+  </div>
+  <div id="guideChips"></div>
+  <div id="guideGrid"></div>
+</div>
+
+<!-- ==== האזור האישי ==== -->
+<div id="personalView">
+  <div id="personalBar">
+    <button id="personalBackBtn" type="button">→ חזרה</button>
+    <span id="personalTitle">🗂️ האזור האישי שלי</span>
+  </div>
+  <div id="personalTabs">
+    <button class="ptab active" type="button" data-ptab="bookmarks">⭐ סימניות</button>
+    <button class="ptab" type="button" data-ptab="edits">✏️ העריכות שלי</button>
+    <button class="ptab" type="button" data-ptab="drafts">📝 הצעות ודיווחים</button>
+    <button class="ptab" type="button" data-ptab="pages">📄 דפי HTML</button>
+    <button class="ptab" type="button" data-ptab="feedback">💬 משוב למפתח</button>
+  </div>
+  <div id="personalBody"></div>
+</div>
+
+<div id="entryOverlay">
+  <div id="entryModal">
+    <button id="entryCloseBtn" type="button">✕</button>
+    <div id="entryModalInner"></div>
+  </div>
+</div>
+
+<div id="resultsOverlay">
+  <div id="resultsModal">
+    <button id="resultsCloseX" type="button" title="סגירה">✕</button>
+    <h2>תוצאות זיהוי</h2>
+    <div class="quote" id="resultsQuote"></div>
+    <div id="resultsChips"></div>
+    <div id="resultsList"></div>
+    <div id="noResults" style="display:none;"></div>
+    <button id="closeResults" type="button">סגור</button>
+  </div>
+</div>
+
+<div class="panel-overlay" id="addHtmlOverlay">
+  <div class="panel-box">
+    <h2>➕ הוספת דף HTML</h2>
+    <p class="panel-hint">בחרו קובץ HTML מהמחשב — הוא יישמר לצמיתות (גם אחרי סגירת אוצריא) ויופיע כאן ברשימה.</p>
+    <input type="text" id="addHtmlName" placeholder="שם לזיהוי הדף (למשל: לוח שנה אישי)">
+    <input type="file" id="addHtmlFile" accept=".html,.htm,text/html">
+    <div class="panel-actions">
+      <button class="panel-btn" id="addHtmlSave">💾 שמירה</button>
+      <button class="panel-btn secondary" id="addHtmlClose">סגירה</button>
+    </div>
+    <div class="saved-html-list" id="savedHtmlList"></div>
+  </div>
+</div>
+
+<!-- ==== הגדרות תצוגה ==== -->
+<button id="settingsBtn" type="button" title="הגדרות תצוגה" aria-label="הגדרות תצוגה">⚙️</button>
+<div id="settingsScrim"></div>
+<div id="settingsPanel" role="dialog" aria-label="הגדרות תצוגה">
+  <h2>⚙️ הגדרות תצוגה
+    <button id="settingsCloseBtn" type="button" title="סגירה">✕</button>
+  </h2>
+  <p class="set-note">ההגדרות נשמרות במכשיר ונשארות גם אחרי סגירת אוצריא.</p>
+
+  <div class="set-group">
+    <label class="set-title">ערכת צבעים</label>
+    <div class="set-opts" id="setTheme">
+      <button class="set-opt" type="button" data-val="classic">קלאסי</button>
+      <button class="set-opt" type="button" data-val="otzaria">תואם לאוצריא (ברירת מחדל)</button>
+      <button class="set-opt" type="button" data-val="plain">בהיר נקי</button>
+      <button class="set-opt" type="button" data-val="dark">כהה</button>
+    </div>
+  </div>
+
+  <div class="set-group">
+    <label class="set-title">גופן</label>
+    <div class="set-opts" id="setFont">
+      <button class="set-opt" type="button" data-val="default">היבו (רגיל)</button>
+      <button class="set-opt" type="button" data-val="otzaria">כמו באוצריא (ברירת מחדל)</button>
+      <button class="set-opt" type="button" data-val="frank">פרנק־ריהל</button>
+      <button class="set-opt" type="button" data-val="david">דוד</button>
+      <button class="set-opt" type="button" data-val="arial">אריאל</button>
+      <button class="set-opt" type="button" data-val="times">טיימס</button>
+    </div>
+    <p class="set-note" style="margin:7px 0 0;">״כמו באוצריא״ לוקח רק את שם הגופן — גודל הטקסט נשאר בשליטתך למטה.</p>
+  </div>
+
+  <div class="set-group">
+    <label class="set-title">גודל טקסט</label>
+    <div class="set-row">
+      <input type="range" id="setScale" min="85" max="125" step="5" value="100">
+      <span class="set-val" id="setScaleVal">100%</span>
+    </div>
+  </div>
+
+  <div class="set-group">
+    <label class="set-title">צפיפות הכרטיסים</label>
+    <div class="set-opts" id="setDensity">
+      <button class="set-opt" type="button" data-val="compact">צפוף</button>
+      <button class="set-opt" type="button" data-val="normal">רגיל</button>
+      <button class="set-opt" type="button" data-val="roomy">מרווח</button>
+    </div>
+  </div>
+
+  <div class="set-group">
+    <label class="set-switch">
+      <span>הצגת תמונות בכרטיסי הרשימה</span>
+      <input type="checkbox" id="setCardImg" checked>
+    </label>
+  </div>
+
+  <div class="set-group">
+    <label class="set-title">תצוגה מקדימה</label>
+    <div class="set-preview">
+      <div class="pv-title">אַבְרָהָם אָבִינוּ</div>
+      <div class="pv-sub">אישים בתנ״ך · דור עשרים</div>
+      <div class="pv-ref">בראשית י״ב, א׳</div>
+      <p class="pv-text">וַיֹּאמֶר ה׳ אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.</p>
+    </div>
+  </div>
+
+  <button id="settingsReset" type="button">איפוס להגדרות ברירת המחדל</button>
+</div>
+
+<script src="shell/router.js"></script>
+</body>
+</html>

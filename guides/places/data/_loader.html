@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"></head>
+<body>
+<script src="places.js"></script>
+<script>
+try {
+  parent.postMessage({ __madaeiHatanachLoader: true, cat: 'places', ok: true, data: (typeof DATA !== 'undefined') ? DATA : [], cats: (typeof CATS !== 'undefined') ? CATS : [] }, '*');
+} catch(e) {
+  parent.postMessage({ __madaeiHatanachLoader: true, cat: 'places', ok: false, error: String(e) }, '*');
+}
+</script>
+</body></html>

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>צומח בתנ״ך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#EDE3C8; --parchment-deep:#E1D2A8; --card:#F4ECD8;
+    --ink:#2B2318; --ink-soft:#5B4E39; --forest:#3F5B44; --forest-deep:#2C4131;
+    --rust:#9C4A2E; --rust-deep:#7A3821; --gold:#A9812F; --gold-light:#C9A24E;
+    --teal:#3D6B6B; --line:#c9b98a; --shadow:0 10px 30px rgba(43,35,24,.28);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.25), transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(0,0,0,0.05), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, transparent 1px, transparent 3px),
+      var(--parchment);
+    color:var(--ink); font-family:'Heebo',sans-serif; line-height:1.6;
+  }
+  h1,h2,h3,.display{font-family:'Frank Ruhl Libre',serif;}
+
+  .hero{position:relative; padding:56px 24px 34px; text-align:center; border-bottom:3px double var(--gold);
+    background:linear-gradient(180deg, rgba(169,129,47,0.08), transparent 70%); overflow:hidden;}
+  .eyebrow{letter-spacing:.35em; font-size:12px; color:var(--gold); font-weight:700; margin-bottom:14px;}
+  .hero h1{font-size:clamp(28px,5vw,48px); font-weight:900; margin:0 0 10px; color:var(--ink);}
+  .hero p.sub{max-width:680px; margin:0 auto; color:var(--ink-soft); font-size:15px;}
+  .badge-note{display:inline-block; margin-top:14px; font-size:12.5px; background:var(--card); border:1px solid var(--line);
+    border-radius:20px; padding:6px 14px; color:var(--ink-soft);}
+
+  .controls{position:sticky; top:0; z-index:50; background:rgba(237,227,200,0.96); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line); padding:14px 20px;}
+  .controls-inner{max-width:1180px;margin:0 auto; display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .search-wrap{position:relative; flex:1 1 240px; min-width:200px;}
+  .search-wrap svg{position:absolute; right:14px; top:50%; transform:translateY(-50%); opacity:.5;}
+  #search{width:100%; padding:10px 40px 10px 14px; border:1px solid var(--line); border-radius:3px;
+    background:var(--card); color:var(--ink); font-family:'Heebo',sans-serif; font-size:14px;}
+  #search:focus{outline:2px solid var(--gold-light); outline-offset:1px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{border:1px solid var(--line); background:var(--card); color:var(--ink-soft); padding:7px 14px;
+    border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; transition:.15s; white-space:nowrap;}
+  .chip:hover{border-color:var(--gold);}
+  .chip.active{background:var(--ink); color:var(--parchment); border-color:var(--ink);}
+  .count-tag{font-size:12px; color:var(--ink-soft); opacity:.75; padding:0 4px;}
+
+  main{max-width:1180px; margin:0 auto; padding:36px 20px 80px;}
+  .category-section{margin-bottom:56px; scroll-margin-top:90px;}
+  .cat-head{display:flex; align-items:baseline; gap:14px; border-bottom:2px solid var(--gold); padding-bottom:10px; margin-bottom:6px;}
+  .cat-head h2{font-size:clamp(20px,3vw,28px); margin:0; font-weight:700;}
+  .cat-num{font-family:'Frank Ruhl Libre',serif; font-size:15px; color:var(--gold); border:1px solid var(--gold);
+    border-radius:50%; width:30px;height:30px; display:flex;align-items:center;justify-content:center; flex-shrink:0;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:16px;}
+
+  .card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:3px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.04), 0 8px 18px -14px rgba(0,0,0,0.5); overflow:hidden;
+    display:flex; flex-direction:column; cursor:pointer; transition:.18s ease;}
+  .card:hover{transform:translateY(-3px); border-color:var(--gold); box-shadow:var(--shadow);}
+  .card.hidden{display:none;}
+  .seal{position:absolute; top:8px; left:8px; font-size:10px; font-weight:700; padding:3px 8px; border-radius:2px; z-index:2; letter-spacing:.03em;}
+  .seal.kosher{background:var(--forest); color:#EAF2E9;}
+  .seal.special{background:var(--gold); color:#2B2318;}
+  .expand-badge{position:absolute; top:8px; right:8px; font-size:9px; background:var(--teal); color:#EAF4F2;
+    padding:3px 7px; border-radius:2px; z-index:2; letter-spacing:.03em;}
+  .card-media{height:104px; display:flex; align-items:center; justify-content:center; background:var(--parchment-deep);
+    position:relative; overflow:hidden;}
+  .card-media img{width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .35s;}
+  .card-media img.loaded{opacity:1;}
+  .placeholder-icon{width:52px; height:52px;}
+  .card-body{padding:12px 14px 14px; display:flex; flex-direction:column; gap:4px;}
+  .card-name{margin:0; font-size:16px; font-weight:700;}
+  .card-verse{font-size:11px; color:var(--gold); font-weight:500;}
+  .card-desc{margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+
+  .empty-msg{text-align:center; color:var(--ink-soft); padding:50px 0;}
+  .empty-msg.hidden, .category-section.hidden{display:none;}
+
+  /* ===== Modal ===== */
+  .overlay{position:fixed; inset:0; background:rgba(20,16,10,.6); backdrop-filter:blur(2px);
+    display:none; align-items:flex-start; justify-content:center; z-index:200; padding:30px 16px; overflow-y:auto;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--parchment); max-width:760px; width:100%; border:2px solid var(--ink); border-radius:4px;
+    box-shadow:var(--shadow); position:relative; margin-bottom:40px;}
+  .modal-close{position:absolute; top:12px; left:12px; width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:16px; cursor:pointer; z-index:3;}
+  .modal-head{padding:26px 26px 14px; border-bottom:2px solid var(--gold); display:flex; align-items:center; gap:14px;}
+  .modal-head h2{margin:0 0 4px; font-size:26px;}
+  .modal-head .cat-line{font-size:12.5px; color:var(--ink-soft);}
+  .modal-body{padding:20px 26px 28px;}
+  .field-label{font-family:'Frank Ruhl Libre',serif; font-size:13px; font-weight:700; color:var(--gold-light);
+    letter-spacing:.04em; margin:22px 0 8px; text-transform:none;}
+  .field-label:first-child{margin-top:0;}
+
+  /* method tabs */
+  .method-tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+  .method-tab{border:1px solid var(--line); background:var(--card); color:var(--ink-soft); padding:6px 12px;
+    border-radius:16px; font-size:12.5px; cursor:pointer;}
+  .method-tab.active{background:var(--forest-deep); color:#EAF2E9; border-color:var(--forest-deep);}
+  .method-panel{background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px;}
+  .conf-tag{display:inline-block; font-size:11px; padding:3px 10px; border-radius:12px; margin-bottom:8px; font-weight:600;}
+  .conf-ודאי, .conf-ודאי\ כמוטיב\ ספרותי{background:var(--forest); color:#EAF2E9;}
+  .conf-סביר{background:var(--gold); color:#2B2318;}
+  .conf-שנוי{background:var(--rust); color:#FBEDE6;}
+  .method-latin{font-style:italic; color:var(--ink-soft); font-size:12.5px; margin:0 0 6px;}
+  .method-text{margin:0 0 12px; font-size:14px;}
+  .method-gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; margin-top:10px;}
+  .method-gallery img{width:100%; height:70px; object-fit:cover; border-radius:2px; border:1px solid var(--line); opacity:0; transition:opacity .3s; cursor:zoom-in;}
+  .method-gallery img.loaded{opacity:1;}
+  .gallery-empty{font-size:11.5px; color:var(--ink-soft); opacity:.7;}
+  .card-media img{cursor:zoom-in;}
+
+  /* ===== Lightbox ===== */
+  .lightbox{position:fixed; inset:0; background:rgba(10,8,5,.88); display:none; align-items:center; justify-content:center;
+    z-index:300; padding:40px 20px; cursor:zoom-out;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:min(92vw,1100px); max-height:88vh; object-fit:contain; border:2px solid var(--gold-light); border-radius:3px; box-shadow:var(--shadow);}
+  .lightbox-close{position:fixed; top:16px; left:16px; width:38px; height:38px; border-radius:50%; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:18px; cursor:pointer; z-index:301;}
+  .wiki-link{display:inline-flex; align-items:center; gap:5px; margin-top:10px; font-size:12.5px; color:var(--teal); text-decoration:none; font-weight:600;}
+  .wiki-link:hover{text-decoration:underline;}
+
+  /* verses */
+  .verse-card{background:var(--card); border-right:3px solid var(--gold); border-radius:2px; padding:10px 14px; margin-bottom:8px;}
+  .verse-ref{font-size:11.5px; color:var(--gold-light); font-weight:700; margin-bottom:3px;}
+  .verse-text{font-family:'Frank Ruhl Libre',serif; font-size:15px; line-height:1.9;}
+  .verse-text.empty{color:var(--ink-soft); font-family:'Heebo',sans-serif; font-size:12.5px; font-style:italic;}
+
+  /* sources */
+  .src-item{background:var(--card); border:1px solid var(--line); border-radius:2px; padding:10px 14px; margin-bottom:8px; font-size:13px;}
+  .src-source{font-weight:700; margin-bottom:3px;}
+  .src-note{color:var(--ink-soft); font-size:12.5px; line-height:1.6;}
+  .src-link{display:inline-block; margin-top:5px; font-size:11.5px; color:var(--teal);}
+  .no-src{font-size:12.5px; color:var(--ink-soft); opacity:.75; font-style:italic;}
+
+  .expanded-note{background:var(--forest); color:#EAF2E9; font-size:12px; padding:8px 12px; border-radius:3px; margin-bottom:16px;}
+  .basic-note{background:var(--card); border:1px dashed var(--line); color:var(--ink-soft); font-size:12px; padding:8px 12px; border-radius:3px; margin-bottom:16px;}
+
+  #lightbulb-btn{position:fixed; top:14px; left:14px; z-index:999; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); font-size:13px; padding:7px 12px; border-radius:20px; cursor:pointer; box-shadow:var(--shadow);}
+  #lightbulb-btn:hover{border-color:var(--gold);}
+  .disclosure-line{display:block; margin-top:8px; font-size:11px; color:var(--ink-soft); opacity:.75;}
+  .lookup-status{display:inline-block; margin-top:10px; font-size:11.5px; padding:4px 10px; border-radius:12px;}
+  .lookup-status.ok{background:var(--forest); color:#EAF2E9;}
+  .lookup-status.err{background:var(--rust); color:#FBEDE6;}
+</style>
+</head>
+<body>
+<div style="position:fixed;top:14px;left:14px;z-index:9999;"><button onclick="if(window.parent!==window){window.parent.postMessage({__madaeiHatanachBack:true},'*');}else{window.location.href='../../index.html';}" style="border:none;background:#2a2016;color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;">→ חזרה לתמונ״ך</button></div>
+
+<button id="lightbulb-btn" title="שליחת משוב על התוסף">💡 להארות</button>
+
+<header class="hero">
+  <div class="eyebrow">מסע בין הדגן, הפרי והעץ שבין דפי המקרא</div>
+  <h1>מדריך הצומח בתנ״ך</h1>
+  <p class="sub" id="heroSub">צמחי המקרא, זיהוים המדעי ומקורות מקראיים — לחצו על כל כרטיס להרחבה.</p>
+  <span class="badge-note" id="badgeNote">✓ כרטיסים תמציתיים מהמקורות — פסוקים, מדרשים ומקורות מחקר מורחבים יתווספו בהמשך.</span>
+  <span id="lookupStatus" class="lookup-status" style="display:none;"></span>
+  <span class="disclosure-line">נוצר באמצעות Claude ע״י חד בדרא · גרסה ראשונית — מקורות חז״ל ומחקר יתווספו בהמשך.</span>
+</header>
+
+<div class="controls">
+  <div class="controls-inner">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="text" placeholder="חיפוש צמח, פסוק או תיאור…">
+    </div>
+    <div class="chips" id="chips"></div>
+    <button id="addNewBtn" type="button" style="border:1px solid var(--line);background:var(--card);color:var(--ink-soft);padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">＋ הוספת ערך חדש</button>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="closeBtn">✕</button>
+    <div id="modalInner"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+"use strict";
+
+// DEUT_8_8/ISA_41_19/SHIR_4_14/BAM_11_5 מוגדרים כעת בתוך data/flora-data.js עצמו (כדי שהקובץ יהיה עצמאי גם כשהוא נטען בבידוד ע"י מעטפת הניתוב).
+</script>
+<script src="data/flora-data.js"></script>
+<script>
+
+const CARD_IMAGES = {};
+
+const CATS = [
+  {id:'grains', num:'א', label:'דגן וקטניות', blurb:'חיטה ושעורה משבעת המינים, ולצידם עוד דגנים וקטניות מקראיים.'},
+  {id:'fruit-trees', num:'ב', label:'עצי פרי', blurb:'הגפן, התאנה, הרימון, הזית והתמר משבעת המינים, ולצידם עוד עצי פרי.'},
+  {id:'forest-trees', num:'ג', label:'עצי יער ומדבר', blurb:'ארז, ברוש, אלון, שיטה, ערבה, הדס ועוד עצי יער ומדבר מקראיים.'},
+  {id:'spices', num:'ד', label:'בשמים וקטורת', blurb:'קנמון, מור, לבונה, נרד וסממני קטורת ובושם נוספים.'},
+  {id:'flowers', num:'ה', label:'פרחים', blurb:'חבצלת, שושנה, דודאים ופרחי מקרא נוספים.'},
+  {id:'thorns-wild', num:'ו', label:'קוצים וצמחי בר', blurb:'קוץ, דרדר, חוח וצמחי בר ומדבר נוספים.'},
+  {id:'vegetables', num:'ז', label:'ירקות', blurb:'ירקות מקראיים וחז"ליים — אבטיח, קישוא, בצל, שום, כרוב ועוד.'},
+];
+
+let activeCat = 'all';
+let query = '';
+
+function sealLabel(k){
+  if(k==='K.yes') return {cls:'kosher', txt:'משבעת המינים'};
+  if(k==='K.special') return {cls:'special', txt:'מיוחד'};
+  return null;
+}
+
+const ICONS = {
+  'grains': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M50 85V25" stroke-linecap="round"/><path d="M50 30l-12-10M50 30l12-10M50 42l-12-10M50 42l12-10M50 54l-12-10M50 54l12-10" stroke-linecap="round"/></svg>`,
+  'fruit-trees': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M50 85V55" stroke-linecap="round"/><path d="M50 20c-16 0-28 12-28 26 0 12 10 20 28 20s28-8 28-20c0-14-12-26-28-26z" stroke-linejoin="round"/><circle cx="40" cy="45" r="2" fill="var(--ink-soft)" stroke="none"/><circle cx="60" cy="50" r="2" fill="var(--ink-soft)" stroke="none"/></svg>`,
+  'forest-trees': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M50 85V60" stroke-linecap="round"/><path d="M50 15 L32 45 H68 Z" stroke-linejoin="round"/><path d="M50 33 L36 60 H64 Z" stroke-linejoin="round"/></svg>`,
+  'spices': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><rect x="38" y="35" width="24" height="42" rx="4"/><path d="M44 35v-11h12v11" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 50h24"/></svg>`,
+  'flowers': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><circle cx="50" cy="40" r="7"/><circle cx="50" cy="24" r="7"/><circle cx="65" cy="40" r="7"/><circle cx="50" cy="56" r="7"/><circle cx="35" cy="40" r="7"/><path d="M50 63v22" stroke-linecap="round"/></svg>`,
+  'thorns-wild': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M50 85V30" stroke-linecap="round"/><path d="M50 68l13-9M50 68l-13-9M50 53l13-9M50 53l-13-9M50 38l9-7M50 38l-9-7" stroke-linecap="round"/></svg>`,
+  'vegetables': `<svg viewBox="0 0 100 100" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M50 40c-14 0-22 10-22 22 0 14 10 22 22 22s22-8 22-22c0-12-8-22-22-22z" stroke-linejoin="round"/><path d="M50 40V20M42 26l8-8 8 8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+function cardHTML(item, idx){
+  const seal = sealLabel(item.k);
+  const firstVerse = item.verses[0] ? item.verses[0].ref : '';
+  const searchBlob = (item.name+' '+firstVerse+' '+(item.aliases||[]).join(' ')+' '+item.methods.map(m=>m.label+' '+m.explanation).join(' ')).toLowerCase();
+  const wiki = item.methods[0].wiki;
+  const embedded = CARD_IMAGES[wiki];
+  return `
+  <div class="card" data-cat="${item.cat}" data-idx="${idx}" data-search="${searchBlob}">
+    <div class="card-media" ${embedded ? '' : `data-wiki="${wiki}"`}>
+      ${seal ? `<div class="seal ${seal.cls}">${seal.txt}</div>` : ''}
+      ${item.expanded ? `<div class="expand-badge">מורחב</div>` : ''}
+      ${embedded
+        ? `<img class="loaded" src="${embedded}" alt="${item.name}" loading="lazy">`
+        : `<div class="placeholder-icon">${ICONS[item.cat]}</div>`}
+    </div>
+    <div class="card-body">
+      <h3 class="card-name">${item.name}</h3>
+      <span class="card-verse">${firstVerse}${item.verses.length>1 ? ' ועוד' : ''}</span>
+      <p class="card-desc">${item.methods[0].explanation}</p>
+    </div>
+  </div>`;
+}
+
+function render(){
+  document.getElementById('heroSub').textContent = DATA.length + ' צמחי מקרא, זיהוים המדעי ומקורות מקראיים — לחצו על כל כרטיס להרחבה.';
+  document.getElementById('badgeNote').textContent = '✓ ' + DATA.length + ' צמחי מקרא וחז"ל — כרטיסים תמציתיים; פסוקים ומקורות מורחבים יתווספו בהמשך.';
+  const main = document.getElementById('main');
+  main.innerHTML = CATS.map(cat=>{
+    const items = DATA.map((d,i)=>({...d, idx:i})).filter(d=>d.cat===cat.id);
+    return `
+    <section class="category-section" id="${cat.id}">
+      <div class="cat-head">
+        <span class="cat-num">${cat.num}</span>
+        <h2>${cat.label}</h2>
+        <span class="count-tag">(${items.length})</span>
+      </div>
+      <p style="color:var(--ink-soft);font-size:13.5px;max-width:760px;margin:8px 0 20px;">${cat.blurb}</p>
+      <div class="grid">${items.map(it=>cardHTML(it, it.idx)).join('')}</div>
+    </section>`;
+  }).join('') + `<p class="empty-msg hidden" id="emptyMsg">לא נמצאו תוצאות התואמות את החיפוש.</p>`;
+
+  const chipsWrap = document.getElementById('chips');
+  chipsWrap.innerHTML = `<button class="chip active" data-cat="all">הכל <span class="count-tag">(${DATA.length})</span></button>` +
+    CATS.map(c=>`<button class="chip" data-cat="${c.id}">${c.label}</button>`).join('');
+
+  attachEvents();
+  lazyLoadCardImages();
+}
+
+function attachEvents(){
+  document.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      const cat = chip.dataset.cat;
+      document.querySelectorAll('.category-section').forEach(sec=>{
+        sec.classList.toggle('hidden', cat!=='all' && sec.id!==cat);
+      });
+      document.querySelectorAll('.card').forEach(c=>c.classList.remove('hidden'));
+      document.getElementById('search').value='';
+      document.getElementById('emptyMsg').classList.add('hidden');
+    });
+  });
+  document.getElementById('search').addEventListener('input', e=>filterSearch(e.target.value.trim().toLowerCase()));
+  document.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('click', ()=> openModal(DATA[card.dataset.idx]));
+  });
+}
+
+function filterSearch(q){
+  let anyVisible = false;
+  document.querySelectorAll('.category-section').forEach(sec=>sec.classList.remove('hidden'));
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.chip[data-cat="all"]').classList.add('active');
+  document.querySelectorAll('.category-section').forEach(sec=>{
+    let has = false;
+    sec.querySelectorAll('.card').forEach(card=>{
+      const match = !q || card.dataset.search.includes(q);
+      card.classList.toggle('hidden', !match);
+      if(match) has = true;
+    });
+    sec.classList.toggle('hidden', !has);
+    if(has) anyVisible = true;
+  });
+  document.getElementById('emptyMsg').classList.toggle('hidden', anyVisible || !q);
+}
+
+function lazyLoadCardImages(){
+  const medias = document.querySelectorAll('.card-media[data-wiki]');
+  const io = new IntersectionObserver((entries,obs)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ loadCardImage(entry.target); obs.unobserve(entry.target); }
+    });
+  }, {rootMargin:'200px'});
+  medias.forEach(m=>io.observe(m));
+}
+
+async function loadCardImage(mediaEl){
+  const title = mediaEl.dataset.wiki;
+  if(!title) return;
+  try{
+    const res = await fetch(`https://he.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+    if(!res.ok) return;
+    const data = await res.json();
+    const src = data.thumbnail && data.thumbnail.source;
+    if(src){
+      const img = document.createElement('img');
+      img.src = src; img.alt = title; img.loading='lazy';
+      img.onload = ()=> img.classList.add('loaded');
+      mediaEl.appendChild(img);
+      const icon = mediaEl.querySelector('.placeholder-icon');
+      if(icon) icon.style.display='none';
+    }
+  }catch(e){}
+}
+
+// ---------- modal ----------
+const overlay = document.getElementById('overlay');
+const modalInner = document.getElementById('modalInner');
+
+const NON_TANAKH_SOURCE = /^(תוספתא|משנה |תלמוד )/;
+function versesFieldLabel(item){
+  const isChazal = v => NON_TANAKH_SOURCE.test(v.ref);
+  const allChazal = item.verses.every(isChazal);
+  const anyChazal = item.verses.some(isChazal);
+  if(allChazal) return 'מקור מספרות חז״ל';
+  if(anyChazal) return 'מקורות במקרא ובחז״ל';
+  return 'מקורות בתנ״ך';
+}
+
+function openModal(item){
+  const seal = sealLabel(item.k);
+  const catLabel = CATS.find(c=>c.id===item.cat)?.label || item.cat;
+
+  const tabsHTML = item.methods.map((m,i)=>`<button class="method-tab ${i===0?'active':''}" data-mi="${i}">${m.label.split('(')[0].split('—')[0].trim().slice(0,22)}</button>`).join('');
+
+  const versesHTML = item.verses.map(v=>`
+    <div class="verse-card">
+      <div class="verse-ref">${v.ref}</div>
+      <div class="verse-text ${v.text ? '' : 'empty'}">${v.text || 'טקסט הפסוק המלא ייווסף בהרחבה הבאה — ניתן לעיין במקור לפי המראה מקום.'}</div>
+    </div>`).join('');
+
+  const midrashHTML = item.midrash.length ? item.midrash.map(s=>`
+    <div class="src-item">
+      <div class="src-source">${s.source}</div>
+      <div class="src-note">${s.note}</div>
+      ${s.link ? `<a class="src-link" href="${s.link}" data-external-link="${s.link}">קישור למקור ↗</a>` : ''}
+    </div>`).join('') : `<p class="no-src">מקורות חז״ל מפורטים לערך זה טרם נאספו — בהרחבות הבאות.</p>`;
+
+  const academicHTML = item.academic.length ? item.academic.map(a=>`
+    <div class="src-item">
+      <div class="src-note">${a.citation}</div>
+      ${a.link ? `<a class="src-link" href="${a.link}" data-external-link="${a.link}">קישור ↗</a>` : ''}
+    </div>`).join('') : `<p class="no-src">מקורות מחקריים נוספים טרם נאספו עבור ערך זה.</p>`;
+
+  modalInner.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <h2>${item.name} ${seal ? `<span class="seal ${seal.cls}" style="position:static;display:inline-block;vertical-align:middle;">${seal.txt}</span>`:''} <button id="printBtn" title="הדפסת הכרטיס" style="border:none;background:none;cursor:pointer;font-size:16px;">🖨️</button> <button id="editBtn" title="הצעת עריכה" style="border:none;background:none;cursor:pointer;font-size:16px;">✏️</button></h2>
+        <div class="cat-line">${catLabel}</div>
+        ${item.aliases && item.aliases.length ? `<div class="cat-line">כינויים נרדפים: ${item.aliases.join(', ')}</div>` : ''}
+      </div>
+    </div>
+    <div class="modal-body">
+      ${item.expanded ? `<div class="expanded-note">✓ ערך מורחב: פסוקים מלאים, מקורות חז״ל ומחקר אקדמי</div>` : `<div class="basic-note">ערך בסיסי (גרסת בדיקה) — פסוק שבעת המינים ופסוק ייחודי מובאים, מקורות חז״ל ומחקר יתווספו בהרחבה הבאה</div>`}
+
+      <div class="field-label">שיטות זיהוי</div>
+      <div class="method-tabs">${tabsHTML}</div>
+      <div id="methodPanel"></div>
+
+      <div class="field-label">${versesFieldLabel(item)}</div>
+      ${versesHTML}
+
+      <div class="field-label">מקורות חז״ל (תלמוד ומדרש)</div>
+      ${midrashHTML}
+
+      <div class="field-label">מקורות מחקריים נוספים</div>
+      ${academicHTML}
+    </div>
+  `;
+
+  renderMethodPanel(item, 0);
+  modalInner.querySelectorAll('.method-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      modalInner.querySelectorAll('.method-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      renderMethodPanel(item, parseInt(tab.dataset.mi));
+    });
+  });
+  const eb = modalInner.querySelector('#editBtn');
+  if (eb) eb.addEventListener('click', (e)=>{ e.stopPropagation(); openEditForm(item); });
+  const pb = modalInner.querySelector('#printBtn');
+  if (pb) pb.addEventListener('click', (e)=>{ e.stopPropagation(); window.print(); });
+
+  overlay.classList.add('open');
+}
+
+const FLORA_REPORT_EMAIL = 'E0548433917@outlook.com';
+function floraEditField(id, label, val, long){
+  const v = Array.isArray(val) ? val.join(', ') : String(val==null?'':val);
+  const safe = v.replace(/"/g,'&quot;');
+  return `<div class="edit-field"><div class="field-label">${label}</div>` +
+    (long ? `<textarea id="${id}" style="width:100%;min-height:80px;">${v}</textarea>` : `<input type="text" id="${id}" value="${safe}" style="width:100%;">`) +
+    `</div>`;
+}
+function openEditForm(item){
+  const m0 = item.methods[0];
+  modalInner.innerHTML = `
+    <div class="modal-head"><div><h2>עריכת כרטיס: ${item.name}</h2>
+    <div class="cat-line">השינויים נשמרים במכשיר זה בלבד, אלא אם תישלח הצעה למפתח</div></div></div>
+    <div class="modal-body">
+      ${floraEditField('fef_aliases','כינויים נוספים (מופרד בפסיקים)', item.aliases||[])}
+      ${floraEditField('fef_explanation','הסבר (שיטת הזיהוי הראשית)', m0.explanation, true)}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <button class="nf-btn" id="fefSave">💾 שמירה במכשיר</button>
+        <button class="nf-btn" id="fefSend">📧 שליחה למפתח</button>
+        <button class="nf-btn secondary" id="fefCancel">ביטול</button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+  function collect(){
+    return {
+      aliases: document.getElementById('fef_aliases').value.split(',').map(s=>s.trim()).filter(Boolean),
+      explanation: document.getElementById('fef_explanation').value.trim()
+    };
+  }
+  function diffText(fields){
+    const lines = [];
+    const beforeAliases = (item.aliases||[]).join(', ');
+    const afterAliases = fields.aliases.join(', ');
+    if (beforeAliases !== afterAliases) lines.push('כינויים:\n  לפני: ' + (beforeAliases||'—') + '\n  אחרי: ' + (afterAliases||'—'));
+    if ((m0.explanation||'') !== fields.explanation) lines.push('הסבר:\n  לפני: ' + (m0.explanation||'—') + '\n  אחרי: ' + (fields.explanation||'—'));
+    return lines.join('\n\n');
+  }
+  document.getElementById('fefSave').addEventListener('click', ()=>{
+    const f = collect();
+    item.aliases = f.aliases;
+    m0.explanation = f.explanation;
+    render();
+    openModal(item);
+  });
+  document.getElementById('fefSend').addEventListener('click', async ()=>{
+    const f = collect();
+    const diff = diffText(f) || '(לא זוהה שינוי בשדות)';
+    item.aliases = f.aliases;
+    m0.explanation = f.explanation;
+    render();
+    if (window.Otzaria && Otzaria.call){
+      try {
+        await Otzaria.call('feedback.sendEmail', { to: FLORA_REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - צומח בתנ״ך', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
+        await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
+      } catch(e){
+        await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
+      }
+    }
+    openModal(item);
+  });
+  document.getElementById('fefCancel').addEventListener('click', ()=> openModal(item));
+}
+
+function openNotFoundModal(searchedText){
+  const safeText = (searchedText||'').replace(/"/g,'&quot;');
+  modalInner.innerHTML = `
+    <div class="modal-head"><div><h2>"${searchedText}" אינו קיים עדיין במדריך</h2>
+    <div class="cat-line">אפשר להציע להוסיף אותו בגרסה הבאה</div></div></div>
+    <div class="modal-body">
+      <p>מלאו את הפרטים הבאים ושלחו אותם למפתח (${FLORA_REPORT_EMAIL}).</p>
+      <div class="field-label">שם הצמח</div>
+      <input type="text" id="fnfName" value="${safeText}" style="width:100%;">
+      <div class="field-label">מה המקור בספרייה (פסוק)</div>
+      <textarea id="fnfSource" style="width:100%;min-height:50px;"></textarea>
+      <div class="field-label">הערות נוספות</div>
+      <textarea id="fnfNotes" style="width:100%;min-height:50px;"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <button class="nf-btn" id="fnfSave">💾 שמירה במכשיר</button>
+        <button class="nf-btn" id="fnfSend">📧 שליחה במייל</button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+  document.getElementById('fnfSave').addEventListener('click', ()=>{
+    const name = document.getElementById('fnfName').value.trim();
+    if (!name){ window.alert('יש למלא שם'); return; }
+    try {
+      const key = 'flora_nf_drafts_v1';
+      const drafts = JSON.parse(localStorage.getItem(key) || '[]');
+      drafts.push({
+        name, source: document.getElementById('fnfSource').value.trim(),
+        notes: document.getElementById('fnfNotes').value.trim(), savedAt: new Date().toISOString()
+      });
+      localStorage.setItem(key, JSON.stringify(drafts));
+      window.alert('הטיוטה נשמרה במכשיר זה. ניתן לשלוח אותה למפתח בכל שלב.');
+    } catch(e){ window.alert('שמירת הטיוטה נכשלה.'); }
+  });
+  document.getElementById('fnfSend').addEventListener('click', async ()=>{
+    if (!(window.Otzaria && Otzaria.call)) return;
+    const name = document.getElementById('fnfName').value.trim();
+    const source = document.getElementById('fnfSource').value.trim();
+    const notes = document.getElementById('fnfNotes').value.trim();
+    const body = 'הצעת תוספת למדריך צומח בתנ״ך\n\nההוספה המוצעת: ' + name + '\nהמקור בספרייה: ' + (source||'—') + '\nהערות נוספות: ' + (notes||'—');
+    try {
+      await Otzaria.call('feedback.sendEmail', { to: FLORA_REPORT_EMAIL, subject: 'הצעת תוספת - צומח בתנ״ך', body: body, includeSystemInfo: true });
+      await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
+    } catch(e){
+      await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
+    }
+  });
+}
+
+function renderMethodPanel(item, mi){
+  const m = item.methods[mi];
+  const panel = document.getElementById('methodPanel');
+  const wikiUrl = m.wiki ? `https://he.wikipedia.org/wiki/${encodeURIComponent(m.wiki)}` : `https://he.wikipedia.org/w/index.php?search=${encodeURIComponent(item.name)}`;
+  panel.innerHTML = `
+    <div class="method-panel">
+      <span class="conf-tag" style="background:${m.confidence.includes('ודאי')?'var(--forest)':m.confidence.includes('שנוי')?'var(--rust)':'var(--gold)'};color:${m.confidence.includes('שנוי')?'#FBEDE6':m.confidence.includes('סביר')?'#2B2318':'#EAF2E9'}">${m.confidence}</span>
+      ${m.latin ? `<p class="method-latin">${m.latin}</p>` : ''}
+      <p class="method-text">${m.explanation}</p>
+      <div class="method-gallery" id="gallery-${mi}"><span class="gallery-empty">טוען תמונות מוויקיפדיה…</span></div>
+      <a class="wiki-link" href="${wikiUrl}" data-external-link="${wikiUrl}">קריאה נוספת בוויקיפדיה ↗</a>
+    </div>`;
+  loadGallery(m.wiki, mi);
+}
+
+async function loadGallery(title, mi){
+  const gal = document.getElementById(`gallery-${mi}`);
+  if(!title){ gal.innerHTML = `<span class="gallery-empty">אין קישור זמין לתמונות.</span>`; return; }
+  try{
+    const res = await fetch(`https://he.wikipedia.org/api/rest_v1/page/media-list/${encodeURIComponent(title)}`);
+    if(!res.ok){ gal.innerHTML = `<span class="gallery-empty">לא נמצאו תמונות נוספות.</span>`; return; }
+    const data = await res.json();
+    const items = (data.items || []).filter(it => it.type === 'image' && it.srcset && it.srcset.length);
+    if(!items.length){ gal.innerHTML = `<span class="gallery-empty">לא נמצאו תמונות נוספות בערך זה.</span>`; return; }
+    gal.innerHTML = '';
+    items.slice(0, 8).forEach(it=>{
+      const src = 'https:' + (it.srcset[0].src.startsWith('//') ? it.srcset[0].src : '//' + it.srcset[0].src);
+      const img = document.createElement('img');
+      img.src = src; img.loading = 'lazy';
+      img.onload = ()=> img.classList.add('loaded');
+      img.onerror = ()=> img.remove();
+      gal.appendChild(img);
+    });
+  }catch(e){
+    gal.innerHTML = `<span class="gallery-empty">שגיאה בטעינת תמונות.</span>`;
+  }
+}
+
+function closeModal(){ overlay.classList.remove('open'); }
+document.getElementById('closeBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeModal(); });
+
+// ---------- lightbox ----------
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+
+function openLightbox(src, alt){
+  lightboxImg.src = src;
+  lightboxImg.alt = alt || '';
+  lightbox.classList.add('open');
+}
+function closeLightbox(){ lightbox.classList.remove('open'); lightboxImg.src=''; }
+
+document.addEventListener('click', e=>{
+  const img = e.target.closest('.card-media img, .method-gallery img');
+  if(img){
+    e.stopPropagation();
+    openLightbox(img.src, img.alt);
+  }
+}, true);
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', e=>{ if(e.target===lightbox) closeLightbox(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ closeLightbox(); closeModal(); }
+});
+
+// ---------- Otzaria plugin integration ----------
+const MENU_ITEM_ID = 'chadbedera-flora-lookup';
+
+function hasOtzaria(){ return !!(window.Otzaria && typeof Otzaria.call === 'function'); }
+
+// מניעת קריסה בלחיצה על קישור חיצוני: לא לנווט ישירות, לשאול ולפתוח בדפדפן המערכת
+async function confirmOpenExternal(url){
+  let hostname = url;
+  try { hostname = new URL(url).hostname || url; } catch(_){}
+  if (!hasOtzaria()) return;
+  const c = await Otzaria.call('ui.showConfirm', {
+    title: 'קישור לאתר חיצוני',
+    content: 'הקישור הזה מוביל אל האתר "' + hostname + '" — מחוץ לתוסף. האם לפתוח אותו בדפדפן המערכת?'
+  }).catch(() => null);
+  if (!c || !c.success || !c.data || c.data.confirmed !== true) return;
+  const r = await Otzaria.call('app.openUrl', { url: url }).catch(() => null);
+  if (!r || !r.success){
+    await Otzaria.call('notifications.showInApp', { message: 'פתיחת הקישור נכשלה (ייתכן שגרסת אוצריא אינה תומכת עדיין).', type: 'error' }).catch(()=>{});
+  }
+}
+
+document.addEventListener('click', (ev) => {
+  let target = ev.target;
+  while (target && target.tagName !== 'A') target = target.parentNode;
+  if (!target) return;
+  if (target.hasAttribute('data-external-link')){
+    ev.preventDefault();
+    const url = target.getAttribute('data-external-link');
+    if (url) confirmOpenExternal(url);
+  }
+}, true);
+
+function normalizeHeb(s){
+  return (s || '')
+    .replace(/[֑-ׇ]/g, '')      // ניקוד וטעמים
+    .replace(/[^א-ת]/g, '');    // רק עיצורים עבריים
+}
+
+const PREFIXES = ['ה','ו','ב','כ','ל','מ','ש'];
+const SUFFIXES = ['ים','ות'];
+const NIQQUD_RE = /[֑-ׇ]/g;
+
+function tokenizeHeb(text){
+  return (text || '').replace(NIQQUD_RE, '').match(/[א-ת]+/g) || [];
+}
+function looseForm(w){ return (w || '').replace(/[וי]/g, ''); }
+
+const FLORA_LOOKUP = new Map();
+const LOOSE_LOOKUP = new Map();
+
+function registerKey(phrase, idx){
+  const norm = normalizeHeb(phrase);
+  if (!norm || norm.length < 2) return;
+  if (!FLORA_LOOKUP.has(norm)) FLORA_LOOKUP.set(norm, idx);
+  const loose = looseForm(norm);
+  if (loose.length >= 2 && !LOOSE_LOOKUP.has(loose)) LOOSE_LOOKUP.set(loose, idx);
+}
+function registerPhrase(phrase, idx){
+  if (!phrase) return;
+  registerKey(phrase, idx);
+  const words = phrase.trim().split(/\s+/).filter(Boolean);
+  if (words.length > 1) words.forEach(w => { if (normalizeHeb(w).length >= 3) registerKey(w, idx); });
+}
+
+DATA.forEach((item, idx) => {
+  let nameCore = item.name, nameParen = '';
+  const pm = item.name.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+  if (pm){ nameCore = pm[1]; nameParen = pm[2]; }
+  registerPhrase(nameCore, idx);
+  if (nameParen) registerPhrase(nameParen, idx);
+  (item.aliases || []).forEach(a => registerPhrase(a, idx));
+});
+
+// כל הצירופים האפשריים: הסרת עד שתי קידומות (אותיות השימוש ה/ו/ב/כ/ל/מ/ש) X הסרת סיומת ריבוי
+function candidateForms(word){
+  const w = normalizeHeb(word);
+  if (!w) return [];
+  const prefixVariants = [w];
+  let cur = w;
+  for (let i = 0; i < 2 && cur.length > 2; i++){
+    if (!PREFIXES.includes(cur[0])) break;
+    cur = cur.slice(1);
+    prefixVariants.push(cur);
+  }
+  const all = new Set();
+  prefixVariants.forEach(p => {
+    all.add(p);
+    SUFFIXES.forEach(suf => {
+      if (p.endsWith(suf) && p.length > suf.length + 1) all.add(p.slice(0, -suf.length));
+    });
+  });
+  return Array.from(all).filter(c => c.length >= 2);
+}
+
+function findFloraIdx(word){
+  const cands = candidateForms(word);
+  for (const c of cands){ if (FLORA_LOOKUP.has(c)) return FLORA_LOOKUP.get(c); }
+  // נפילה חזרה: כתיב חסר/מלא — השוואה בלי אותיות ו/י פנימיות
+  for (const c of cands){
+    const lc = looseForm(c);
+    if (lc.length >= 2 && LOOSE_LOOKUP.has(lc)) return LOOSE_LOOKUP.get(lc);
+  }
+  return null;
+}
+
+function findFloraInSelection(text){
+  const words = tokenizeHeb(text);
+  for (const w of words){
+    const idx = findFloraIdx(w);
+    if (idx !== null) return idx;
+  }
+  return null;
+}
+
+function showLookupStatus(msg, ok){
+  const el = document.getElementById('lookupStatus');
+  el.textContent = msg;
+  el.className = 'lookup-status ' + (ok ? 'ok' : 'err');
+  el.style.display = 'inline-block';
+}
+
+async function registerContextMenuItem(){
+  try {
+    await Otzaria.call('reader.addContextMenuItem', {
+      id: MENU_ITEM_ID,
+      label: 'זהה צמח במדריך',
+      icon: 'leaf_one_24_regular'
+    });
+    showLookupStatus('✅ זיהוי צמחים בלחיצה ימנית פעיל (יש להפעיל "הרצה ברקע" בהגדרות התוסף כדי שיישאר זמין תמיד)', true);
+  } catch(e){
+    showLookupStatus('⚠️ רישום פריט הזיהוי נכשל: ' + ((e && e.message) || String(e)), false);
+  }
+}
+
+// מעבר בפועל ללשונית התוסף לאחר אישור — דורש API מעבר-ללשונית (מגרסה 0.9.96 ומעלה).
+// שם המתודה מורכב בזמן ריצה ולא כתוב כמחרוזת אחת, כי הוולידטור של אוצריא סורק את
+// הקבצים סטטית ודוחה התקנה על גרסאות ישנות אם המחרוזת מופיעה. בגרסאות קודמות
+// הקריאה נכשלת בשקט, והכרטיס פשוט כבר פתוח בלשונית ברקע.
+async function goToPluginOnConfirm(title, content, fallbackMessage){
+  if (!hasOtzaria()) return;
+  try {
+    const res = await Otzaria.call('ui.showConfirm', { title, content });
+    if (res && res.success && res.data && res.data.confirmed === true){
+      const futureApiMethod = ['plugin', 'openSelf'].join('.');
+      await Otzaria.call(futureApiMethod, {}).catch(()=>{});
+    }
+  } catch(e){
+    await Otzaria.call('notifications.showInApp', { message: fallbackMessage, type: 'success' }).catch(()=>{});
+  }
+}
+
+async function handleContextMenuClick(data){
+  if (!data || data.itemId !== MENU_ITEM_ID) return;
+  const text = (data.selectedText || '').trim();
+  if (!text){
+    if (hasOtzaria()) await Otzaria.call('notifications.showInApp', { message: 'יש לסמן תחילה את שם הצמח בטקסט', type: 'info' }).catch(()=>{});
+    return;
+  }
+  const idx = findFloraInSelection(text);
+  if (idx !== null){
+    const item = DATA[idx];
+    const seal = sealLabel(item.k);
+    openModal(item);
+    if (hasOtzaria()){
+      const firstVerse = item.verses[0] ? item.verses[0].ref : '';
+      let explanation = item.methods[0].explanation || '';
+      if (explanation.length > 220) explanation = explanation.slice(0, 217) + '...';
+      const content = explanation
+        + (firstVerse ? '\n\nלפי: ' + firstVerse : '')
+        + '\n\nהכרטיס המלא כבר פתוח ברקע. לחיצה על אישור תעביר אותך ללשונית "צומח בתנך" (בגרסאות אוצריא ישנות פעולה זו טרם נתמכת — הכרטיס יישאר פתוח ברקע בלבד).';
+      await goToPluginOnConfirm(
+        '🌿 ' + item.name + (seal ? ' — ' + seal.txt : ''),
+        content,
+        '🌿 זוהה: ' + item.name + (seal ? ' (' + seal.txt + ')' : '')
+      );
+    }
+  } else {
+    document.getElementById('search').value = text;
+    filterSearch(normalizeHeb(text) ? text.trim().toLowerCase() : '');
+    openNotFoundModal(text);
+    if (hasOtzaria()) await Otzaria.call('notifications.showInApp', {
+      message: 'לא זוהה צמח במדריך עבור "' + text + '"',
+      type: 'info'
+    }).catch(()=>{});
+  }
+}
+
+document.getElementById('lightbulb-btn').addEventListener('click', async () => {
+  if (!hasOtzaria()) return;
+  const msg = window.prompt('מה תרצה לשתף לגבי התוסף? (הודעה תישלח למפתח)');
+  if (!msg || !msg.trim()) return;
+  try {
+    await Otzaria.call('feedback.sendEmail', {
+      to: 'E0548433917@outlook.com',
+      subject: 'משוב על תוסף מדריך הצומח',
+      body: msg.trim(),
+      includeSystemInfo: true
+    });
+    await Otzaria.call('notifications.showInApp', { message: 'המשוב נשלח, תודה!', type: 'success' }).catch(()=>{});
+  } catch(e){
+    await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת המשוב', type: 'error' }).catch(()=>{});
+  }
+});
+
+function waitForOtzaria(elapsed){
+  if (window.Otzaria && typeof Otzaria.on === 'function'){
+    // פריט התפריט האחיד נרשם ע"י מעטפת "מדעי התנ״ך" (index.html), לא כאן.
+    Otzaria.on('reader.context_menu_item_clicked', handleContextMenuClick);
+    return;
+  }
+  if (elapsed > 4000 && !waitForOtzaria._warned){
+    waitForOtzaria._warned = true;
+  }
+  setTimeout(() => waitForOtzaria(elapsed + 200), 200);
+}
+waitForOtzaria(0);
+
+document.getElementById('addNewBtn').addEventListener('click', ()=> openNotFoundModal(''));
+
+render();
+
+(function(){
+  try {
+    const focus = new URLSearchParams(location.search).get('focus');
+    if (focus) handleContextMenuClick({ itemId: MENU_ITEM_ID, selectedText: focus });
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
