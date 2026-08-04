@@ -141,7 +141,19 @@ async function handleIdentifyClick(payload){
     const modern = shortModernId(m.entry);
     return '• ' + via + m.catIcon + ' ' + m.name + ' — ' + m.catLabel + (modern ? ' · ' + modern : '');
   }
-  const lines = matches.map(lineFor).join('\n');
+  // תקציר לפי קטגוריה ("4 אישים · 6 צומח · 1 מקומות") - הפופאפ של אוצריא (ui.showConfirm)
+  // חתוך בגובה ואין לנו שליטה על ה-CSS שלו, אז מקצרים את התוכן במקום להוסיף גלילה.
+  function summaryLine(list){
+    const counts = new Map(); // catId -> {icon, label, n}
+    list.forEach(m => {
+      if (!counts.has(m.catId)) counts.set(m.catId, { icon: m.catIcon, label: m.catLabel.replace(/ בתנ״ך$/, ''), n: 0 });
+      counts.get(m.catId).n++;
+    });
+    return Array.from(counts.values()).map(v => v.icon + ' ' + v.n + ' ' + v.label).join(' · ');
+  }
+  const TOP_N = 5;
+  const top = matches.slice(0, TOP_N);
+  const restCount = matches.length - top.length;
   const title = matches.length === 1
     ? (matches[0].catIcon + ' ' + matches[0].name)
     : ('נמצאו ' + matches.length + ' התאמות ל"' + text + '"');
@@ -149,10 +161,18 @@ async function handleIdentifyClick(payload){
   const transferNote = canOpenSelf
     ? 'לחיצה על אישור תעביר אותך לתוסף תמונ״ך עם '
     : 'מעבר אוטומטי לתוסף אינו נתמך בגרסת אוצריא זו (נדרש 0.9.96 ומעלה) — יש לפתוח את תמונ״ך ידנית. ';
-  const disclaimer = '\n\n⚠️ הזיהוי מבוסס התאמה חכמה (הסרת אותיות שימוש וכתיב חסר) וייתכנו זיהויי שווא. מצאתם טעות? בחלון התוצאות יש כפתור דיווח, וכל כרטיס ניתן לעריכה מקומית (✏️).';
-  const content = (matches.length === 1
-    ? (lineFor(matches[0]) + '\n\n' + transferNote + (canOpenSelf ? 'הכרטיס המלא.' : ''))
-    : (lines + '\n\n' + transferNote + (canOpenSelf ? 'רשימת התוצאות.' : ''))) + disclaimer;
+  const disclaimer = '⚠️ הזיהוי מבוסס התאמה חכמה (הסרת אותיות שימוש וכתיב חסר) וייתכנו זיהויי שווא. מצאתם טעות? בחלון התוצאות יש כפתור דיווח, וכל כרטיס ניתן לעריכה מקומית (✏️).';
+  const contentParts = [];
+  if (matches.length === 1){
+    contentParts.push(lineFor(matches[0]));
+  } else {
+    contentParts.push(summaryLine(matches));
+    contentParts.push(top.map(lineFor).join('\n'));
+    if (restCount > 0) contentParts.push('ועוד ' + restCount + ' — לחיצה על אישור תציג את כולן.');
+  }
+  contentParts.push(transferNote + (canOpenSelf ? (matches.length === 1 ? 'הכרטיס המלא.' : 'רשימת התוצאות.') : ''));
+  contentParts.push(disclaimer);
+  const content = contentParts.join('\n\n');
 
   try {
     const res = await Otzaria.call('ui.showConfirm', { title, content });
@@ -168,7 +188,7 @@ function registerUnifiedMenuItem(){
   if (!(window.Otzaria && Otzaria.call)) return;
   Otzaria.call('reader.addContextMenuItem', {
     id: MENU_ITEM_ID,
-    label: 'זהה בתמונ״ך',
+    label: 'זהה דצח״מ (ומקדש) בתמונ״ך!',
     icon: 'search_24_regular'
   }).catch(()=>{});
 }
