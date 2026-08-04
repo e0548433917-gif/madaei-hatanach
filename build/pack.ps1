@@ -45,8 +45,11 @@ $stageDir = Join-Path $env:TEMP "madaei-hatanach-stage"
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
 New-Item -ItemType Directory -Path $stageDir | Out-Null
 
-$excludeDirs = @('build', 'dist', '.git', '.claude')
-$excludeFiles = @('_serve.ps1')
+# מה לא נשלח למשתמשים. שים לב: assets/ ו-docs/ נכנסו לריפו ב-2.11.3 והחבילה קפצה
+# מ-12MB ל-50MB, כי הם לא היו ברשימה הזו. הם חומרי פיתוח בלבד — אין אליהם שום
+# הפניה מ-index.html או מ-shell/. אותו דבר tools/ (סקריפט ולידציה שרץ ב-node).
+$excludeDirs = @('build', 'dist', '.git', '.claude', 'assets', 'docs', 'tools')
+$excludeFiles = @('_serve.ps1', 'README.md', 'למפתחים.md', 'פוסט-לפורום.md', '.gitignore', '.gitattributes')
 
 Get-ChildItem -Path $root -Force | Where-Object {
   $_.Name -notin $excludeDirs -and $_.Name -notin $excludeFiles -and $_.Name -ne (Split-Path $stageDir -Leaf)
@@ -104,6 +107,16 @@ Move-Item $tmpZip2 $standalonePath
 Write-Host "נוצרה גרסה עצמאית: $standalonePath"
 
 Remove-Item $stageDir -Recurse -Force
+
+# ---- 5. שומר גודל ----
+# 2.11.2 שקל 12.2MB. אם החבילה חצתה 16MB כנראה שנכנסה אליה תיקייה חדשה שאמורה
+# להיות ב-$excludeDirs — בדיוק מה שקרה ב-2.11.3 עם assets/ ו-docs/ (50MB).
+$sizeMB = [math]::Round((Get-Item $otzpluginPath).Length / 1MB, 1)
+Write-Host ""
+Write-Host "גודל החבילה: $sizeMB MB"
+if ($sizeMB -gt 16) {
+  Write-Warning "החבילה גדולה מהצפוי ($sizeMB MB, הרף 16MB). בדוק אם נוספה תיקייה שצריכה להיכנס ל-`$excludeDirs ב-build\pack.ps1."
+}
 
 Write-Host ""
 Write-Host "סיום. גרסה חדשה: $newVersion"
