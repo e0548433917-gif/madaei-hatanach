@@ -32,22 +32,54 @@ function bringToFront(){
 // לכן: כותבים את הבקשה לאחסון של אוצריא *לפני* המעבר, והמופע שעולה קורא אותה ומציג.
 // אם לא הייתה טעינה מחדש (0.9.95 ומטה) — התצוגה הישירה עובדת כרגיל, וה-timeout
 // שלמטה מנקה את המפתח כדי שלא יוצג שוב בפתיחה הבאה.
-function setPendingIdentify(text, mode){
-  return storageSet(PENDING_IDENTIFY_KEY, { text: text, mode: mode || 'results', ts: Date.now() });
-}
-function clearPendingIdentify(){ storageSet(PENDING_IDENTIFY_KEY, null); }
+// מזהה ייחודי למופע הנוכחי של התוסף. אם plugin.openSelf *לא* טוען מחדש, המופע
+// שכתב את הבקשה הוא גם זה שכבר הציג אותה — ואז אסור לו להציג שוב כשהוא חוזר לחזית.
+// אם כן נטען מחדש, למופע החדש יש מזהה אחר, והוא זה שיצרוך.
+const INSTANCE_ID = 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
+function setPendingIdentify(text, mode){
+  return storageSetJson(PENDING_IDENTIFY_KEY, {
+    text: text, mode: mode || 'results', ts: Date.now(), origin: INSTANCE_ID
+  });
+}
+function clearPendingIdentify(){ storageSetJson(PENDING_IDENTIFY_KEY, null); }
+
+let consumingPending = false;
 async function consumePendingIdentify(){
-  let rec = await storageGet(PENDING_IDENTIFY_KEY);
-  if (!rec) return;
-  if (typeof rec === 'string'){ try { rec = JSON.parse(rec); } catch(e){ rec = null; } }
-  await storageSet(PENDING_IDENTIFY_KEY, null);   // צורכים פעם אחת בלבד
-  if (!rec || !rec.text) return;
-  // בקשה ישנה (למשל התוסף נפתח ידנית שבוע אחר כך) לא מוצגת
-  if (rec.ts && (Date.now() - rec.ts) > 120000) return;
-  if (rec.mode === 'propose'){ openGenericProposeForm(rec.text); return; }
-  const matches = await identify(rec.text);
-  showResults(matches, rec.text);
+  if (consumingPending) return;          // מונע כפל צריכה כששני טריגרים נדלקים יחד
+  consumingPending = true;
+  try {
+    const rec = await storageGetJson(PENDING_IDENTIFY_KEY);
+    if (!rec || !rec.text) return;
+    // בקשה שהמופע הזה כתב בעצמו — הוא כבר הציג אותה ב-showNow. יוצאים *בלי למחוק*:
+    // אם קיים מופע לשונית נפרד, הוא זה שאמור לצרוך, ומחיקה כאן הייתה גונבת לו אותה.
+    // הניקוי במקרה הזה נעשה ע"י ה-setTimeout שב-handoffAndShow.
+    if (rec.origin === INSTANCE_ID) return;
+    await storageSetJson(PENDING_IDENTIFY_KEY, null);   // צורכים פעם אחת בלבד
+    // בקשה ישנה (למשל התוסף נפתח ידנית שבוע אחר כך) לא מוצגת
+    if (rec.ts && (Date.now() - rec.ts) > 120000) return;
+    if (rec.mode === 'propose'){ openGenericProposeForm(rec.text); return; }
+    const matches = await identify(rec.text);
+    showResults(matches, rec.text);
+  } finally {
+    consumingPending = false;
+  }
+}
+
+// חשד ב׳ מהתוכנית: אם אוצריא מחזיקה מופע רקע *ומופע לשונית שכבר טעון*, ה-consume
+// שרץ פעם אחת ב-waitForOtzaria לעולם לא יראה את הבקשה — הוא רץ דקות קודם.
+// לכן בודקים גם בכל חזרה לחזית, ובפולינג קל כרשת ביטחון (אין ודאות ש-visibilitychange
+// בכלל נדלק בתוך ה-webview של אוצריא, ולכן הפולינג הוא לא כפילות אלא הגיבוי היחיד).
+function startPendingIdentifyWatch(){
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) consumePendingIdentify();
+  });
+  window.addEventListener('focus', () => consumePendingIdentify());
+  window.addEventListener('pageshow', () => consumePendingIdentify());
+  // הפולינג *לא* מגודר ב-document.hidden בכוונה. נמדד בפועל: ה-webview המוטמע מדווח
+  // document.hidden === true גם כשהלשונית בחזית, ולכן גידור כזה היה משבית את רשת
+  // הביטחון בדיוק בארכיטקטורה שהיא נועדה לה. העלות היא קריאת IPC אחת שמחזירה null.
+  setInterval(consumePendingIdentify, 1500);
 }
 
 // מעבר ללשונית התוסף + הצגה, בצורה שעמידה לטעינה מחדש של המופע.
@@ -178,6 +210,8 @@ function waitForOtzaria(elapsed){
     renderCustomPageCards();
     // אם המופע הזה נפתח בעקבות "זהה בתמונ״ך" בספרייה — מציגים את מה שהמתין באחסון.
     consumePendingIdentify();
+    // ...וממשיכים לבדוק גם אחר כך: המופע הגלוי עשוי להיות טעון מזמן (חשד ב׳).
+    startPendingIdentifyWatch();
     return;
   }
   setTimeout(() => waitForOtzaria(elapsed + 200), 200);

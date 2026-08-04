@@ -180,13 +180,53 @@ function preloadAllGuides(list, i){
   loadGuideData(list[i]).then(() => preloadAllGuides(list, i + 1),
                               () => preloadAllGuides(list, i + 1));
 }
+// אוצריא אינה עקבית בצורת התשובה של storage.get, ושני תוספים שעובדים בפועל קוראים
+// אותה הפוך: ״יומא דהילולא״ קורא res.data.value, ו״עיון ההלכה״ קורא res.data עצמו.
+// עד היום החזרנו את res.data כמות שהוא — כלומר במעטפת { value: ... } קיבלנו את
+// המעטפת ולא את הערך, ‏rec.text יצא undefined, והקוד יצא בשקט בלי שום שגיאה.
+// זו הסיבה האמיתית לבאג 996, וגם למה restoreBookmarksFromOtzaria לא שחזר כלום.
+// מעכשיו: מקלפים את המעטפת אם היא קיימת, ותומכים בשתי הצורות.
+function unwrapStorageValue(data){
+  if (data === undefined) return null;
+  if (data && typeof data === 'object' && !Array.isArray(data)
+      && Object.prototype.hasOwnProperty.call(data, 'value')){
+    return data.value === undefined ? null : data.value;
+  }
+  return data;
+}
+
 function storageGet(key){
   if (!hasOtzaria()) return Promise.resolve(null);
-  return Otzaria.call('storage.get', { key: key }).then(res => (res && res.data !== undefined) ? res.data : null).catch(() => null);
+  return Otzaria.call('storage.get', { key: key }).then(res => unwrapStorageValue(res && res.data)).catch(() => null);
 }
 function storageSet(key, value){
   if (!hasOtzaria()) return Promise.resolve(false);
   return Otzaria.call('storage.set', { key: key, value: value }).then(res => !(res && res.success === false)).catch(() => false);
+}
+
+// ---- רשומות מבניות באחסון אוצריא ----
+// אוצריא אינה מבטיחה שמירת אובייקטים ב-storage.set. בדיקת תוספים שעובדים בפועל
+// מראה שני דפוסים סותרים: ״יומא דהילולא״ כותב value: JSON.stringify(...) ואילו
+// ״עיון ההלכה״ מעביר את האובייקט כמות שהוא. אם השכבה שמתחת ממירה למחרוזת בעצמה,
+// אובייקט נשמר כ-"[object Object]" והקריאה חוזרת שבורה בלי שום שגיאה גלויה —
+// בדיוק התסמין של באג 996 (המעבר ללשונית קרה, אבל שום תוצאה לא הוצגה).
+// לכן: כותבים תמיד מחרוזת JSON, וקוראים בסובלנות לשני המצבים גם יחד.
+function storageSetJson(key, value){
+  if (value === null || value === undefined) return storageSet(key, null);
+  let payload;
+  try { payload = JSON.stringify(value); }
+  catch(e){ return Promise.resolve(false); }
+  return storageSet(key, payload);
+}
+
+function storageGetJson(key){
+  return storageGet(key).then(raw => {
+    if (raw === null || raw === undefined || raw === '') return null;
+    if (typeof raw === 'object') return raw;               // גרסה ששומרת אובייקטים כמו שהם
+    if (typeof raw !== 'string') return null;
+    if (raw === '[object Object]') return null;            // נשמר בגרסה ישנה בלי stringify
+    try { return JSON.parse(raw); } catch(e){ return null; }
+  });
 }
 
 async function getHtmlPagesIndex(){
