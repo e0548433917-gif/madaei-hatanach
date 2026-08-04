@@ -429,6 +429,8 @@ html, body {
   padding: 16px;
 }
 #resultsOverlay.open { display: flex; }
+/* המודל עצמו לא גולל - רק אזור התוצאות בפנים (#resultsList/#noResults).
+   כך הכותרת, הציטוט והצ'יפים נשארים דביקים למעלה, כמו בחלונות הזיהוי של אוצריא עצמה. */
 #resultsModal {
   background: var(--color-surface);
   color: var(--color-on-surface);
@@ -436,20 +438,45 @@ html, body {
   border-radius: var(--radius-lg);
   max-width: 680px; width: 100%;
   max-height: 85vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 18px;
   position: relative;
   animation: fadeIn .2s ease-out;
 }
 #resultsCloseX {
-  position: sticky; top: 0; float: left; margin-left: -6px;
+  position: absolute; top: 12px; left: 12px;
   width: 32px; height: 32px; border-radius: 50%;
   border: 1px solid var(--color-outline-faint); background: var(--color-surface-2); cursor: pointer;
   font-size: 1em; color: var(--color-on-surface);
   z-index: 5;
 }
-#resultsModal h2 { font-size: 1.12em; margin: 0 0 4px; }
-#resultsModal .quote { font-size: .86em; color: var(--color-on-surface-dim); margin-bottom: 12px; }
+#resultsCloseX:hover { background: var(--color-hover); }
+#resultsModal h2 { flex: 0 0 auto; font-size: 1.12em; margin: 0 0 4px; padding-left: 36px; text-align: center; }
+#resultsModal .quote {
+  flex: 0 0 auto; font-size: .86em; color: var(--color-on-surface-dim);
+  margin-bottom: 0; padding-bottom: 12px;
+}
+#resultsChips {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--color-outline-faint);
+  padding-bottom: 12px; margin-bottom: 12px;
+}
+/* אזור הגלילה הפנימי - שדה זה או #noResults ממלא את מה שנשאר מהמודל */
+#resultsList, #noResults {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-left: 6px; margin-left: -6px;
+}
+#resultsList::-webkit-scrollbar, #noResults::-webkit-scrollbar { width: 8px; }
+#resultsList::-webkit-scrollbar-track, #noResults::-webkit-scrollbar-track { background: transparent; }
+#resultsList::-webkit-scrollbar-thumb, #noResults::-webkit-scrollbar-thumb {
+  background: var(--color-outline-faint); border-radius: var(--radius-pill);
+}
+#resultsList::-webkit-scrollbar-thumb:hover, #noResults::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+#resultsList, #noResults { scrollbar-width: thin; scrollbar-color: var(--color-outline-faint) transparent; }
 .result-row {
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px;
@@ -473,7 +500,8 @@ html, body {
 .result-row-detail { border-top: 1px solid var(--color-outline-faint); padding-top: 10px; }
 #noResults { text-align: center; padding: 20px 0; color: var(--color-on-surface-faint); }
 #closeResults {
-  display: block; margin: 14px auto 0;
+  flex: 0 0 auto;
+  display: block; margin: 12px auto 0;
   border: none; background: none; color: var(--color-on-surface-faint); cursor: pointer;
   font-family: var(--font-main); font-size: .86em;
   text-decoration: underline;
