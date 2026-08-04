@@ -1,0 +1,154 @@
+// חלון תוצאות הזיהוי: צ׳יפים, רשימה ודיווח על טעות.
+// נוצר בפיצול router.js (גרסה 2.11.2). המקור: shell/router.js שורות 1584-1733.
+// אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
+
+
+// לחיצה על תוצאה לא "עוברת" לשום מקום - היא מרחיבה את הכרטיס המלא (עם תמונות, פסוקים
+// וכו') ישר בתוך רשימת התוצאות, בלי לסגור אותה. זה בדיוק מה שביקשת - נשארים בעמוד
+// השער, ורואים הכל במקום, בלי לאבד את הרשימה.
+// שורת צ'יפים לסינון תוצאות הזיהוי לפי מדריך - מוצגת רק כשיש יותר מקטגוריה אחת
+// בתוצאות (אחרת אין טעם לסנן). לוחצים על צ'יפ -> מסננים את resultsList בלי לרוץ
+// שוב את identify() ובלי לסגור את החלונית.
+function renderResultsChips(matches, activeCat, onSelect){
+  const resultsChips = document.getElementById('resultsChips');
+  if (!resultsChips) return;
+  if (!matches.length){ resultsChips.innerHTML = ''; return; }
+  const counts = new Map(); // catId -> {label, icon, n}
+  matches.forEach(m => {
+    if (!counts.has(m.catId)) counts.set(m.catId, { label: m.catLabel, icon: m.catIcon, n: 0 });
+    counts.get(m.catId).n++;
+  });
+  if (counts.size < 2){ resultsChips.innerHTML = ''; return; } // קטגוריה אחת בלבד - אין מה לסנן
+  let html = `<button type="button" class="chip${activeCat==='all'?' active':''}" data-cat="all">הכל (${matches.length})</button>`;
+  counts.forEach((v, catId) => {
+    html += `<button type="button" class="chip${activeCat===catId?' active':''}" data-cat="${esc(catId)}">${v.icon} ${esc(v.label)} (${v.n})</button>`;
+  });
+  resultsChips.innerHTML = html;
+  resultsChips.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => onSelect(btn.dataset.cat));
+  });
+}
+
+function showResults(matches, selectedText){
+  let activeResultsCat = 'all';
+
+  function render(){
+    renderResultsChips(matches, activeResultsCat, (catId) => { activeResultsCat = catId; render(); });
+    const filtered = activeResultsCat === 'all' ? matches : matches.filter(m => m.catId === activeResultsCat);
+    renderResultsListRows(filtered, selectedText);
+  }
+  render();
+
+  resultsOverlay.classList.add('open');
+}
+
+function renderResultsListRows(matches, selectedText){
+  resultsList.innerHTML = '';
+  if (!matches.length){
+    noResults.style.display = 'block';
+    noResults.innerHTML = '<button type="button" class="panel-btn" id="noResPropose">➕ הצעת ערך חדש</button>';
+    noResults.querySelector('#noResPropose').addEventListener('click', () => openGenericProposeForm(selectedText));
+    resultsQuote.textContent = 'לא נמצאה התאמה ל"' + selectedText + '" באף אחד ממדריכי תמונ״ך.';
+  } else {
+    noResults.style.display = 'none';
+    resultsQuote.textContent = 'נבחר: "' + selectedText + '"';
+    matches.forEach(m => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      const viaPrefix = (m.matchedVia && m.matchedVia !== m.name) ? (esc(m.matchedVia) + ': ') : '';
+      const modern = shortModernId(m.entry);
+      const isCustom = m.catId === 'custom';
+      row.innerHTML = `
+        <div class="result-row-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div class="info">
+            <div class="name">${viaPrefix}${m.catIcon} ${esc(m.name)}</div>
+            <div class="cat">${m.catLabel}${modern ? ' · ' + esc(modern) : ''}</div>
+          </div>
+          <button type="button" class="expand-btn">${isCustom ? 'פתיחה' : 'הרחבה ⌄'}</button>
+        </div>
+        <div class="result-row-detail" style="display:none;margin-top:10px;"></div>
+      `;
+      const btn = row.querySelector('.expand-btn');
+      const detailBox = row.querySelector('.result-row-detail');
+      if (isCustom){
+        btn.addEventListener('click', () => openCustomHtmlPage(m.term));
+      } else {
+        btn.addEventListener('click', async () => {
+          const open = detailBox.style.display !== 'none';
+          if (open){
+            detailBox.style.display = 'none';
+            btn.textContent = 'הרחבה ⌄';
+            return;
+          }
+          if (!detailBox.dataset.built){
+            detailBox.innerHTML = renderEntryDetailHTML(m.entry, m.catId);
+            wireEntryDetail(detailBox, m.entry, () => openGenericEditForm(m.entry, m.catId));
+            detailBox.dataset.built = '1';
+          }
+          detailBox.style.display = 'block';
+          btn.textContent = 'סגירה ⌃';
+        });
+      }
+      resultsList.appendChild(row);
+    });
+
+    // דיווח על טעות בזיהוי - שליחה למפתח או תיקון מקומי (✏️ בכל תוצאה מורחבת).
+    const reportRow = document.createElement('div');
+    reportRow.style.cssText = 'margin-top:12px;text-align:center;';
+    reportRow.innerHTML = '<button type="button" class="panel-btn secondary" id="identifyErrorBtn">🚩 מצאת טעות בזיהוי? דיווח למפתח</button>';
+    reportRow.querySelector('#identifyErrorBtn').addEventListener('click', () => openIdentifyErrorReport(selectedText, matches));
+    resultsList.appendChild(reportRow);
+  }
+}
+
+// טופס דיווח טעות בזיהוי: תיאור חופשי, שליחה במייל או שמירה מקומית. תיקון בפועל של
+// כרטיס אפשרי מקומית דרך כפתור ✏️ שבכל תוצאה מורחבת / כרטיס.
+function openIdentifyErrorReport(selectedText, matches){
+  const summary = (matches || [])
+    .filter(m => m.catId !== 'custom')
+    .map(m => (m.matchedVia && m.matchedVia !== m.name ? m.matchedVia + ' ← ' : '') + m.name + ' (' + m.catLabel + ')')
+    .join('\n');
+  entryModalInner.innerHTML = `
+    <h2>🚩 דיווח על טעות בזיהוי</h2>
+    <div class="entry-sub">הקטע שנבחר: "${esc(selectedText)}"</div>
+    <div class="field-label">מה זוהה</div>
+    <p style="white-space:pre-line;">${esc(summary || '—')}</p>
+    <div class="field-label">מה הטעות? (איזה זיהוי שגוי, ומה הנכון)</div>
+    <textarea id="idErrText" class="f-textarea" style="min-height:90px"></textarea>
+    <p class="mini-note">אפשר גם לתקן מיד במכשיר שלך: בכל תוצאה מורחבת יש כפתור ✏️ לעריכה מקומית של הכרטיס.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+      <button class="nf-btn" id="idErrSend">📧 שליחת הדיווח למפתח</button>
+      <button class="nf-btn" id="idErrSave">💾 שמירה במכשיר</button>
+      <button class="nf-btn secondary" id="idErrCancel">סגירה</button>
+    </div>`;
+  entryOverlay.classList.add('open');
+  document.getElementById('idErrCancel').addEventListener('click', () => entryOverlay.classList.remove('open'));
+  const buildBody = () => 'דיווח טעות בזיהוי - תמונ״ך\n\nהקטע שנבחר: "' + selectedText + '"\n\nמה זוהה:\n' + (summary || '—')
+    + '\n\nתיאור הטעות:\n' + (document.getElementById('idErrText').value.trim() || '—');
+  document.getElementById('idErrSave').addEventListener('click', () => {
+    try {
+      const key = 'identify_error_reports_v1';
+      const reports = JSON.parse(localStorage.getItem(key) || '[]');
+      reports.push({ selectedText, summary, note: document.getElementById('idErrText').value.trim(), savedAt: new Date().toISOString() });
+      localStorage.setItem(key, JSON.stringify(reports));
+      window.alert('הדיווח נשמר במכשיר זה. ניתן לשלוח אותו למפתח בכל שלב.');
+    } catch(e){ window.alert('שמירת הדיווח נכשלה.'); }
+  });
+  document.getElementById('idErrSend').addEventListener('click', async () => {
+    if (!hasOtzaria()){ window.alert('שליחה דורשת פתיחה בתוך אוצריא. אפשר לפנות ל-' + DEV_EMAIL); return; }
+    try {
+      await Otzaria.call('feedback.sendEmail', { to: DEV_EMAIL, subject: 'דיווח טעות בזיהוי - תמונ״ך', body: buildBody(), includeSystemInfo: true });
+      await Otzaria.call('notifications.showInApp', { message: 'הדיווח נשלח, תודה!', type: 'success' }).catch(()=>{});
+      entryOverlay.classList.remove('open');
+    } catch(e){
+      await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת הדיווח', type: 'error' }).catch(()=>{});
+    }
+  });
+}
+
+closeResults.addEventListener('click', () => resultsOverlay.classList.remove('open'));
+document.getElementById('resultsCloseX').addEventListener('click', () => resultsOverlay.classList.remove('open'));
+resultsOverlay.addEventListener('click', (ev) => { if (ev.target === resultsOverlay) resultsOverlay.classList.remove('open'); });
+document.querySelectorAll('.panel-overlay').forEach(p => {
+  p.addEventListener('click', (ev) => { if (ev.target === p) p.classList.remove('open'); });
+});

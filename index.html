@@ -176,6 +176,20 @@
   <button id="settingsReset" type="button">איפוס להגדרות ברירת המחדל</button>
 </div>
 
-<script src="shell/router.js"></script>
+<!-- שכבת התוסף, מפוצלת ל-12 מודולים (2.11.2). הסדר קריטי ואינו שרירותי:
+     core ראשון כי כולם נשענים עליו, ו-bridge אחרון כי הוא מריץ את האתחול בפועל.
+     בכוונה <script> רגיל ולא type="module" — כל הקבצים חולקים scope גלובלי אחד. -->
+<script src="shell/core.js"></script>
+<script src="shell/data.js"></script>
+<script src="shell/identify.js"></script>
+<script src="shell/refs.js"></script>
+<script src="shell/guides.js"></script>
+<script src="shell/entry-detail.js"></script>
+<script src="shell/edit-forms.js"></script>
+<script src="shell/results-ui.js"></script>
+<script src="shell/home.js"></script>
+<script src="shell/personal.js"></script>
+<script src="shell/settings.js"></script>
+<script src="shell/bridge.js"></script>
 </body>
 </html>
