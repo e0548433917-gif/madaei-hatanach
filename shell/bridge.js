@@ -45,6 +45,12 @@ function setPendingIdentify(text, mode){
 function clearPendingIdentify(){ storageSetJson(PENDING_IDENTIFY_KEY, null); }
 
 let consumingPending = false;
+// חותמת הזמן של הבקשה האחרונה שהמופע הזה כבר הציג. המחיקה מהאחסון (למטה) היא
+// ההגנה הראשונה, אבל היא לא מספיקה: אם היא נכשלת או שהאחסון של אוצריא לא באמת
+// מוחק ב-null, הפולינג של 1.5 שניות מציג את אותה בקשה שוב ושוב — חלון התוצאות
+// נבנה מחדש בלולאה, הסינון קופץ בחזרה ל"הכל", והצ׳יפים "מהבהבים ולא נלחצים"
+// כי האלמנט שנלחץ מוחלף באמצע. הזיכרון בתוך המופע חוסם את זה בוודאות.
+let lastConsumedTs = 0;
 async function consumePendingIdentify(){
   if (consumingPending) return;          // מונע כפל צריכה כששני טריגרים נדלקים יחד
   consumingPending = true;
@@ -55,6 +61,8 @@ async function consumePendingIdentify(){
     // אם קיים מופע לשונית נפרד, הוא זה שאמור לצרוך, ומחיקה כאן הייתה גונבת לו אותה.
     // הניקוי במקרה הזה נעשה ע"י ה-setTimeout שב-handoffAndShow.
     if (rec.origin === INSTANCE_ID) return;
+    if (rec.ts && rec.ts <= lastConsumedTs) return;    // כבר הוצגה במופע הזה
+    lastConsumedTs = rec.ts || Date.now();
     await storageSetJson(PENDING_IDENTIFY_KEY, null);   // צורכים פעם אחת בלבד
     // בקשה ישנה (למשל התוסף נפתח ידנית שבוע אחר כך) לא מוצגת
     if (rec.ts && (Date.now() - rec.ts) > 120000) return;
@@ -114,14 +122,22 @@ async function handleIdentifyClick(payload){
 
   const canOpenSelf = await isOpenSelfSupported();
 
+  // הפופאפ של אוצריא (ui.showConfirm) חתוך בגובה ואין לנו שליטה על ה-CSS שלו. כשמסמנים
+  // פסקה שלמה הקטע הנבחר לבדו ממלא את כל החלון והכפתורים/ההוראה נדחקים מחוץ לתצוגה,
+  // ולכן בכל מקום שבו הקטע מוצג הוא נחתך לסימן היכר קצר בלבד.
+  const snippet = (s, max) => {
+    const clean = String(s).replace(/\s+/g, ' ').trim();
+    return clean.length <= max ? clean : clean.slice(0, max - 1) + '…';
+  };
+
   // אין התאמה: מציעים לפתוח טופס הצעת ערך חדש (עם בחירת קטגוריה) - לשליחה או לשמירה מקומית.
   if (!matches.length){
     try {
       const res = await Otzaria.call('ui.showConfirm', {
-        title: 'לא נמצאה התאמה ל"' + text + '"',
-        content: 'לא נמצא זיהוי ל"' + text + '" באף אחד ממדריכי תמונ״ך.\n\n'
-          + 'האם יש לך זיהוי שאינו מופיע? לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת הקטגוריה (צומח, חי, דומם וכו׳), שליחה למפתח או שמירה במחשב שלך.'
-          + (canOpenSelf ? '' : '\n\n(בגרסת אוצריא זו אין מעבר אוטומטי ללשונית — יש לפתוח את תמונ״ך ידנית, הטופס ימתין שם פתוח.)')
+        title: 'לא נמצאה התאמה ל"' + snippet(text, 40) + '"',
+        content: 'לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת קטגוריה, שליחה למפתח או שמירה במחשב.'
+          + (canOpenSelf ? '' : '\n\n(אין מעבר אוטומטי ללשונית בגרסת אוצריא זו — יש לפתוח את תמונ״ך ידנית, הטופס ימתין פתוח.)')
+          + '\n\nהקטע שנבחר: "' + snippet(text, 120) + '"'
       });
       if (res && res.success && res.data && res.data.confirmed === true){
         await handoffAndShow(text, 'propose', canOpenSelf, () => openGenericProposeForm(text));
@@ -141,8 +157,7 @@ async function handleIdentifyClick(payload){
     const modern = shortModernId(m.entry);
     return '• ' + via + m.catIcon + ' ' + m.name + ' — ' + m.catLabel + (modern ? ' · ' + modern : '');
   }
-  // תקציר לפי קטגוריה ("4 אישים · 6 צומח · 1 מקומות") - הפופאפ של אוצריא (ui.showConfirm)
-  // חתוך בגובה ואין לנו שליטה על ה-CSS שלו, אז מקצרים את התוכן במקום להוסיף גלילה.
+  // תקציר לפי קטגוריה ("4 אישים · 6 צומח · 1 מקומות")
   function summaryLine(list){
     const counts = new Map(); // catId -> {icon, label, n}
     list.forEach(m => {
@@ -156,22 +171,24 @@ async function handleIdentifyClick(payload){
   const restCount = matches.length - top.length;
   const title = matches.length === 1
     ? (matches[0].catIcon + ' ' + matches[0].name)
-    : ('נמצאו ' + matches.length + ' התאמות ל"' + text + '"');
+    : ('נמצאו ' + matches.length + ' התאמות ל"' + snippet(text, 40) + '"');
 
-  const transferNote = canOpenSelf
-    ? 'לחיצה על אישור תעביר אותך לתוסף תמונ״ך עם '
-    : 'מעבר אוטומטי לתוסף אינו נתמך בגרסת אוצריא זו (נדרש 0.9.96 ומעלה) — יש לפתוח את תמונ״ך ידנית. ';
-  const disclaimer = '⚠️ הזיהוי מבוסס התאמה חכמה (הסרת אותיות שימוש וכתיב חסר) וייתכנו זיהויי שווא. מצאתם טעות? בחלון התוצאות יש כפתור דיווח, וכל כרטיס ניתן לעריכה מקומית (✏️).';
+  // ההוראה מופיעה **לפני** רשימת ההתאמות בכוונה: הרשימה היא החלק שגדל בלי גבול,
+  // וכל מה שמתחתיה נדחק מחוץ לחלון החתוך. מה שחייב להיקרא נמצא בשתי השורות הראשונות.
+  const action = canOpenSelf
+    ? ('לחיצה על אישור תפתח את תמונ״ך עם ' + (matches.length === 1 ? 'הכרטיס המלא.' : 'כל ' + matches.length + ' ההתאמות.'))
+    : 'אין מעבר אוטומטי בגרסת אוצריא זו — יש לפתוח את תמונ״ך ידנית.';
   const contentParts = [];
   if (matches.length === 1){
     contentParts.push(lineFor(matches[0]));
+    contentParts.push(action);
   } else {
     contentParts.push(summaryLine(matches));
-    contentParts.push(top.map(lineFor).join('\n'));
-    if (restCount > 0) contentParts.push('ועוד ' + restCount + ' — לחיצה על אישור תציג את כולן.');
+    contentParts.push(action);
+    contentParts.push(top.map(lineFor).join('\n') + (restCount > 0 ? '\nועוד ' + restCount + '…' : ''));
   }
-  contentParts.push(transferNote + (canOpenSelf ? (matches.length === 1 ? 'הכרטיס המלא.' : 'רשימת התוצאות.') : ''));
-  contentParts.push(disclaimer);
+  contentParts.push('⚠️ ייתכנו זיהויי שווא — בחלון התוצאות יש כפתור דיווח.');
+  contentParts.push('הקטע שנבחר: "' + snippet(text, 120) + '"');
   const content = contentParts.join('\n\n');
 
   try {
