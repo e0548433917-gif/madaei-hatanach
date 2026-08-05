@@ -105,9 +105,11 @@ document.getElementById('addHtmlSave').addEventListener('click', async () => {
 });
 
 // ---- ריבועים בעמוד השער עבור דפי HTML שנשמרו ----
-const cardsGrid = document.getElementById('cardsGrid');
+// מאז 2.12.0 הכרטיסים האלה יושבים בשורה השנייה (#extraGrid) יחד עם האזור האישי,
+// כדי ששורת ששת המדריכים תישאר 3+3 מלאה ולא תיקטע בכל פעם שנוסף דף.
+const extraGrid = document.getElementById('extraGrid');
 async function renderCustomPageCards(){
-  cardsGrid.querySelectorAll('.card[data-custom-page]').forEach(el => el.remove());
+  extraGrid.querySelectorAll('.card[data-custom-page]').forEach(el => el.remove());
   const index = await getHtmlPagesIndex();
   const anchor = document.getElementById('personalCard');   // הכרטיסים נכנסים לפני "האזור האישי"
   index.forEach(name => {
@@ -116,7 +118,7 @@ async function renderCustomPageCards(){
     card.setAttribute('data-custom-page', name);
     card.innerHTML = `<span class="icon">📄</span><span class="label">${esc(name)}</span>`;
     card.addEventListener('click', () => openCustomHtmlPage(name));
-    cardsGrid.insertBefore(card, anchor);
+    extraGrid.insertBefore(card, anchor);
   });
 }
 

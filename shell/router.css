@@ -153,13 +153,30 @@ html, body {
   margin: 0 0 18px;
   text-align: center;
 }
+/* ששת המדריכים הם מספר קבוע, ולכן מספר עמודות קבוע ולא auto-fit: ב-auto-fit יצאו
+   ארבע עמודות במסך רחב, כלומר שורה של 4 ושורה קטועה של 2 (ועם האזור האישי - 4+3).
+   2 או 3 עמודות מחלקות את השש בדיוק, בכל רוחב מסך. */
 .cards {
   display: grid;
-  /* מותאם לרוחב המסך: לא פחות מ-120px ולא יותר מ-170px לכרטיס */
-  grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 20vw, 170px), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(10px, 1.6vw, 16px);
-  max-width: 760px;
+  max-width: 640px;
   margin: 0 auto;
+}
+@media (min-width: 620px){
+  .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* מפריד עדין בין שורת המדריכים לשורה של המשתמש עצמו */
+.cards-sep {
+  display: flex; align-items: center; gap: 10px;
+  max-width: 640px;
+  margin: 22px auto 14px;
+  color: var(--color-on-surface-ghost);
+  font-size: .8em;
+}
+.cards-sep::before, .cards-sep::after {
+  content: ""; flex: 1 1 auto; height: 1px;
+  background: var(--color-outline-faint);
 }
 .card {
   background: var(--color-surface);
@@ -203,7 +220,7 @@ html, body {
 #homeSearchWrap {
   position: relative;
   display: flex; align-items: center; gap: 8px;
-  max-width: 760px;
+  max-width: 640px;   /* יישור לרוחב רשת הכרטיסים */
   margin: 0 auto 20px;
   padding: 6px 14px 6px 6px;
   background: var(--color-surface);
