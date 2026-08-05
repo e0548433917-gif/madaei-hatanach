@@ -471,8 +471,10 @@ async function focusMainMap(lat, lng, zoom, name){
   resultsOverlay.classList.remove('open');
   if (!currentGuideCat || currentGuideCat.id !== 'places'){
     await openGuide('places', null);
-  } else if (activeGuideChip !== 'all' || guideSearchBox.value){
+  } else if (activeGuideChip !== 'all' || guideSearchBox.value || activeGuideEra !== 'all' || activeGuideLetter !== 'all'){
     activeGuideChip = 'all';
+    activeGuideEra = 'all';
+    activeGuideLetter = 'all';
     guideSearchBox.value = '';
     renderGuideGrid('');
   }

@@ -131,8 +131,6 @@ async function renderCustomPageCards(){
 const homeSearch = document.getElementById('homeSearch');
 const homeSearchBtn = document.getElementById('homeSearchBtn');
 const homeSearchDrop = document.getElementById('homeSearchDrop');
-let homeSearchActiveIdx = -1;
-let homeSearchRows = [];
 
 // חיפוש בשמות ובכינויים בכל המדריכים שכבר נטענו (preloadAllGuides טוען אותם ברקע).
 // התאמת תחילית מדורגת לפני התאמת תת-מחרוזת.
@@ -161,88 +159,109 @@ function searchEntriesByName(q, limit){
   return starts.concat(contains).slice(0, limit || 12);
 }
 
-function closeHomeDrop(){
-  homeSearchDrop.classList.remove('open');
-  homeSearchActiveIdx = -1;
-  homeSearchRows = [];
-}
+// ההתנהגות הזו זהה בשער ובתוך כל מדריך, ולכן היא פונקציה אחת ולא שני עותקים (2.12.0):
+//   input · drop · btn (אופציונלי) · wrapSel (לסגירה בלחיצה בחוץ) · preferCat
+//   onBeforePick — נקרא לפני מעבר למדריך, כדי שכל שורה תנקה את מה ששייך לה.
+// המדריך הפעיל (preferCat) עולה לראש ההשלמות, כי מי שמחפש בתוך ״אישים״ מתכוון
+// כמעט תמיד לאישים — אבל ההשלמות מכל המדריכים נשארות, בדיוק כמו בשער.
+function attachLiveSearch(opts){
+  const input = opts.input, drop = opts.drop, btn = opts.btn || null;
+  if (!input || !drop) return null;
+  let rows = [], activeIdx = -1, timer = null;
 
-function renderHomeDrop(){
-  const q = homeSearch.value.trim();
-  const hits = searchEntriesByName(q, 12);
-  if (!hits.length){ closeHomeDrop(); return; }
-  homeSearchRows = hits;
-  homeSearchActiveIdx = -1;
-  homeSearchDrop.innerHTML = hits.map((h, i) => {
-    const viaNote = (normalizeHeb(h.via) !== normalizeHeb(h.name)) ? ' <span class="hs-cat">(' + esc(h.via) + ')</span>' : '';
-    return `<div class="hs-row" data-i="${i}">
-      <span>${h.catIcon}</span>
-      <span class="hs-name">${esc(h.name)}</span>${viaNote}
-      <span class="hs-cat">${esc(h.catLabel)}</span>
-    </div>`;
-  }).join('') + '<div class="hs-note">Enter — זיהוי מלא של כל הטקסט שבשורה (גם פסוק שלם)</div>';
-  homeSearchDrop.querySelectorAll('.hs-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const h = homeSearchRows[parseInt(row.dataset.i, 10)];
-      if (h) pickHomeSuggestion(h);
-    });
-  });
-  homeSearchDrop.classList.add('open');
-}
-
-function pickHomeSuggestion(h){
-  closeHomeDrop();
-  homeSearch.value = '';
-  openGuide(h.catId, h.name);
-}
-
-async function runHomeIdentify(){
-  const text = homeSearch.value.trim();
-  if (!text) return;
-  closeHomeDrop();
-  homeSearchBtn.disabled = true;
-  const label = homeSearchBtn.textContent;
-  homeSearchBtn.textContent = '…';
-  try {
-    const matches = await identify(text);
-    showResults(matches, text);
-  } finally {
-    homeSearchBtn.disabled = false;
-    homeSearchBtn.textContent = label;
+  function close(){
+    drop.classList.remove('open');
+    drop.innerHTML = '';
+    rows = []; activeIdx = -1;
   }
-}
 
-if (homeSearch){
-  let homeSearchTimer = null;
-  homeSearch.addEventListener('input', () => {
-    clearTimeout(homeSearchTimer);
-    homeSearchTimer = setTimeout(renderHomeDrop, 140);
+  function render(){
+    let hits = searchEntriesByName(input.value.trim(), 12);
+    const prefer = opts.preferCat && opts.preferCat();
+    if (prefer && hits.length){
+      hits = hits.filter(h => h.catId === prefer).concat(hits.filter(h => h.catId !== prefer));
+    }
+    if (!hits.length){ close(); return; }
+    rows = hits; activeIdx = -1;
+    drop.innerHTML = hits.map((h, i) => {
+      const viaNote = (normalizeHeb(h.via) !== normalizeHeb(h.name)) ? ' <span class="hs-cat">(' + esc(h.via) + ')</span>' : '';
+      return `<div class="hs-row" data-i="${i}">
+        <span>${h.catIcon}</span>
+        <span class="hs-name">${esc(h.name)}</span>${viaNote}
+        <span class="hs-cat">${esc(h.catLabel)}</span>
+      </div>`;
+    }).join('') + '<div class="hs-note">Enter — זיהוי מלא של כל הטקסט שבשורה (גם פסוק שלם)</div>';
+    drop.querySelectorAll('.hs-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const h = rows[parseInt(row.dataset.i, 10)];
+        if (h) pick(h);
+      });
+    });
+    drop.classList.add('open');
+  }
+
+  function pick(h){
+    close();
+    input.value = '';
+    if (opts.onBeforePick) opts.onBeforePick();
+    openGuide(h.catId, h.name);
+  }
+
+  async function runIdentify(){
+    const text = input.value.trim();
+    if (!text) return;
+    close();
+    let label = null;
+    if (btn){ btn.disabled = true; label = btn.textContent; btn.textContent = '…'; }
+    try {
+      const matches = await identify(text);
+      showResults(matches, text);
+    } finally {
+      if (btn){ btn.disabled = false; btn.textContent = label; }
+    }
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(render, 140);
   });
-  homeSearch.addEventListener('keydown', (ev) => {
-    const rows = homeSearchDrop.querySelectorAll('.hs-row');
+  input.addEventListener('keydown', (ev) => {
+    const els = drop.querySelectorAll('.hs-row');
     if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp'){
-      if (!rows.length) return;
+      if (!els.length) return;
       ev.preventDefault();
-      homeSearchActiveIdx += (ev.key === 'ArrowDown' ? 1 : -1);
-      if (homeSearchActiveIdx < 0) homeSearchActiveIdx = rows.length - 1;
-      if (homeSearchActiveIdx >= rows.length) homeSearchActiveIdx = 0;
-      rows.forEach((r, i) => r.classList.toggle('active', i === homeSearchActiveIdx));
-      rows[homeSearchActiveIdx].scrollIntoView({ block: 'nearest' });
+      activeIdx += (ev.key === 'ArrowDown' ? 1 : -1);
+      if (activeIdx < 0) activeIdx = els.length - 1;
+      if (activeIdx >= els.length) activeIdx = 0;
+      els.forEach((r, i) => r.classList.toggle('active', i === activeIdx));
+      els[activeIdx].scrollIntoView({ block: 'nearest' });
       return;
     }
     if (ev.key === 'Enter'){
       ev.preventDefault();
-      if (homeSearchActiveIdx >= 0 && homeSearchRows[homeSearchActiveIdx]){
-        pickHomeSuggestion(homeSearchRows[homeSearchActiveIdx]);
-      } else {
-        runHomeIdentify();
-      }
+      if (activeIdx >= 0 && rows[activeIdx]) pick(rows[activeIdx]);
+      else runIdentify();
       return;
     }
-    if (ev.key === 'Escape') closeHomeDrop();
+    if (ev.key === 'Escape') close();
   });
-  homeSearchBtn.addEventListener('click', runHomeIdentify);
+  if (btn) btn.addEventListener('click', runIdentify);
   document.addEventListener('click', (ev) => {
-    if (!ev.target.closest('#homeSearchWrap')) closeHomeDrop();
+    if (!ev.target.closest(opts.wrapSel)) close();
   });
+  return { close: close, identify: runIdentify };
 }
+
+attachLiveSearch({
+  input: homeSearch, drop: homeSearchDrop, btn: homeSearchBtn, wrapSel: '#homeSearchWrap'
+});
+
+// אותה שורה בדיוק בתוך כל מדריך. הסינון החי של הרשת (guides.js) נשאר כפי שהיה —
+// כאן רק נוספו ההשלמה החיה וה-Enter שמריץ זיהוי מלא על הטקסט שבשורה.
+attachLiveSearch({
+  input: guideSearchBox,
+  drop: document.getElementById('guideSearchDrop'),
+  btn: document.getElementById('guideIdentifyBtn'),
+  wrapSel: '#guideSearchWrap, #guideIdentifyBtn',
+  preferCat: () => currentGuideCat && currentGuideCat.id
+});

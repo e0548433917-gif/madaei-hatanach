@@ -24,7 +24,7 @@
     <input type="search" id="homeSearch" autocomplete="off" spellcheck="false"
            placeholder="חיפוש ערך בכל המדריכים — או הדביקו פסוק שלם לזיהוי…">
     <button id="homeSearchBtn" type="button" title="זיהוי">זיהוי</button>
-    <div id="homeSearchDrop"></div>
+    <div id="homeSearchDrop" class="hs-drop"></div>
   </div>
 
   <div class="cards" id="cardsGrid">
@@ -57,10 +57,22 @@
   <div id="guideViewBar">
     <button id="guideBackBtn" type="button">→ חזרה</button>
     <span id="guideViewTitle"></span>
-    <input type="text" id="guideSearchBox" placeholder="חיפוש...">
+    <!-- אותה שורת חיפוש של עמוד השער: השלמה חיה + Enter = זיהוי מלא (2.12.0) -->
+    <div id="guideSearchWrap">
+      <input type="text" id="guideSearchBox" placeholder="חיפוש במדריך — או הדביקו פסוק שלם לזיהוי…">
+      <div id="guideSearchDrop" class="hs-drop"></div>
+    </div>
+    <button id="guideIdentifyBtn" type="button" title="זיהוי מלא של הטקסט שבשורה">זיהוי</button>
+    <button id="guideFiltersToggle" type="button" aria-expanded="true">☰ סינון</button>
     <button id="guideAddNewBtn" type="button">＋ הוספת ערך חדש</button>
   </div>
-  <div id="guideChips"></div>
+  <!-- אפשרויות הסינון, כמו בתוסף ״אישים בתנ״ך״: קטגוריה · תקופה · א-ב (2.12.0) -->
+  <div id="guideFiltersSummary"></div>
+  <div id="guideFilters">
+    <div id="guideChips"></div>
+    <div class="filter-row" id="guideEraRow"><span class="filter-label">תקופה:</span><div id="guideEraChips"></div></div>
+    <div class="filter-row"><span class="filter-label">א-ב:</span><div id="guideAlphaBar"></div></div>
+  </div>
   <div id="guideGrid"></div>
 </div>
 

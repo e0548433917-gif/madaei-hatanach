@@ -101,14 +101,117 @@ function lazyLoadWikiThumbnails(container){
 let activeGuideChip = 'all';
 const guideChips = document.getElementById('guideChips');
 
+// ---- אפשרויות הסינון, כפי שהן בתוסף ״אישים בתנ״ך״ (2.12.0) ----
+// שלוש שורות: קטגוריה (הצ׳יפים שהיו כאן מאז ומתמיד) · תקופה · א-ב. ״תקופה״ נשענת
+// על השדה era שב-CATS, שקיים רק במדריך אישים — ולכן השורה מוסתרת בשאר המדריכים,
+// בדיוק כמו שהיא לא קיימת שם. ב״ביוגרפיות״ אין סינון בכלל ולא הועתק ממנו דבר.
+const guideFilters = document.getElementById('guideFilters');
+const guideFiltersToggle = document.getElementById('guideFiltersToggle');
+const guideFiltersSummary = document.getElementById('guideFiltersSummary');
+const guideEraRow = document.getElementById('guideEraRow');
+const guideEraChips = document.getElementById('guideEraChips');
+const guideAlphaBar = document.getElementById('guideAlphaBar');
+const ALEPH_BET = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י','כ','ל','מ','נ','ס','ע','פ','צ','ק','ר','ש','ת'];
+let activeGuideEra = 'all';
+let activeGuideLetter = 'all';
+
+function guideCatOf(catId){
+  const cats = (currentGuideCat && catsCache[currentGuideCat.id]) || [];
+  return cats.find(c => c.id === catId) || null;
+}
+function guideEraOf(entry){
+  const c = guideCatOf(entry.cat);
+  return (c && c.era) || '';
+}
+// האות הראשונה של השם, אחרי הסרת ניקוד — כמו firstLetter בתוסף אישים
+function guideFirstLetter(name){
+  const n = normalizeHeb(name || '');
+  return n ? n[0] : '';
+}
+// הסינון שאינו הצ׳יפים: תקופה ואות פותחת. משמש גם ברשימה וגם בספירות שבצ׳יפים.
+function matchesGuideFilters(entry){
+  if (activeGuideEra !== 'all' && guideEraOf(entry) !== activeGuideEra) return false;
+  if (activeGuideLetter !== 'all' && guideFirstLetter(entry.name) !== activeGuideLetter) return false;
+  return true;
+}
+
+function renderGuideEraChips(){
+  const cats = (currentGuideCat && catsCache[currentGuideCat.id]) || [];
+  const eras = [];
+  cats.forEach(c => {
+    if (c.era && !eras.includes(c.era) && currentGuideData.some(e => e.cat === c.id)) eras.push(c.era);
+  });
+  if (!eras.length){
+    guideEraRow.classList.add('hidden');
+    guideEraChips.innerHTML = '';
+    activeGuideEra = 'all';
+    return;
+  }
+  guideEraRow.classList.remove('hidden');
+  guideEraChips.innerHTML = `<button class="chip${activeGuideEra==='all'?' active':''}" data-era="all">הכל</button>` +
+    eras.map(e => `<button class="chip${activeGuideEra===e?' active':''}" data-era="${esc(e)}">${esc(e)}</button>`).join('');
+  guideEraChips.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeGuideEra = btn.dataset.era;
+      renderGuideGrid(guideSearchBox.value);
+    });
+  });
+}
+
+function renderGuideAlphaBar(){
+  // רק אותיות שיש להן ערכים *בהינתן* הסינון האחר, כדי שלא יוצגו אותיות מתות
+  const letters = new Set();
+  currentGuideData.forEach(e => {
+    if (activeGuideChip !== 'all' && e.cat !== activeGuideChip) return;
+    if (activeGuideEra !== 'all' && guideEraOf(e) !== activeGuideEra) return;
+    const l = guideFirstLetter(e.name);
+    if (l) letters.add(l);
+  });
+  if (activeGuideLetter !== 'all' && !letters.has(activeGuideLetter)) activeGuideLetter = 'all';
+  guideAlphaBar.innerHTML = `<button class="alpha-btn${activeGuideLetter==='all'?' active':''}" data-letter="all" title="הכל">*</button>` +
+    ALEPH_BET.filter(l => letters.has(l))
+      .map(l => `<button class="alpha-btn${activeGuideLetter===l?' active':''}" data-letter="${l}">${l}</button>`).join('');
+  guideAlphaBar.querySelectorAll('.alpha-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeGuideLetter = btn.dataset.letter;
+      renderGuideGrid(guideSearchBox.value);
+    });
+  });
+}
+
+function updateGuideFiltersSummary(){
+  const parts = [];
+  if (activeGuideChip !== 'all'){
+    const c = guideCatOf(activeGuideChip);
+    parts.push('קטגוריה: ' + (c ? c.label : activeGuideChip));
+  }
+  if (activeGuideEra !== 'all') parts.push('תקופה: ' + activeGuideEra);
+  if (activeGuideLetter !== 'all') parts.push('אות: ' + activeGuideLetter);
+  const open = !guideFilters.classList.contains('collapsed');
+  guideFiltersSummary.textContent = (parts.length && !open) ? ('סינון פעיל — ' + parts.join(' · ')) : '';
+  guideFiltersToggle.classList.toggle('on', parts.length > 0);
+}
+
+guideFiltersToggle.addEventListener('click', () => {
+  const nowOpen = guideFilters.classList.toggle('collapsed') === false;
+  guideFiltersToggle.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+  guideFiltersToggle.textContent = nowOpen ? '✕ סגירת הסינון' : '☰ סינון';
+  updateGuideFiltersSummary();
+});
+
 function renderGuideChips(){
+  renderGuideEraChips();
+  renderGuideAlphaBar();
+  updateGuideFiltersSummary();
   const cats = (currentGuideCat && catsCache[currentGuideCat.id]) || [];
   if (!cats.length){ guideChips.innerHTML = ''; guideChips.style.display = 'none'; return; }
   guideChips.style.display = 'flex';
-  const totalCount = currentGuideData.length;
+  // הספירות מכבדות את שאר הסינון, אחרת צ׳יפ יבטיח 40 ערכים ויציג שניים
+  const counted = currentGuideData.filter(matchesGuideFilters);
+  const totalCount = counted.length;
   guideChips.innerHTML = `<button class="chip${activeGuideChip==='all'?' active':''}" data-chip="all">הכל (${totalCount})</button>` +
     cats.map(c => {
-      const n = currentGuideData.filter(e => e.cat === c.id).length;
+      const n = counted.filter(e => e.cat === c.id).length;
       return `<button class="chip${activeGuideChip===c.id?' active':''}" data-chip="${esc(c.id)}">${esc(c.label)} (${n})</button>`;
     }).join('');
   // במקומות: כפתור קפיצה ישירה למפה שבסוף הרשימה
@@ -125,8 +228,10 @@ function renderGuideChips(){
   });
   const jumpBtn = document.getElementById('jumpToMapChip');
   if (jumpBtn) jumpBtn.addEventListener('click', () => {
-    if (activeGuideChip !== 'all' || guideSearchBox.value){
+    if (activeGuideChip !== 'all' || guideSearchBox.value || activeGuideEra !== 'all' || activeGuideLetter !== 'all'){
       activeGuideChip = 'all';
+      activeGuideEra = 'all';
+      activeGuideLetter = 'all';
       guideSearchBox.value = '';
       renderGuideGrid('');
     }
@@ -144,15 +249,17 @@ function renderGuideGrid(filterText){
   const q = normalizeHeb(filterText || '').trim();
   let list = currentGuideData;
   if (activeGuideChip !== 'all') list = list.filter(e => e.cat === activeGuideChip);
+  list = list.filter(matchesGuideFilters);
   if (q) list = list.filter(e => normalizeHeb(e.name + ' ' + (e.aliases || []).join(' ')).includes(q));
 
   if (!list.length){
-    guideGrid.innerHTML = '<div class="grid-empty">אין תוצאות.</div>';
+    guideGrid.innerHTML = '<div class="grid-empty">לא נמצאו תוצאות התואמות את הסינון.</div>';
     return;
   }
 
   const cats = (currentGuideCat && catsCache[currentGuideCat.id]) || [];
-  const groupByCat = activeGuideChip === 'all' && !q && cats.length;
+  const noExtraFilter = activeGuideEra === 'all' && activeGuideLetter === 'all';
+  const groupByCat = activeGuideChip === 'all' && !q && noExtraFilter && cats.length;
   const flatIdx = []; // רשימת (entry) לפי סדר הופעה בפועל ב-DOM, לחיבור הקליקים
   let html = '';
   if (groupByCat){
@@ -170,7 +277,7 @@ function renderGuideGrid(filterText){
 
   // במקומות בלבד: מפת עולם מלאה עם כל ציוני הדרך, בסוף הרשימה (בדיוק כמו במקור,
   // רק שם היא הייתה בהתחלה - כאן מבקשים בסוף). אופלין לגמרי (Natural Earth + Leaflet).
-  const isPlaces = currentGuideCat && currentGuideCat.id === 'places' && !q && activeGuideChip === 'all';
+  const isPlaces = currentGuideCat && currentGuideCat.id === 'places' && !q && activeGuideChip === 'all' && noExtraFilter;
   if (isPlaces){
     html += `<div class="entry-section-head" style="grid-column:1/-1;"><span class="entry-section-num">🗺️</span><h3>מפת כל המקומות</h3></div>
       <div id="worldMap" style="grid-column:1/-1;height:420px;border-radius:10px;overflow:hidden;"></div>`;
@@ -207,6 +314,8 @@ async function openGuide(catId, term){
   guideViewTitle.textContent = cat.icon + ' ' + cat.label;
   guideSearchBox.value = '';
   activeGuideChip = 'all';
+  activeGuideEra = 'all';
+  activeGuideLetter = 'all';
   currentGuideCat = cat;
   currentGuideData = await loadGuideData(cat);
   renderGuideGrid('');

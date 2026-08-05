@@ -248,8 +248,8 @@ html, body {
 }
 #homeSearchBtn:hover { opacity: .88; }
 
-/* רשימת ההשלמה החיה */
-#homeSearchDrop {
+/* רשימת ההשלמה החיה — משותפת לשורת החיפוש בשער ולשורת החיפוש שבתוך כל מדריך (2.12.0) */
+.hs-drop {
   display: none;
   position: absolute; top: calc(100% + 6px); right: 0; left: 0;
   z-index: 60;
@@ -259,18 +259,18 @@ html, body {
   border-radius: var(--radius-md);
   box-shadow: 0 8px 26px var(--color-shadow-strong);
 }
-#homeSearchDrop.open { display: block; }
-#homeSearchDrop .hs-row {
+.hs-drop.open { display: block; }
+.hs-drop .hs-row {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 14px; cursor: pointer;
   border-bottom: 1px solid var(--color-outline-faint);
 }
-#homeSearchDrop .hs-row:last-child { border-bottom: none; }
-#homeSearchDrop .hs-row:hover,
-#homeSearchDrop .hs-row.active { background: var(--color-primary-subtle); }
-#homeSearchDrop .hs-name { font-weight: 600; }
-#homeSearchDrop .hs-cat { font-size: .8em; color: var(--color-on-surface-faint); margin-inline-start: auto; }
-#homeSearchDrop .hs-note {
+.hs-drop .hs-row:last-child { border-bottom: none; }
+.hs-drop .hs-row:hover,
+.hs-drop .hs-row.active { background: var(--color-primary-subtle); }
+.hs-drop .hs-name { font-weight: 600; }
+.hs-drop .hs-cat { font-size: .8em; color: var(--color-on-surface-faint); margin-inline-start: auto; }
+.hs-drop .hs-note {
   padding: 10px 14px; font-size: .83em; color: var(--color-on-surface-faint);
   border-top: 1px solid var(--color-outline-faint);
 }
@@ -543,16 +543,22 @@ html, body {
   flex: 0 0 auto;
   flex-wrap: wrap;
 }
-#guideBackBtn, #guideAddNewBtn {
+#guideBackBtn, #guideAddNewBtn, #guideIdentifyBtn, #guideFiltersToggle {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer;
   font-family: var(--font-main); font-size: .86em; color: var(--color-on-surface);
   white-space: nowrap; transition: background .15s, border-color .15s;
 }
-#guideBackBtn:hover, #guideAddNewBtn:hover { background: var(--color-hover); border-color: var(--color-primary); }
+#guideBackBtn:hover, #guideAddNewBtn:hover,
+#guideIdentifyBtn:hover, #guideFiltersToggle:hover { background: var(--color-hover); border-color: var(--color-primary); }
+/* ״סינון פעיל״ — הכפתור נצבע כדי שלא ישכחו שיש סינון סגור מתחתיו */
+#guideFiltersToggle.on {
+  background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary);
+}
 #guideViewTitle { font-weight: 700; font-size: 1em; white-space: nowrap; }
+#guideSearchWrap { position: relative; flex: 1 1 220px; min-width: 160px; display: flex; }
 #guideSearchBox {
-  flex: 1 1 200px; min-width: 160px;
+  flex: 1 1 auto; min-width: 0;
   padding: 7px 14px; border: 1px solid var(--color-outline); border-radius: var(--radius-pill);
   font-family: var(--font-main); font-size: .86em;
   background: var(--color-surface); color: var(--color-on-surface);
@@ -560,22 +566,54 @@ html, body {
 }
 #guideSearchBox:focus { outline: none; border-color: var(--color-primary); }
 
+/* ==================== אפשרויות הסינון (הועתקו מתוסף ״אישים בתנ״ך״) ==================== */
+#guideFilters {
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-outline-faint);
+  flex: 0 0 auto;
+  max-height: 44vh; overflow-y: auto;
+}
+#guideFilters.collapsed { display: none; }
+#guideFiltersSummary {
+  padding: 6px 16px; font-size: .8em; color: var(--color-on-surface-faint);
+  background: var(--color-surface-2); border-bottom: 1px solid var(--color-outline-faint);
+  flex: 0 0 auto;
+}
+#guideFiltersSummary:empty { display: none; }
+#guideFilters .filter-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 0 16px 10px;
+}
+#guideFilters .filter-row.hidden { display: none; }
+#guideFilters .filter-label { font-size: .78em; color: var(--color-on-surface-faint); white-space: nowrap; }
+#guideEraChips { display: flex; flex-wrap: wrap; gap: 8px; }
+#guideAlphaBar { display: flex; flex-wrap: wrap; gap: 5px; }
+.alpha-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--color-outline); background: var(--color-surface);
+  color: var(--color-on-surface-dim); font-family: var(--font-main); font-size: .78em;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.alpha-btn:hover { border-color: var(--color-primary); background: var(--color-primary-subtle); color: var(--color-primary); }
+.alpha-btn.active { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+
 /* Filter chips בסגנון M3 */
 #guideChips {
   display: flex; flex-wrap: wrap; gap: 8px;
-  padding: 10px 16px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-outline-faint);
+  padding: 10px 16px;
   flex: 0 0 auto;
 }
-#guideChips .chip, #resultsChips .chip {
+#guideChips .chip, #guideEraChips .chip, #resultsChips .chip {
   border: 1px solid var(--color-outline); background: var(--color-surface); color: var(--color-on-surface-dim);
   padding: 6px 14px; border-radius: var(--radius-pill); font-family: var(--font-main);
   font-size: .83em; font-weight: 600; cursor: pointer; white-space: nowrap;
   transition: background .12s, color .12s, border-color .12s;
 }
-#guideChips .chip:hover, #resultsChips .chip:hover {
+#guideChips .chip:hover, #guideEraChips .chip:hover, #resultsChips .chip:hover {
   border-color: var(--color-primary); background: var(--color-primary-subtle); color: var(--color-primary);
 }
-#guideChips .chip.active, #resultsChips .chip.active {
+#guideChips .chip.active, #guideEraChips .chip.active, #resultsChips .chip.active {
   background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary);
 }
 #resultsChips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
