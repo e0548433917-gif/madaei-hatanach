@@ -1,7 +1,7 @@
 {
   "id": "com.chadbedera.madaeihatanach",
   "name": "תמונ״ך",
-  "version": "2.12.1",
+  "version": "2.12.2",
   "description": "מדריך מאוחד לתנ״ך: אישים, מקומות, בעלי חיים, צומח, דומם ובית המקדש — זיהוי אחיד בלחיצה ימנית, תמונות ומפה ללא אינטרנט.",
   "author": "חד בדרא",
   "schemaVersion": 1,
@@ -22,8 +22,16 @@
     "plugin.storage.read",
     "plugin.storage.write",
     "app.info.read",
+    "network.access",
     "events.subscribe:theme.changed"
   ],
+  "network": {
+    "enabled": true,
+    "allowlist": [
+      "https://raw.githubusercontent.com",
+      "https://api.github.com"
+    ]
+  },
   "contributes": {
     "toolTab": {
       "title": "תמונ״ך",

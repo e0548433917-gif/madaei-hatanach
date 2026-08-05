@@ -257,3 +257,119 @@ waitForOtzaria(0);
 
 // טעינה מוקדמת ברקע של כל מאגרי הזיהוי, כדי שהחיפוש הראשון יהיה מיידי.
 preloadAllGuides(CATEGORIES, 0);
+
+
+// ---- בדיקת עדכון גרסה (סבב 4.2) ------------------------------------------
+// הדפוס הועתק כמעט כלשונו מ״הורדת ספרים v3.1.3״ (app.js ~653–663,
+// fetchWithCorsProxy): רשימת כתובות חלופיות שנוסות אחת-אחת בלולאת try/catch
+// *שקטה*, וההמשך רק אחרי שכולן נכשלו. ההבדל היחיד: שם זו הורדה שהמשתמש ביקש
+// ולכן בסוף נזרקת שגיאה גלויה — כאן זו בדיקת רקע שאיש לא ביקש, ולכן כישלון
+// מוחלט מסתיים ב-null ובשקט גמור: בלי הודעה, בלי אייקון, בלי console.
+// משתמש בלי אינטרנט לא אמור לדעת שהמנגנון הזה קיים בכלל.
+//
+// ⚠️ הדומיינים אינם שרירותיים. קהל אוצריא יושב ברובו מאחורי סינון נטפרי;
+// raw.githubusercontent.com ו-api.github.com נבדקו בפועל ושניהם פתוחים,
+// ולכן מותר להישען עליהם. **אין להוסיף כאן דומיין שלא נבדק מול נטפרי**, וכל
+// תוספת חייבת להיכנס גם ל-network.allowlist במניפסט.
+const UPDATE_CHECK_KEY = 'madaei_hatanach_update_check_v1';
+const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;   // לכל היותר פעם ביממה
+const UPDATE_FETCH_TIMEOUT_MS = 8000;                    // שלא תישאר בקשה תלויה
+const UPDATE_CHECK_DELAY_MS = 5000;                      // אחרי שהתוסף כבר שימושי
+const UPDATE_RELEASES_URL = 'https://github.com/e0548433917-gif/madaei-hatanach/releases';
+const UPDATE_MANIFEST_URLS = [
+  'https://raw.githubusercontent.com/e0548433917-gif/madaei-hatanach/main/manifest.json',
+  // גיבוי דרך ה-API, למקרה ש-raw חסום/נופל. Accept: ...github.raw מחזיר את
+  // הקובץ עצמו במקום מעטפת JSON עם base64.
+  'https://api.github.com/repos/e0548433917-gif/madaei-hatanach/contents/manifest.json?ref=main',
+];
+
+// גרסה נחשבת תקינה רק אם היא מספרים ונקודות. כל דבר אחר (tag בסגנון "v2.12.1",
+// HTML של דף שגיאה, טקסט חופשי) נפסל — cmpVersion מפרש אותו כ-0 והיה מייצר
+// התראת שווא.
+function isPlainVersion(v){ return typeof v === 'string' && /^\d+(?:\.\d+){0,3}$/.test(v); }
+
+// מקור האמת לגרסה המקומית הוא המניפסט שנארז בחבילה — בדיוק הקובץ ש-pack.ps1
+// מעלה בכל אריזה. לא קבוע בקוד, כדי שלא יתיישן ויתחיל להתריע לשווא.
+async function readLocalPluginVersion(){
+  try {
+    const res = await fetch('manifest.json', { cache: 'no-store' });
+    if (!res || !res.ok) return null;
+    const data = JSON.parse(await res.text());
+    return isPlainVersion(data && data.version) ? data.version : null;
+  } catch(e){ return null; }
+}
+
+function fetchUpdateManifest(url){
+  const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch(e){} }, UPDATE_FETCH_TIMEOUT_MS);
+  return fetch(url, {
+    cache: 'no-store',
+    headers: { 'Accept': 'application/vnd.github.raw' },
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(
+    res => { clearTimeout(timer); return res; },
+    err => { clearTimeout(timer); throw err; }
+  );
+}
+
+async function fetchRemoteVersion(){
+  for (const url of UPDATE_MANIFEST_URLS){
+    try {
+      const res = await fetchUpdateManifest(url);
+      if (!res || !res.ok) continue;
+      const data = JSON.parse(await res.text());
+      if (isPlainVersion(data && data.version)) return data.version;
+    } catch(e){ /* נסה את הכתובת הבאה */ }
+  }
+  return null;   // כולן נכשלו — ובניגוד למקור, כאן לא זורקים כלום
+}
+
+// הודעה עדינה בפינה. לא מודאל, לא overlay, לא חוסמת שום פעולה — ואפשר לסגור.
+// הקישור עובר דרך data-external-link, כלומר דרך confirmOpenExternal שב-refs.js
+// (אישור + app.openUrl), ולא דרך ניווט ישיר ב-WebView שגורם לקריסה.
+function showUpdateNotice(remoteVersion){
+  if (document.getElementById('updateNotice')) return;
+  const box = document.createElement('div');
+  box.id = 'updateNotice';
+  box.setAttribute('dir', 'rtl');
+  box.style.cssText = 'position:fixed;inset-inline-start:16px;bottom:16px;z-index:9998;'
+    + 'max-width:min(340px,calc(100vw - 32px));display:flex;gap:10px;align-items:flex-start;'
+    + 'padding:12px 14px;border-radius:12px;border:1px solid var(--color-outline);'
+    + 'background:var(--color-surface);color:var(--color-on-surface);'
+    + 'box-shadow:0 6px 20px var(--color-shadow-strong);font:inherit;font-size:14px;line-height:1.5;';
+  box.innerHTML =
+    '<span aria-hidden="true" style="font-size:18px;line-height:1.2;">🔔</span>'
+    + '<div style="flex:1;min-width:0;">'
+    +   '<div style="font-weight:600;">גרסה חדשה של תמונ״ך זמינה — ' + esc(remoteVersion) + '</div>'
+    +   '<a href="#" data-external-link="' + esc(UPDATE_RELEASES_URL) + '" '
+    +      'style="color:var(--color-link);text-decoration:underline;cursor:pointer;">לדף ההורדות בגיטהב ›</a>'
+    + '</div>'
+    + '<button type="button" data-update-notice-close title="סגירה" aria-label="סגירה" '
+    +   'style="background:none;border:none;color:var(--color-on-surface-faint);cursor:pointer;'
+    +   'font-size:15px;line-height:1;padding:2px 4px;">✕</button>';
+  box.querySelector('[data-update-notice-close]').addEventListener('click', () => box.remove());
+  document.body.appendChild(box);
+}
+
+async function checkForUpdate(){
+  try {
+    // ⚠️ storage.get של אוצריא מחזיר מעטפת {value:...} ולא את הערך עצמו — זה
+    // הבאג שהפיל אותנו ב-1.1. storageGetJson (data.js) כבר מפרק את המעטפת
+    // דרך unwrapStorageValue, ולכן קוראים רק דרכו ולא דרך Otzaria.call הישיר.
+    const rec = await storageGetJson(UPDATE_CHECK_KEY);
+    const last = (rec && typeof rec.ts === 'number') ? rec.ts : 0;
+    if (Date.now() - last < UPDATE_CHECK_INTERVAL_MS) return;   // עברו פחות מ-24 שעות
+
+    const local = await readLocalPluginVersion();
+    if (!local) return;                 // בלי גרסה מקומית ודאית אין מה להשוות → שקט
+
+    const remote = await fetchRemoteVersion();
+    // החותמת נכתבת גם כשהבקשה נכשלה: אין רשת אינה סיבה לנסות שוב בכל פתיחה.
+    await storageSetJson(UPDATE_CHECK_KEY, { ts: Date.now(), local: local, remote: remote || null });
+    if (!remote) return;
+    if (cmpVersion(remote, local) > 0) showUpdateNotice(remote);
+  } catch(e){ /* שקט מוחלט — הבדיקה הזו לעולם לא מפריעה למשתמש */ }
+}
+
+// ברקע ובלי לעכב שום דבר: אחרי שהשער כבר מצויר והמדריכים בטעינה מוקדמת.
+setTimeout(() => { checkForUpdate(); }, UPDATE_CHECK_DELAY_MS);
