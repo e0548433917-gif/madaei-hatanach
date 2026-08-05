@@ -106,8 +106,10 @@ async function getLookup(cat){
 // אחרי עריכה מקומית (שם/כינויים) צריך לבנות מחדש את מפת הזיהוי של אותו מדריך.
 function invalidateLookup(catId){
   delete lookupCache[catId];
-  // אינדקס שמות המקומות (entry-detail.js) נבנה מאותם נתונים ומתיישן יחד איתם
+  // אינדקס שמות המקומות (entry-detail.js) ואינדקס ״מוזכר יחד עם״ (co-mentions.js)
+  // נבנים מאותם נתונים ומתיישנים יחד איתם
   if (catId === 'places' && typeof invalidatePlaceNameIndex === 'function') invalidatePlaceNameIndex();
+  if (typeof invalidateCoMentions === 'function') invalidateCoMentions();
 }
 
 async function identify(rawText){

@@ -195,12 +195,14 @@
 </div>
 
 <!-- שכבת התוסף, מפוצלת ל-12 מודולים (2.11.2). הסדר קריטי ואינו שרירותי:
+     (13 מאז 2.12.0 — co-mentions.js נוסף אחרי refs.js, שממנו הוא לוקח את TANAKH_BOOKS)
      core ראשון כי כולם נשענים עליו, ו-bridge אחרון כי הוא מריץ את האתחול בפועל.
      בכוונה <script> רגיל ולא type="module" — כל הקבצים חולקים scope גלובלי אחד. -->
 <script src="shell/core.js"></script>
 <script src="shell/data.js"></script>
 <script src="shell/identify.js"></script>
 <script src="shell/refs.js"></script>
+<script src="shell/co-mentions.js"></script>
 <script src="shell/guides.js"></script>
 <script src="shell/entry-detail.js"></script>
 <script src="shell/edit-forms.js"></script>

@@ -317,6 +317,24 @@ function renderEntryDetailHTML(entry, catIdOverride){
     });
   }
 
+  // ״מוזכר יחד עם״ — כל דצח״מ שחולק פסוק עם הערך הזה (co-mentions.js). מוצג מיד
+  // אחרי מקורות התנ״ך, כי הוא נגזר מהם. null = המדריכים עדיין נטענים ברקע.
+  const co = coMentionsFor(entry, catId);
+  if (co && co.length){
+    const CO_MAX = 30;
+    const shown = co.slice(0, CO_MAX);
+    html += `<div class="field-label">מוזכר יחד עם <span class="co-hint">(אותו פסוק)</span></div><p class="co-list">` +
+      shown.map(c => {
+        const cat = CATEGORIES.find(x => x.id === c.catId);
+        const title = c.shared.slice(0, 4).map(coMentionKeyLabel).join(' · ') +
+          (c.shared.length > 4 ? ' ועוד ' + (c.shared.length - 4) : '');
+        return `<span class="co-link" data-cm="${esc(coMentionIdOf(c.entry))}" title="${esc(title)}">`
+          + (cat ? cat.icon + ' ' : '') + esc(c.entry.name) + `</span>`;
+      }).join(' · ') +
+      (co.length > CO_MAX ? ` <span class="co-hint">ועוד ${co.length - CO_MAX}</span>` : '') +
+      `</p>`;
+  }
+
   if (entry.midrash && entry.midrash.length){
     html += `<div class="field-label">מקורות חז״ל</div>`;
     entry.midrash.forEach((m,i) => {
@@ -439,7 +457,15 @@ function wireEntryDetail(container, entry, onEdit){
       if (target) openEntryDetail(target);
     });
   });
-  refreshPlaceLinksWhenReady(container, entry, onEdit);
+  // ״מוזכר יחד עם״ — מעבר לערך השכן, בכל מדריך שהוא
+  container.querySelectorAll('.co-link').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const target = coMentionEntryById(el.dataset.cm);
+      if (target) openEntryDetail(target);
+    });
+  });
+  refreshEntryLinksWhenReady(container, entry, onEdit);
   // "הצג במפה הראשית" - סוגר את הכרטיס, גולל למפה שבסוף רשימת המקומות וממקד שם.
   container.querySelectorAll('.focus-main-map').forEach(el => {
     el.addEventListener('click', (ev) => {
@@ -450,19 +476,25 @@ function wireEntryDetail(container, entry, onEdit){
   });
 }
 
-// כרטיס אישים עלול להיפתח לפני שמדריך המקומות סיים להיטען ברקע (preloadAllGuides
-// טוען בטור) — ואז אין ממה לבנות את הקישורים. במקום לעכב את הפתיחה, טוענים ברקע
-// ומרנדרים את אותו כרטיס פעם אחת כשהנתונים מוכנים. אחרי הטעינה placesLookupSync
-// מחזיר אינדקס, ולכן אין כאן לולאה.
-function refreshPlaceLinksWhenReady(container, entry, onEdit){
-  if (!isPersonEntry(entry) || placesNameIndex()) return;
-  const cat = CATEGORIES.find(c => c.id === 'places');
-  if (!cat) return;
-  loadGuideData(cat).then(() => {
-    if (!placesNameIndex() || !container.isConnected) return;
+// כרטיס עלול להיפתח לפני שכל המדריכים סיימו להיטען ברקע (preloadAllGuides טוען
+// בטור) — ואז אין ממה לבנות את קישורי המקומות ואת ״מוזכר יחד עם״. במקום לעכב את
+// הפתיחה, טוענים ברקע ומרנדרים את אותו כרטיס פעם אחת כשהנתונים מוכנים. אחרי
+// הטעינה שתי הבדיקות מחזירות ״מוכן״, ולכן אין כאן לולאה.
+function refreshEntryLinksWhenReady(container, entry, onEdit){
+  const needPlaces = isPersonEntry(entry) && !placesNameIndex();
+  const needCo = !coMentionsReady();
+  if (!needPlaces && !needCo) return;
+  const cats = needCo ? CATEGORIES.slice() : [CATEGORIES.find(c => c.id === 'places')].filter(Boolean);
+  // בטור ולא ב-Promise.all: שישה קבצי ענק שנטענים יחד מרעיבים זה את זה ומייצרים
+  // בדיוק את הטיימאאוט ש-preloadAllGuides נבנה כדי להימנע ממנו.
+  const chain = (i) => i >= cats.length ? Promise.resolve()
+    : loadGuideData(cats[i]).catch(() => null).then(() => chain(i + 1));
+  chain(0).then(() => {
+    if (!container.isConnected) return;
+    if ((needPlaces && !placesNameIndex()) || (needCo && !coMentionsReady())) return;
     container.innerHTML = renderEntryDetailHTML(entry);
     wireEntryDetail(container, entry, onEdit);
-  }, () => {});
+  });
 }
 
 // ממקד את מפת העולם שבסוף רשימת המקומות על נקודה מסוימת (כמו focusOnMainMap במקור).
