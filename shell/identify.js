@@ -104,7 +104,11 @@ async function getLookup(cat){
 }
 
 // אחרי עריכה מקומית (שם/כינויים) צריך לבנות מחדש את מפת הזיהוי של אותו מדריך.
-function invalidateLookup(catId){ delete lookupCache[catId]; }
+function invalidateLookup(catId){
+  delete lookupCache[catId];
+  // אינדקס שמות המקומות (entry-detail.js) נבנה מאותם נתונים ומתיישן יחד איתם
+  if (catId === 'places' && typeof invalidatePlaceNameIndex === 'function') invalidatePlaceNameIndex();
+}
 
 async function identify(rawText){
   const words = tokenizeHeb(rawText);

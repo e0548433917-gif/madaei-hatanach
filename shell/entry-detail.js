@@ -45,6 +45,93 @@ function personLinkedValue(value, selfEntry){
   }).join(' · ');
 }
 
+// ---- קישור ממקום בכרטיס אישים אל כרטיס המקומות (עם המפה) ----
+// שדות המקום של אישים אינם שם נקי אלא טקסט חופשי: ״מערת המכפלה בחברון״, ״ואז ארץ
+// כנען ומצרים לתקופה״, ״עפרה (קברו)״. לכן לא מחפשים התאמה מלאה של השדה אלא סורקים
+// אותו מילה-מילה, בדיוק כמו מנוע הזיהוי — ומעדיפים צירוף ארוך (״אור כשדים״, ״פדן
+// ארם״) על פני מילה בודדת, כדי לא לקשר את ״אור״ לבדו.
+const PLACE_LINK_FIELDS = new Set(['birthPlace','dwelling','deathPlace','burialPlace']);
+const HEB_WORD_RE = new RegExp('(?:[א-ת]' + HEB_POINT_SRC + '*)+', 'g');
+// מילות יחס שהן גם שם של מקום אמיתי במדריך — ״תחת״ היא תחנת מסע (במדבר לג), ולכן
+// ״תחת תומר דבורה״ נקשר אליה. כמילה בודדת לא מקשרים אותן; בתוך צירוף (״תחת״ כשם
+// עצמאי בשדה) עדיין ייתפסו דרך התאמת הצירוף.
+const PLACE_LINK_SKIP_WORDS = new Set(['תחת','בין','אצל','ליד','עם','אל','על','מן','עד','שם','מול','סביב','לפני','אחרי','כאן','אז','ואז']);
+
+// אינדקס של **שמות שלמים** בלבד (שם, שם בלי הסוגריים, תוכן הסוגריים, כינויים) —
+// ובמכוון לא buildLookup של מנוע הזיהוי, שרושם גם כל מילה בתוך שם רב-מילים. שם
+// חלקי מתאים לזיהוי בפסוק, אבל כאן הוא מקשר לכרטיס הלא נכון: ״אלון בצענים״ נקשר
+// ל״אלון בכות״ ו״בית לחם יהודה״ ל״מדבר יהודה״. נמדד: 99 שדות מקושרים עם מילים
+// חלקיות מול 89 בלעדיהן — עשרה קישורים פחות, וכולם היו שגויים או מטעים.
+// מוחזר null כל עוד מדריך המקומות לא נטען; ר' refreshPlaceLinksWhenReady.
+let placeNameIndex = null;
+function placesNameIndex(){
+  if (placeNameIndex) return placeNameIndex;
+  const data = dataCache['places'];
+  if (!data || !data.length) return null;
+  const idx = new Map();
+  const put = (s, e) => { const n = normalizeHeb(s); if (n && n.length >= 2 && !idx.has(n)) idx.set(n, e); };
+  data.forEach(e => {
+    let core = e.name || '', paren = '';
+    const pm = core.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+    if (pm){ core = pm[1]; paren = pm[2]; }
+    put(core, e);
+    if (paren) put(paren, e);
+    (e.aliases || []).forEach(a => put(a, e));
+  });
+  placeNameIndex = idx;
+  return idx;
+}
+function invalidatePlaceNameIndex(){ placeNameIndex = null; }
+
+// התאמה מדויקת בלבד (כולל תחיליות/סיומות דרך candidateForms) — בלי כתיב חסר,
+// שמייצר בטקסט חופשי קצר יותר רעש מתועלת.
+function lookupPlaceByPhrase(phrase, allowForms){
+  const idx = placesNameIndex();
+  if (!idx) return null;
+  const norm = normalizeHeb(phrase);
+  if (norm.length < 2) return null;
+  if (!allowForms) return idx.has(norm) ? idx.get(norm) : null;
+  if (GENERIC_DESCRIPTORS.has(norm) || STOPWORDS.has(norm) || PLACE_LINK_SKIP_WORDS.has(norm)) return null;
+  if (idx.has(norm)) return idx.get(norm);
+  for (const f of candidateForms(phrase)){
+    if (f === norm) continue;
+    if (GENERIC_DESCRIPTORS.has(f) || STOPWORDS.has(f)) continue;
+    if (idx.has(f)) return idx.get(f);
+  }
+  return null;
+}
+
+function findPlaceEntryByName(name){
+  const idx = placesNameIndex();
+  return (idx && idx.get(normalizeHeb(name))) || null;
+}
+
+function placeLinkedText(value){
+  const text = Array.isArray(value) ? value.join(', ') : String(value == null ? '' : value);
+  if (!placesNameIndex()) return esc(text);
+  const toks = [];
+  let m;
+  HEB_WORD_RE.lastIndex = 0;
+  while ((m = HEB_WORD_RE.exec(text)) !== null) toks.push({ s: m.index, e: m.index + m[0].length });
+  let out = '', cursor = 0, i = 0;
+  while (i < toks.length){
+    let hit = null, span = 1;
+    for (let len = Math.min(3, toks.length - i); len >= 1; len--){
+      const phrase = text.slice(toks[i].s, toks[i + len - 1].e);
+      const found = lookupPlaceByPhrase(phrase, len === 1);
+      if (found){ hit = found; span = len; break; }
+    }
+    if (!hit){ i++; continue; }
+    const s = toks[i].s, e = toks[i + span - 1].e;
+    out += esc(text.slice(cursor, s));
+    out += `<span class="place-link" data-place="${esc(hit.name)}">${esc(text.slice(s, e))}</span>`;
+    cursor = e;
+    i += span;
+  }
+  out += esc(text.slice(cursor));
+  return out;
+}
+
 // ---- סכימת שדות לכל מדריך ----
 // מגדירה אילו שדות "אמורים" להיות בערך של כל מדריך. משמשת לשני דברים:
 // 1. בתצוגה - להראות גם שדות **חסרים** (באפור, "—"), כדי שיידעו איזה מידע עוד חסר.
@@ -183,6 +270,10 @@ function renderEntryDetailHTML(entry, catIdOverride){
     if (personEntry && PERSON_LINK_FIELDS.has(k)){
       const linked = personLinkedValue(v, entry);
       if (linked){ html += `<div class="field-label">${esc(label)}</div><p>${linked}</p>`; return; }
+    }
+    if (personEntry && PLACE_LINK_FIELDS.has(k)){
+      html += `<div class="field-label">${esc(label)}</div><p>${placeLinkedText(v)}</p>`;
+      return;
     }
     html += fieldBlock(label, v);
   });
@@ -340,6 +431,15 @@ function wireEntryDetail(container, entry, onEdit){
       if (target) openEntryDetail(target);
     });
   });
+  // מקום בכרטיס אישים -> כרטיס המקומות עצמו, שכולל את המפה של אותו מקום
+  container.querySelectorAll('.place-link').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const target = findPlaceEntryByName(el.dataset.place);
+      if (target) openEntryDetail(target);
+    });
+  });
+  refreshPlaceLinksWhenReady(container, entry, onEdit);
   // "הצג במפה הראשית" - סוגר את הכרטיס, גולל למפה שבסוף רשימת המקומות וממקד שם.
   container.querySelectorAll('.focus-main-map').forEach(el => {
     el.addEventListener('click', (ev) => {
@@ -348,6 +448,21 @@ function wireEntryDetail(container, entry, onEdit){
       focusMainMap(lat, lng, zoom, el.dataset.name);
     });
   });
+}
+
+// כרטיס אישים עלול להיפתח לפני שמדריך המקומות סיים להיטען ברקע (preloadAllGuides
+// טוען בטור) — ואז אין ממה לבנות את הקישורים. במקום לעכב את הפתיחה, טוענים ברקע
+// ומרנדרים את אותו כרטיס פעם אחת כשהנתונים מוכנים. אחרי הטעינה placesLookupSync
+// מחזיר אינדקס, ולכן אין כאן לולאה.
+function refreshPlaceLinksWhenReady(container, entry, onEdit){
+  if (!isPersonEntry(entry) || placesNameIndex()) return;
+  const cat = CATEGORIES.find(c => c.id === 'places');
+  if (!cat) return;
+  loadGuideData(cat).then(() => {
+    if (!placesNameIndex() || !container.isConnected) return;
+    container.innerHTML = renderEntryDetailHTML(entry);
+    wireEntryDetail(container, entry, onEdit);
+  }, () => {});
 }
 
 // ממקד את מפת העולם שבסוף רשימת המקומות על נקודה מסוימת (כמו focusOnMainMap במקור).

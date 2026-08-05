@@ -693,6 +693,10 @@ html, body {
 #entryModalInner a, .result-row-detail a { color: var(--color-link); }
 .person-link { color: var(--color-link); text-decoration: underline dotted; cursor: pointer; }
 .person-link:hover { color: var(--color-primary); }
+/* קישור ממקום בכרטיס אישים לכרטיס המקומות (עם המפה) — נבדל מקישור-אדם בסמל 📍 */
+.place-link { color: var(--color-link); text-decoration: underline dotted; cursor: pointer; }
+.place-link:hover { color: var(--color-primary); }
+.place-link::after { content: " 📍"; font-size: .85em; text-decoration: none; }
 
 /* כלים בתוך כרטיס ערך (הדפסה / עריכה) */
 .entry-tool-btn {
