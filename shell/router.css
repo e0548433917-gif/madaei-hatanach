@@ -557,17 +557,40 @@ html, body {
   flex: 0 0 auto;
   flex-wrap: wrap;
 }
-#guideBackBtn, #guideAddNewBtn, #guideIdentifyBtn, #guideFiltersToggle, #guidePrintBtn {
+#guideBackBtn, #guideAddNewBtn, #guideIdentifyBtn, #guideFiltersToggle, #guidePrintBtn, #guideTimelineToggle {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer;
   font-family: var(--font-main); font-size: .86em; color: var(--color-on-surface);
   white-space: nowrap; transition: background .15s, border-color .15s;
 }
 #guideBackBtn:hover, #guideAddNewBtn:hover, #guidePrintBtn:hover,
-#guideIdentifyBtn:hover, #guideFiltersToggle:hover { background: var(--color-hover); border-color: var(--color-primary); }
-/* ״סינון פעיל״ — הכפתור נצבע כדי שלא ישכחו שיש סינון סגור מתחתיו */
-#guideFiltersToggle.on {
+#guideIdentifyBtn:hover, #guideFiltersToggle:hover, #guideTimelineToggle:hover { background: var(--color-hover); border-color: var(--color-primary); }
+/* ״סינון פעיל״ / ״ציר זמן פעיל״ — הכפתור נצבע כדי שלא ישכחו מה מוצג מתחתיו */
+#guideFiltersToggle.on, #guideTimelineToggle.on {
   background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary);
+}
+
+/* ==================== ציר זמן לפי דורות (2.9) ==================== */
+.timeline { padding: 4px 4px 18px; }
+.timeline-era { position: relative; padding-inline-start: 24px; margin-bottom: 22px; }
+.timeline-era::before {
+  content: ""; position: absolute; inset-inline-start: 5px; top: 22px; bottom: -22px;
+  width: 2px; background: var(--color-outline-faint);
+}
+.timeline-era:last-child::before { display: none; }
+.timeline-era-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.timeline-dot {
+  position: absolute; inset-inline-start: 0; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--color-primary); border: 2px solid var(--color-surface);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+.timeline-era-head h3 { font-size: 1.05em; margin: 0; color: var(--color-primary); }
+.timeline-count { font-size: .8em; color: var(--color-on-surface-faint); }
+.timeline-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+  gap: 12px;
 }
 #guideViewTitle { font-weight: 700; font-size: 1em; white-space: nowrap; }
 #guideSearchWrap { position: relative; flex: 1 1 220px; min-width: 160px; display: flex; }

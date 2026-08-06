@@ -242,6 +242,52 @@ function renderGuideChips(){
   });
 }
 
+// ---- ציר זמן לפי דורות (2.9) — תצוגה חלופית במדריך אישים, לצד הרשת (מתג, לא החלפה) ----
+// era קיים רק על קטגוריות מדריך אישים (ר' ההערה למעלה על guideEraOf) - ולכן הכפתור
+// מוצג רק שם, ומצב הציר מתאפס בכל פתיחת מדריך כדי לא "לדלוף" למדריך אחר.
+let guideViewMode = 'grid';
+const guideTimelineToggle = document.getElementById('guideTimelineToggle');
+// סדר הדורות = סדר ה-CATS (כרונולוגי, כמו ברשימת הצ'יפים) - לא ממציאים סדר חדש.
+function guideErasInOrder(){
+  const cats = (currentGuideCat && catsCache[currentGuideCat.id]) || [];
+  const eras = [];
+  cats.forEach(c => { if (c.era && !eras.includes(c.era)) eras.push(c.era); });
+  return eras;
+}
+// מכבד את אותו סינון (activeGuideChip/matchesGuideFilters/חיפוש) שכבר חושב ב-renderGuideGrid -
+// ציר שלא מכבד את הצ'יפים היה סותר את מה שכתוב בהם.
+function renderGuideTimeline(list){
+  const eras = guideErasInOrder();
+  if (!eras.length){
+    guideGrid.innerHTML = '<div class="grid-empty">אין נתוני תקופה למדריך זה.</div>';
+    return;
+  }
+  const flatIdx = [];
+  let html = '<div class="timeline">';
+  eras.forEach(era => {
+    const items = list.filter(e => guideEraOf(e) === era);
+    if (!items.length) return;
+    html += `<div class="timeline-era">
+      <div class="timeline-era-head"><span class="timeline-dot"></span><h3>${esc(era)}</h3><span class="timeline-count">${items.length}</span></div>
+      <div class="timeline-items">`;
+    items.forEach(entry => { html += entryCardHTML(entry, flatIdx.length); flatIdx.push(entry); });
+    html += `</div></div>`;
+  });
+  html += '</div>';
+  guideGrid.innerHTML = html;
+  guideGrid.querySelectorAll('.entry-card').forEach(card => {
+    const entry = flatIdx[parseInt(card.dataset.idx, 10)];
+    card.addEventListener('click', () => openEntryDetail(entry));
+  });
+  lazyLoadWikiThumbnails(guideGrid);
+}
+if (guideTimelineToggle) guideTimelineToggle.addEventListener('click', () => {
+  guideViewMode = guideViewMode === 'timeline' ? 'grid' : 'timeline';
+  guideTimelineToggle.classList.toggle('on', guideViewMode === 'timeline');
+  guideTimelineToggle.textContent = guideViewMode === 'timeline' ? '☰ תצוגת רשת' : '🕰️ ציר זמן';
+  renderGuideGrid(guideSearchBox.value);
+});
+
 // כשאין חיפוש והצ'יפ הפעיל הוא "הכל" - מקבצים לפי הקטגוריות המקוריות של המדריך (בדיוק
 // כמו שהיה בכל מדריך בנפרד: כותרת קטגוריה + מספר סידורי + הסבר). אחרת - רשימה שטוחה.
 function renderGuideGrid(filterText){
@@ -254,6 +300,11 @@ function renderGuideGrid(filterText){
 
   if (!list.length){
     guideGrid.innerHTML = '<div class="grid-empty">לא נמצאו תוצאות התואמות את הסינון.</div>';
+    return;
+  }
+
+  if (guideViewMode === 'timeline' && currentGuideCat && currentGuideCat.id === 'people'){
+    renderGuideTimeline(list);
     return;
   }
 
@@ -316,6 +367,12 @@ async function openGuide(catId, term){
   activeGuideChip = 'all';
   activeGuideEra = 'all';
   activeGuideLetter = 'all';
+  guideViewMode = 'grid';
+  if (guideTimelineToggle){
+    guideTimelineToggle.style.display = cat.id === 'people' ? '' : 'none';
+    guideTimelineToggle.classList.remove('on');
+    guideTimelineToggle.textContent = '🕰️ ציר זמן';
+  }
   currentGuideCat = cat;
   currentGuideData = await loadGuideData(cat);
   renderGuideGrid('');
