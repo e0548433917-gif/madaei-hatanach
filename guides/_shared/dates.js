@@ -116,3 +116,19 @@ function eventsForToday(){
   const t = todayHebrew();
   return TANAKH_DATE_EVENTS.filter(ev => monthMatchesEventMonth(t.monthName, ev.month) && dayMatchesEventDay(t.raw.day, ev.day));
 }
+
+// ---- מקור המאורע -> קישור לפתיחה בספרייה ----
+// המקורות ב-TANAKH_DATE_EVENTS כתובים "ספר פרק:פסוק" (נקודתיים, לא פסיק כמו
+// ב-parseVerseRef של refs.js) - פורמט ציטוט שונה, ולכן פרסינג נפרד וקטן, לא
+// הרחבה של parseVerseRef. שני כינויים לתיקון טעויות כתיב/קיצור במקור החילוץ
+// ("עזרה" במקום "עזרא", "ד״ה א/ב" קיצור מקובל לדברי הימים). מקור משולב
+// ("... כה:כז ירמיהו נב:לא") - נלקח רק הראשון, לא נבנה פרסינג לרב-מקור.
+const DATE_EVENT_BOOK_ALIASES = { 'עזרה':'עזרא', 'ד"ה א':'דברי הימים א', 'ד"ה ב':'דברי הימים ב' };
+function parseColonVerseRef(source){
+  if (!source) return null;
+  const m = String(source).trim().match(/^([א-ת" ]+?)\s+([א-ת]{1,3}):([א-ת]{1,3})/);
+  if (!m) return null;
+  const book = DATE_EVENT_BOOK_ALIASES[m[1].trim()] || m[1].trim();
+  if (TANAKH_BOOKS.indexOf(book) === -1) return null;
+  return { bookId: book, ref: 'פרק ' + m[2] };
+}

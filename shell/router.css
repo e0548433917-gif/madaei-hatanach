@@ -769,6 +769,9 @@ html, body {
   font-weight: 700; font-size: .86em; color: var(--color-secondary); margin-bottom: 4px;
 }
 .panel-box .src-note { font-size: .85em; color: var(--color-on-surface-dim); }
+.panel-box .src-item.clickable { cursor: pointer; }
+.panel-box .src-item.clickable:hover { border-color: var(--color-primary); background: var(--color-primary-subtle); }
+.panel-box .open-hint { font-size: calc(.78 * var(--fs)); color: var(--color-primary); font-weight: 400; }
 /* יושב בתוך .verse-ref שכבר מוקטן - גודל מוחלט כדי שלא יצטבר */
 #entryModalInner .open-hint, .result-row-detail .open-hint { font-size: calc(.78 * var(--fs)); color: var(--color-primary); font-weight: 400; }
 #entryModalInner .verse-text, .result-row-detail .verse-text { font-size: 1em; line-height: 1.85; }
