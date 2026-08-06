@@ -271,9 +271,10 @@ function buildReportPanel(){
     + '</div>'
     + '<p class="panel-hint" style="margin-top:12px;">'
     +   'מעדיפים לשלוח בעצמכם? ״הורדה לקובץ״ שומרת את הדיווח כקובץ טקסט (ואם ההורדה '
-    +   'חסומה — מעתיקה אותו ללוח), ואפשר לפתוח אתו דיווח ידני בכל עת בכתובת:<br>'
-    +   '<a href="#" data-external-link="' + esc(REPORT_ISSUES_URL) + '" '
-    +      'style="color:var(--color-link);text-decoration:underline;">' + esc(REPORT_ISSUES_URL) + '</a>'
+    +   'חסומה — מעתיקה אותו ללוח), ואפשר לפתוח אתו דיווח ידני בכל עת. '
+    // הקישור אינו מוצג כטקסט/כתובת גלויים בכוונה (רק כפתור העתקה) - כדי לא לחשוף
+    // את כתובת ה-Issues (ומתוכה שם המשתמש בגיטהאב) בממשק עצמו.
+    +   '<button type="button" class="panel-btn secondary" id="reportCopyIssuesLink" style="margin-top:6px;">📋 העתקת קישור לדיווח ידני</button>'
     + '</p></div>';
   document.body.appendChild(ov);
   // הפאנל נוצר בזמן ריצה ולכן אינו נתפס במאזין הכללי של .panel-overlay ב-results-ui.js
@@ -288,6 +289,11 @@ function buildReportPanel(){
     reportEnv().then(env => {
       const item = newReportItem(kind, title || 'דיווח מהתוסף', details, env);
       saveReportsToFile([item], 'דיווח-תמונך');
+    });
+  });
+  ov.querySelector('#reportCopyIssuesLink').addEventListener('click', () => {
+    copyReportText(REPORT_ISSUES_URL).then(ok => {
+      reportNotify(ok ? 'הקישור הועתק ללוח.' : 'ההעתקה נכשלה כאן — נסו שוב.', ok ? 'success' : 'error');
     });
   });
   return ov;
@@ -827,6 +833,16 @@ function renderPersonalWhatsNew(){
   const changelogWrap = document.createElement('div');
   changelogWrap.innerHTML = '<p class="mini-note">טוען יומן שינויים...</p>';
   personalBody.appendChild(changelogWrap);
+
+  // תקציר קצר של מה שעוד מתוכנן - קבוע ידני (לא מ-docs/, שלא ארוז בחבילה
+  // בכוונה). לעדכן ידנית בכל סבב, יחד עם הערך ב-CHANGELOG.md.
+  personalBody.appendChild(sectionHead('🛣️ מה מתוכנן בהמשך', ''));
+  const roadmapWrap = document.createElement('div');
+  roadmapWrap.innerHTML = '<p class="mini-note" style="margin-top:0">'
+    + 'תצוגת ״נ״ך״ מלאה · טעינה עצלה של הדאטה (פתיחה מיידית יותר) · שיפורי פופאפ הזיהוי '
+    + '· תיקוני עריכה בדפי HTML מותאמים · האחדת איקונים בכל התוסף · לקראת הגרסה 3.0.0.'
+    + '</p>';
+  personalBody.appendChild(roadmapWrap);
 
   async function refreshStatus(){
     statusWrap.innerHTML = '<p class="mini-note" style="margin-top:0">בודק גרסה...</p>';
