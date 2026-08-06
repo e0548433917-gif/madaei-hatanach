@@ -780,19 +780,20 @@ function mdLiteToHtml(md){
   if (inList) html += '</ul>';
   return html;
 }
-async function loadChangelogBlocks(){
-  try {
-    const res = await fetch('CHANGELOG.md', { cache: 'no-store' });
-    if (!res || !res.ok) return null;
-    const text = await res.text();
-    return text.split(/\n(?=## )/).filter(p => p.trim().indexOf('## ') === 0).map(p => {
-      const nl = p.indexOf('\n');
-      return {
-        header: (nl === -1 ? p : p.slice(0, nl)).replace(/^##\s*/, '').trim(),
-        body: nl === -1 ? '' : p.slice(nl + 1).trim()
-      };
-    });
-  } catch(e){ return null; }
+// EMBEDDED_CHANGELOG_MD (guides/_shared/changelog-embedded.js) מוטבע ב-build/
+// pack.ps1 בזמן האריזה, מתוך CHANGELOG.md עצמו - לא fetch בזמן ריצה. fetch
+// ל-CHANGELOG.md נכשל בפועל בתוך ה-WebView של אוצריא (הקובץ אכן ארוז בחבילה,
+// אבל הטעינה בזמן ריצה לא עבדה שם); ההטבעה מסירה את התלות הזו לגמרי.
+function loadChangelogBlocks(){
+  const text = (typeof EMBEDDED_CHANGELOG_MD !== 'undefined') ? EMBEDDED_CHANGELOG_MD : '';
+  if (!text) return Promise.resolve(null);
+  return Promise.resolve(text.split(/\n(?=## )/).filter(p => p.trim().indexOf('## ') === 0).map(p => {
+    const nl = p.indexOf('\n');
+    return {
+      header: (nl === -1 ? p : p.slice(0, nl)).replace(/^##\s*/, '').trim(),
+      body: nl === -1 ? '' : p.slice(nl + 1).trim()
+    };
+  }));
 }
 function renderChangelogInto(container, blocks){
   if (!blocks || !blocks.length){

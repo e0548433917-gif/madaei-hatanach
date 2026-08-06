@@ -165,6 +165,18 @@ if (-not $NoChangelog) {
   }
 }
 
+# ---- 1ג. הטמעת CHANGELOG.md כקבוע JS (guides/_shared/changelog-embedded.js) ----
+# הלשונית "מה חדש" (4.7) הסתמכה על fetch('CHANGELOG.md') בזמן ריצה, ונכשלה
+# בפועל בתוך ה-WebView של אוצריא. הפתרון: מטביעים את התוכן כקבוע JS באותו
+# רגע שבו CHANGELOG.md עצמו מתעדכן, כך שהוא אף פעם לא "לא מסונכרן" עם מה
+# שבפועל נארז - ואין שום תלות ב-fetch/רשת בזמן ריצה.
+$changelogEmbedPath = Join-Path $root "guides\_shared\changelog-embedded.js"
+$clFinal = Get-Content $changelogPath -Raw -Encoding UTF8
+$clJson = $clFinal | ConvertTo-Json -Compress
+$embedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך CHANGELOG.md - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_CHANGELOG_MD = $clJson;`r`n"
+[System.IO.File]::WriteAllText($changelogEmbedPath, $embedContent, [System.Text.UTF8Encoding]::new($false))
+Write-Host "הוטמע CHANGELOG.md כקבוע JS: guides/_shared/changelog-embedded.js"
+
 # ---- 2. הכנת תיקיית staging נקייה (בלי קבצי build/debug) ----
 $stageDir = Join-Path $env:TEMP "madaei-hatanach-stage"
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }

@@ -253,6 +253,10 @@
 <!-- מאורעות התנ״ך לפי תאריך (2.10א) - דאטה משותפת, לא ספציפית למדריך אחד.
      נשען על numToHeb/gematriaValue מ-co-mentions.js. -->
 <script src="guides/_shared/dates.js"></script>
+<!-- תוכן CHANGELOG.md מוטבע ב-build/pack.ps1 בזמן האריזה (ר' שם) - "מה חדש"
+     (personal.js) קורא מ-EMBEDDED_CHANGELOG_MD ולא מ-fetch, כי fetch('CHANGELOG.md')
+     נכשל בפועל בתוך ה-WebView של אוצריא. -->
+<script src="guides/_shared/changelog-embedded.js"></script>
 <script src="shell/parasha.js"></script>
 <script src="shell/guides.js"></script>
 <script src="shell/entry-detail.js"></script>
