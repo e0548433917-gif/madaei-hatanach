@@ -46,6 +46,9 @@ const REPORT_KINDS = [
   { id: 'טעות בתוכן', label: '📖 טעות בתוכן — פרט לא נכון בערך' },
   { id: 'הצעה',       label: '💡 הצעה — רעיון לשיפור' }
 ];
+// כתובת הדיווחים הידנית — למי שמעדיף לפתוח Issue בעצמו, או שהשליחה אצלו חסומה.
+// לא נפתחת בניווט ישיר אלא דרך data-external-link ⇒ confirmOpenExternal (refs.js).
+const REPORT_ISSUES_URL = 'https://github.com/e0548433917-gif/madaei-hatanach/issues';
 
 // התור נשמר ב-plugin.storage כשיש אוצריא (שורד עדכון גרסה), ובדפדפן חשוף
 // נופל ל-localStorage כדי שגם בדיקה מחוץ לאוצריא תתנהג אותו דבר.
@@ -188,6 +191,64 @@ async function flushReportOutbox(opts){
   }
 }
 
+// ---- הורדה לקובץ ושליחה ידנית אחר כך ----
+// לא כל סביבה מרשה הורדה מתוך WebView, ולכן יש נפילה מדורגת:
+// הורדה אמיתית → העתקה ללוח → חלון עם הטקסט לבחירה ידנית. בכל מקרה
+// המשתמש נשאר עם הטקסט ביד, ועם הכתובת שאליה אפשר להדביק אותו.
+function reportItemToText(item){
+  return [
+    'דיווח מתוסף תמונ״ך',
+    'סוג: ' + (item.kind || '—'),
+    'כותרת: ' + (item.title || '—'),
+    'סביבה: ' + (item.env || '—'),
+    'נשמר: ' + (item.savedAt || '—'),
+    '',
+    item.details || '',
+    '',
+    '— אפשר להדביק את הטקסט הזה כדיווח חדש ב-' + REPORT_ISSUES_URL
+  ].join('\n');
+}
+
+function copyReportText(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text).then(() => true, () => false);
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-1000px;';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return Promise.resolve(!!ok);
+  } catch(e){ return Promise.resolve(false); }
+}
+
+function saveReportsToFile(items, baseName){
+  const text = (items || []).map(reportItemToText).join('\n\n==============================\n\n');
+  const name = (baseName || 'דיווח-תמונך') + '-' + new Date().toISOString().slice(0, 10) + '.txt';
+  try {
+    const blob = new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch(e){} }, 4000);
+    reportNotify('הקובץ ירד: ' + name + '. אפשר לשלוח אותו מתי שנוח.', 'success');
+    return Promise.resolve(true);
+  } catch(e){
+    return copyReportText(text).then(ok => {
+      if (ok) reportNotify('ההורדה חסומה כאן — הדיווח הועתק ללוח. אפשר להדביק אותו ב-' + REPORT_ISSUES_URL, 'success');
+      else window.prompt('העתיקו את הטקסט ושלחו אותו ב-' + REPORT_ISSUES_URL, text);
+      return ok;
+    });
+  }
+}
+
 // ---- המודאל ----
 function buildReportPanel(){
   const ov = document.createElement('div');
@@ -205,13 +266,30 @@ function buildReportPanel(){
     + '<textarea id="reportDetails" placeholder="מה קרה? איפה? מה ציפיתם שיקרה? ככל שיהיה מפורט יותר — כך קל יותר לתקן."></textarea>'
     + '<div class="panel-actions">'
     +   '<button class="panel-btn" type="button" id="reportSend">📨 שליחה</button>'
+    +   '<button class="panel-btn secondary" type="button" id="reportDownload">💾 הורדה לקובץ</button>'
     +   '<button class="panel-btn secondary" type="button" id="reportPanelClose">סגירה</button>'
-    + '</div></div>';
+    + '</div>'
+    + '<p class="panel-hint" style="margin-top:12px;">'
+    +   'מעדיפים לשלוח בעצמכם? ״הורדה לקובץ״ שומרת את הדיווח כקובץ טקסט (ואם ההורדה '
+    +   'חסומה — מעתיקה אותו ללוח), ואפשר לפתוח אתו דיווח ידני בכל עת בכתובת:<br>'
+    +   '<a href="#" data-external-link="' + esc(REPORT_ISSUES_URL) + '" '
+    +      'style="color:var(--color-link);text-decoration:underline;">' + esc(REPORT_ISSUES_URL) + '</a>'
+    + '</p></div>';
   document.body.appendChild(ov);
   // הפאנל נוצר בזמן ריצה ולכן אינו נתפס במאזין הכללי של .panel-overlay ב-results-ui.js
   ov.addEventListener('click', ev => { if (ev.target === ov) closeReportPanel(); });
   ov.querySelector('#reportPanelClose').addEventListener('click', closeReportPanel);
   ov.querySelector('#reportSend').addEventListener('click', submitReportPanel);
+  ov.querySelector('#reportDownload').addEventListener('click', () => {
+    const kind = ov.querySelector('#reportKind').value;
+    const title = ov.querySelector('#reportTitle').value.trim();
+    const details = ov.querySelector('#reportDetails').value;
+    if (!title && !details.trim()){ window.alert('אין מה להוריד — הדיווח ריק.'); return; }
+    reportEnv().then(env => {
+      const item = newReportItem(kind, title || 'דיווח מהתוסף', details, env);
+      saveReportsToFile([item], 'דיווח-תמונך');
+    });
+  });
   return ov;
 }
 
@@ -518,6 +596,13 @@ function appendOutboxStatus(){
       renderPersonalBody();
     });
     box.appendChild(btn);
+    const dl = document.createElement('button');
+    dl.type = 'button';
+    dl.className = 'panel-btn secondary';
+    dl.style.marginInlineStart = '6px';
+    dl.textContent = '💾 הורדה לקובץ';
+    dl.addEventListener('click', () => saveReportsToFile(list, 'דיווחים-ממתינים-תמונך'));
+    box.appendChild(dl);
   }).catch(()=>{ box.remove(); });
 }
 

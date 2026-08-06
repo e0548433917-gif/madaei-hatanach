@@ -68,7 +68,7 @@ function openGenericEditForm(entry, catIdOverride){
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
       <button class="nf-btn" id="genEditSave">💾 שמירה במכשיר</button>
-      <button class="nf-btn" id="genEditSend">📧 שליחה למפתח</button>
+      <button class="nf-btn" id="genEditSend">📨 שליחה למפתח</button>
       <button class="nf-btn secondary" id="genEditCancel">ביטול</button>
       ${editExists ? '<button class="nf-btn secondary danger-link" id="genEditRestore">↺ שחזור לגרסת המקור</button>' : ''}
     </div>`;
@@ -187,21 +187,12 @@ function openGenericEditForm(entry, catIdOverride){
     const diff = buildDiff(c);
     apply(c);
     renderGuideGrid(guideSearchBox.value);
-    if (window.Otzaria && Otzaria.call){
-      try {
-        await Otzaria.call('feedback.sendEmail', {
-          to: DEV_EMAIL,
-          subject: 'הצעת עריכה - ' + entry.name + ' - ' + (CATEGORIES.find(x=>x.id===catId)||{label:''}).label + ' (תמונ״ך)',
-          body: 'הצעת עריכה לערך: ' + entry.name + '\n\n' + diff,
-          includeSystemInfo: true
-        });
-        await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
-      } catch(e){
-        await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחה', type: 'error' }).catch(()=>{});
-      }
-    } else {
-      window.alert('שליחה דורשת פתיחה בתוך אוצריא. אפשר לפנות ל-' + DEV_EMAIL);
-    }
+    // 2.13.2 — דרך ממסר הדיווחים (personal.js), לא במייל. שמירה בתור + שליחה שקטה.
+    await sendToDev(
+      'הצעת עריכה — ' + entry.name + ' (' + (CATEGORIES.find(x=>x.id===catId)||{label:''}).label + ')',
+      'הצעת עריכה לערך: ' + entry.name + '\n\n' + diff,
+      'הצעת עריכה'
+    );
     openEntryDetail(entry);
   });
 }
@@ -224,7 +215,7 @@ function openGenericProposeForm(prefillName){
     <textarea id="genNfNotes" class="f-textarea" style="min-height:50px"></textarea>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
       <button class="nf-btn" id="genNfSave">💾 שמירה במכשיר</button>
-      <button class="nf-btn" id="genNfSend">📧 שליחה במייל</button>
+      <button class="nf-btn" id="genNfSend">📨 שליחה למפתח</button>
       <button class="nf-btn secondary" id="genNfCancel">ביטול</button>
     </div>`;
   entryOverlay.classList.add('open');
@@ -254,17 +245,9 @@ function openGenericProposeForm(prefillName){
     const f = fields();
     if (!f.name){ window.alert('יש למלא שם'); return; }
     const cat = selectedCat();
-    const body = 'הצעת תוספת למדריך ' + cat.label + ' (תמונ״ך)\n\nההוספה המוצעת: ' + f.name + '\nהמקור בספרייה: ' + (f.source||'—') + '\nהערות נוספות: ' + (f.notes||'—');
-    if (window.Otzaria && Otzaria.call){
-      try {
-        await Otzaria.call('feedback.sendEmail', { to: DEV_EMAIL, subject: 'הצעת תוספת - ' + cat.label + ' - תמונ״ך', body, includeSystemInfo: true });
-        await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
-        entryOverlay.classList.remove('open');
-      } catch(e){
-        await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחה', type: 'error' }).catch(()=>{});
-      }
-    } else {
-      window.alert('שליחה דורשת פתיחה בתוך אוצריא.');
-    }
+    const body = 'הצעת תוספת למדריך ' + cat.label + '\n\nההוספה המוצעת: ' + f.name + '\nהמקור בספרייה: ' + (f.source||'—') + '\nהערות נוספות: ' + (f.notes||'—');
+    // 2.13.2 — דרך ממסר הדיווחים. הפאנל נסגר בכל מקרה: גם אם אין רשת ההצעה כבר שמורה בתור.
+    await sendToDev('הצעת תוספת — ' + f.name + ' (' + cat.label + ')', body, 'הצעת ערך');
+    entryOverlay.classList.remove('open');
   });
 }

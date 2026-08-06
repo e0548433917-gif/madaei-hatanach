@@ -118,7 +118,7 @@ function openIdentifyErrorReport(selectedText, matches){
     <textarea id="idErrText" class="f-textarea" style="min-height:90px"></textarea>
     <p class="mini-note">אפשר גם לתקן מיד במכשיר שלך: בכל תוצאה מורחבת יש כפתור ✏️ לעריכה מקומית של הכרטיס.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
-      <button class="nf-btn" id="idErrSend">📧 שליחת הדיווח למפתח</button>
+      <button class="nf-btn" id="idErrSend">📨 שליחת הדיווח למפתח</button>
       <button class="nf-btn" id="idErrSave">💾 שמירה במכשיר</button>
       <button class="nf-btn secondary" id="idErrCancel">סגירה</button>
     </div>`;
@@ -136,14 +136,10 @@ function openIdentifyErrorReport(selectedText, matches){
     } catch(e){ window.alert('שמירת הדיווח נכשלה.'); }
   });
   document.getElementById('idErrSend').addEventListener('click', async () => {
-    if (!hasOtzaria()){ window.alert('שליחה דורשת פתיחה בתוך אוצריא. אפשר לפנות ל-' + DEV_EMAIL); return; }
-    try {
-      await Otzaria.call('feedback.sendEmail', { to: DEV_EMAIL, subject: 'דיווח טעות בזיהוי - תמונ״ך', body: buildBody(), includeSystemInfo: true });
-      await Otzaria.call('notifications.showInApp', { message: 'הדיווח נשלח, תודה!', type: 'success' }).catch(()=>{});
-      entryOverlay.classList.remove('open');
-    } catch(e){
-      await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת הדיווח', type: 'error' }).catch(()=>{});
-    }
+    // 2.13.2 — דרך ממסר הדיווחים (sendToDev ב-personal.js), לא במייל.
+    // הפאנל נסגר בכל מקרה: אם אין רשת הדיווח כבר שמור בתור ויישלח לבד.
+    await sendToDev('דיווח טעות בזיהוי — "' + selectedText + '"', buildBody(), 'דיווח זיהוי');
+    entryOverlay.classList.remove('open');
   });
 }
 
