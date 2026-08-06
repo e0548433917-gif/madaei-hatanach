@@ -428,8 +428,10 @@ function wireEntryDetail(container, entry, onEdit){
     bmb.classList.toggle('bm-on', on);
     bmb.title = on ? 'הסרה מהסימניות' : 'הוספה לסימניות (האזור האישי)';
   });
+  // ההדפסה עוברת דרך עמוד ההדפסה של print.js (2.5). עד 2.12.2 זו הייתה קריאה
+  // חשופה ל-window.print(), שהדפיסה את כל ממשק התוסף — סרגלים, כפתורים והשער.
   const pb = container.querySelector('#entryPrintBtn');
-  if (pb) pb.addEventListener('click', (e) => { e.stopPropagation(); window.print(); });
+  if (pb) pb.addEventListener('click', (e) => { e.stopPropagation(); printSingleEntry(entry); });
   const eb = container.querySelector('#entryEditBtn');
   if (eb) eb.addEventListener('click', (e) => { e.stopPropagation(); onEdit ? onEdit() : openGenericEditForm(entry); });
   const wikiEl = container.querySelector('[data-wiki-lazy]');
@@ -549,6 +551,7 @@ async function focusMainMap(lat, lng, zoom, name){
 }
 
 function openEntryDetail(entry){
+  printCtxEntry = entry;   // כדי ש-Ctrl+P ידני יידע איזה כרטיס להדפיס (print.js)
   entryModalInner.innerHTML = renderEntryDetailHTML(entry);
   wireEntryDetail(entryModalInner, entry);
   entryOverlay.classList.add('open');

@@ -184,6 +184,17 @@ function renderPersonalBookmarks(){
       personalEmpty('אין עדיין סימניות. בכל כרטיס ערך יש כוכב (☆) בכותרת — לחיצה עליו תוסיף אותו לכאן.'));
     return;
   }
+  // ייצוא כרטסת (2.5) — כל הסימניות כדף מקורות אחד, למגיד שיעור לפני השיעור
+  const bulk = document.createElement('div');
+  bulk.className = 'p-bulk';
+  const printBtn = document.createElement('button');
+  printBtn.type = 'button';
+  printBtn.className = 'panel-btn';
+  printBtn.textContent = '🖨 ייצוא כרטסת (' + list.length + ')';
+  printBtn.addEventListener('click', () => printBookmarks());
+  bulk.appendChild(printBtn);
+  personalBody.appendChild(bulk);
+
   list.slice().reverse().forEach(b => {
     personalBody.appendChild(personalRow(
       b.label || b.key,

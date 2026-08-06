@@ -516,9 +516,13 @@ html, body {
 .result-row button:hover { background: var(--color-btn-hover); }
 .result-row-detail { border-top: 1px solid var(--color-outline-faint); padding-top: 10px; }
 #noResults { text-align: center; padding: 20px 0; color: var(--color-on-surface-faint); }
-#closeResults {
+/* שורת התחתית של חלון התוצאות: ״ייצוא כרטסת״ + ״סגור״ */
+#resultsFoot {
   flex: 0 0 auto;
-  display: block; margin: 12px auto 0;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-top: 12px;
+}
+#closeResults {
   border: none; background: none; color: var(--color-on-surface-faint); cursor: pointer;
   font-family: var(--font-main); font-size: .86em;
   text-decoration: underline;
@@ -543,13 +547,13 @@ html, body {
   flex: 0 0 auto;
   flex-wrap: wrap;
 }
-#guideBackBtn, #guideAddNewBtn, #guideIdentifyBtn, #guideFiltersToggle {
+#guideBackBtn, #guideAddNewBtn, #guideIdentifyBtn, #guideFiltersToggle, #guidePrintBtn {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer;
   font-family: var(--font-main); font-size: .86em; color: var(--color-on-surface);
   white-space: nowrap; transition: background .15s, border-color .15s;
 }
-#guideBackBtn:hover, #guideAddNewBtn:hover,
+#guideBackBtn:hover, #guideAddNewBtn:hover, #guidePrintBtn:hover,
 #guideIdentifyBtn:hover, #guideFiltersToggle:hover { background: var(--color-hover); border-color: var(--color-primary); }
 /* ״סינון פעיל״ — הכפתור נצבע כדי שלא ישכחו שיש סינון סגור מתחתיו */
 #guideFiltersToggle.on {
@@ -878,4 +882,109 @@ html, body {
 #settingsReset {
   border: none; background: none; color: var(--color-on-surface-faint); cursor: pointer;
   font-family: var(--font-main); font-size: .83em; text-decoration: underline; padding: 0;
+}
+
+/* ============================================================
+   ייצוא כרטסת — עמוד ההדפסה (משימה 2.5)
+   #printRoot מוסתר לגמרי במסך ונראה **רק** בהדפסה, ושם כל שאר הממשק יורד.
+   שחור על לבן, בלי צללים ובלי רקעים כהים — הדפסה על נייר ולא צילום מסך.
+   ============================================================ */
+#printRoot { display: none; }
+
+@media print {
+  @page { size: A4; margin: 16mm 14mm 18mm; }
+  /* מספרי עמוד — בכלל @page נפרד בכוונה: מנוע שאינו מכיר תיבות שוליים עלול
+     להשליך את כל הכלל שהן יושבות בו, ואיתו גם את השוליים שלמעלה. אם הוא אכן
+     נופל, הכותרת התחתית המובנית של דיאלוג ההדפסה עדיין נותנת מספור. */
+  @page {
+    @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: #444; }
+  }
+
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    height: auto !important;
+    overflow: visible !important;
+    font-family: var(--font-main);
+    font-size: 11.5pt;
+  }
+
+  /* כל ה-chrome של התוסף — השער, הסרגלים, המסננים, הכפתורים, שכבות ה-overlay
+     והגדרות התצוגה. נשאר רק #printRoot. */
+  #landing, #frameWrap, #guideView, #personalView,
+  #entryOverlay, #resultsOverlay, .panel-overlay,
+  #settingsBtn, #settingsPanel, #settingsScrim,
+  #homeSearchWrap, .hs-drop { display: none !important; }
+
+  #printRoot { display: block !important; }
+
+  /* איפוס גורף: בלי רקעים (אוכלים דיו), בלי צללים, טקסט שחור */
+  #printRoot, #printRoot * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color: #000 !important;
+    animation: none !important;
+    transition: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .print-head {
+    border-bottom: 2px solid #000;
+    padding-bottom: 3mm; margin-bottom: 5mm;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10mm;
+  }
+  .print-brand { font-size: 16pt; font-weight: 700; letter-spacing: .5px; }
+  .print-meta { font-size: 9.5pt; }
+
+  /* תוכן העניינים — רק כשמייצאים יותר מערך אחד */
+  .print-toc {
+    columns: 2; column-gap: 10mm;
+    margin: 0 0 6mm; padding-inline-start: 6mm;
+    font-size: 10pt; line-height: 1.6;
+    border-bottom: 1px solid #999; padding-bottom: 3mm;
+  }
+  .print-toc li { break-inside: avoid; }
+
+  /* כרטיס שלם לא נחתך בין שני עמודים */
+  .print-entry {
+    break-inside: avoid; page-break-inside: avoid;
+    margin: 0 0 7mm; padding-bottom: 4mm;
+    border-bottom: 1px solid #bbb;
+  }
+  .print-entry:last-child { border-bottom: none; }
+  #printRoot h2 {
+    font-size: 14pt; margin: 0 0 1mm;
+    break-after: avoid; page-break-after: avoid;
+  }
+  .print-num { font-weight: 400; }
+  .print-cat { font-size: 9.5pt; margin-bottom: 2mm; }
+  #printRoot .entry-sub { font-size: 9.5pt; margin-bottom: 3mm; }
+  #printRoot .field-label {
+    font-weight: 700; font-size: 10.5pt;
+    margin: 3mm 0 1mm; border-bottom: 1px solid #ccc;
+    break-after: avoid; page-break-after: avoid;
+  }
+  #printRoot p { margin: 0 0 1.5mm; font-size: 10.5pt; line-height: 1.55; orphans: 2; widows: 2; }
+  #printRoot .verse-card, #printRoot .src-item, #printRoot .method-block {
+    border: 1px solid #ccc; border-radius: 0;
+    padding: 2mm 3mm; margin: 0 0 2mm;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  #printRoot .verse-ref, #printRoot .src-source { font-weight: 700; font-size: 10pt; }
+  #printRoot .verse-text { font-size: 11pt; line-height: 1.8; }
+  #printRoot .latin { font-style: italic; }
+  #printRoot .conf-tag { border: 1px solid #999; padding: 0 2mm; font-size: 9pt; }
+  #printRoot .person-link, #printRoot .place-link, #printRoot .co-link {
+    text-decoration: none; border: none; padding: 0;
+  }
+  #printRoot .place-link::after { content: ""; }
+
+  /* תמונות: לרוחב העמוד לכל היותר, ובלי לגלוש לעמוד הבא באמצע */
+  #printRoot img {
+    max-width: 100% !important; height: auto !important;
+    max-height: 80mm !important; object-fit: contain !important;
+    break-inside: avoid; page-break-inside: avoid;
+  }
 }

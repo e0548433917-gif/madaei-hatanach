@@ -64,6 +64,8 @@
     </div>
     <button id="guideIdentifyBtn" type="button" title="זיהוי מלא של הטקסט שבשורה">זיהוי</button>
     <button id="guideFiltersToggle" type="button" aria-expanded="true">☰ סינון</button>
+    <!-- ייצוא כרטסת (2.5): מדפיס את התצוגה המסוננת שרואים כרגע, ערך אחרי ערך -->
+    <button id="guidePrintBtn" type="button" title="הדפסת כל הערכים שבתצוגה הנוכחית">🖨 ייצוא כרטסת</button>
     <button id="guideAddNewBtn" type="button">＋ הוספת ערך חדש</button>
   </div>
   <!-- אפשרויות הסינון, כמו בתוסף ״אישים בתנ״ך״: קטגוריה · תקופה · א-ב (2.12.0) -->
@@ -107,7 +109,10 @@
     <div id="resultsChips"></div>
     <div id="resultsList"></div>
     <div id="noResults" style="display:none;"></div>
-    <button id="closeResults" type="button">סגור</button>
+    <div id="resultsFoot">
+      <button id="resultsPrintBtn" class="panel-btn" type="button" title="הדפסת כל תוצאות הזיהוי כדף מקורות">🖨 ייצוא כרטסת</button>
+      <button id="closeResults" type="button">סגור</button>
+    </div>
   </div>
 </div>
 
@@ -194,6 +199,12 @@
   <button id="settingsReset" type="button">איפוס להגדרות ברירת המחדל</button>
 </div>
 
+<!-- ==== עמוד ההדפסה (״ייצוא כרטסת״, 2.5) ====
+     ריק ומוסתר לגמרי במסך; מתמלא רגע לפני window.print() ונראה **רק** ב-@media print,
+     ששם כל שאר הממשק מוסתר. בכוונה בתוך אותו DOM ולא בחלון/לשונית חדשה — ב-WebView
+     של אוצריא אין window.open. -->
+<div id="printRoot" aria-hidden="true"></div>
+
 <!-- שכבת התוסף, מפוצלת ל-12 מודולים (2.11.2). הסדר קריטי ואינו שרירותי:
      (13 מאז 2.12.0 — co-mentions.js נוסף אחרי refs.js, שממנו הוא לוקח את TANAKH_BOOKS)
      core ראשון כי כולם נשענים עליו, ו-bridge אחרון כי הוא מריץ את האתחול בפועל.
@@ -205,6 +216,7 @@
 <script src="shell/co-mentions.js"></script>
 <script src="shell/guides.js"></script>
 <script src="shell/entry-detail.js"></script>
+<script src="shell/print.js"></script>
 <script src="shell/edit-forms.js"></script>
 <script src="shell/results-ui.js"></script>
 <script src="shell/home.js"></script>

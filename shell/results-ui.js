@@ -31,6 +31,7 @@ function renderResultsChips(matches, activeCat, onSelect){
 
 function showResults(matches, selectedText){
   let activeResultsCat = 'all';
+  printCtxResults = { matches: matches, selectedText: selectedText };   // ל״ייצוא כרטסת״ (print.js)
 
   function render(){
     renderResultsChips(matches, activeResultsCat, (catId) => { activeResultsCat = catId; render(); });
