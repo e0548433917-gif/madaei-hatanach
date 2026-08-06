@@ -27,12 +27,13 @@
     <div id="homeSearchDrop" class="hs-drop"></div>
   </div>
 
-  <!-- "מי בפרשה הזו" (2.7): בחירת פרשה מציגה את כל הערכים (מכל המדריכים) שיש להם
-       מקור בתוך טווח הפרשה, בתוך אותו חלון תוצאות זיהוי (#resultsOverlay). -->
-  <div id="parashaPickerWrap">
-    <span id="parashaPickerIcon">📖</span>
-    <select id="parashaSelect" aria-label="מי בפרשה הזו — בחירת פרשה"></select>
-    <button id="parashaGoBtn" type="button">הצג</button>
+  <!-- שורת "לימוד": פרשת השבוע (2.7, פעיל) · נ״ך · משנה ותלמוד (שני האחרונים -
+       placeholder בלבד, ייבנו בסבבים הבאים). נפרדת משורת ששת המדריכים שמתחתיה. -->
+  <div class="cards-sep"><span>לימוד</span></div>
+  <div class="cards" id="studyGrid">
+    <div class="card" id="parashaCard"><span class="icon">📖</span><span class="label">פרשת השבוע</span></div>
+    <div class="card card-soon" id="nachCard" title="בקרוב"><span class="icon">📜</span><span class="label">נ״ך</span></div>
+    <div class="card card-soon" id="talmudCard" title="בקרוב"><span class="icon">📚</span><span class="label">משנה ותלמוד</span></div>
   </div>
 
   <div class="cards" id="cardsGrid">
@@ -120,6 +121,18 @@
     <div id="resultsFoot">
       <button id="resultsPrintBtn" class="panel-btn" type="button" title="הדפסת כל תוצאות הזיהוי כדף מקורות">🖨 ייצוא כרטסת</button>
       <button id="closeResults" type="button">סגור</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel-overlay" id="parashaPanelOverlay">
+  <div class="panel-box">
+    <h2>📖 מי בפרשה הזו</h2>
+    <p class="panel-hint">בחרו פרשה כדי לראות את כל הערכים (אישים, מקומות, בע״ח, צומח, דומם ובית המקדש) שיש להם מקור בתוך הפרשה.</p>
+    <select id="parashaSelect" aria-label="בחירת פרשה"></select>
+    <div class="panel-actions">
+      <button class="panel-btn" id="parashaGoBtn">הצג</button>
+      <button class="panel-btn secondary" id="parashaPanelClose">סגירה</button>
     </div>
   </div>
 </div>

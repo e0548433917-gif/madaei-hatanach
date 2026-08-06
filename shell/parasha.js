@@ -115,8 +115,24 @@ function entriesForParasha(parashaId){
 }
 
 // ---- UI: בורר הפרשה בעמוד השער ----
+// הכרטיס "פרשת השבוע" (בשורת "לימוד") פותח פאנל בחירה קטן (panel-overlay משותף
+// עם addHtmlOverlay וכו') - בחירה/״הצג״ סוגרים אותו ופותחים את תוצאות הזיהוי.
+const parashaCard = document.getElementById('parashaCard');
+const parashaPanelOverlay = document.getElementById('parashaPanelOverlay');
 const parashaSelect = document.getElementById('parashaSelect');
 const parashaGoBtn = document.getElementById('parashaGoBtn');
+const parashaPanelClose = document.getElementById('parashaPanelClose');
+
+if (parashaCard) parashaCard.addEventListener('click', () => {
+  parashaPanelOverlay.classList.add('open');
+});
+if (parashaPanelClose) parashaPanelClose.addEventListener('click', () => {
+  parashaPanelOverlay.classList.remove('open');
+});
+// שתי המשבצות הבאות (2.10ב ואילך) - עדיין לא נבנו, ולא נשארות מתות בלי תגובה.
+document.querySelectorAll('#nachCard, #talmudCard').forEach(card => {
+  card.addEventListener('click', () => window.alert('בקרוב — עדיין לא נבנה במדריך.'));
+});
 
 function populateParashaSelect(){
   if (!parashaSelect) return;
@@ -146,9 +162,12 @@ async function showParasha(parashaId){
   }
 }
 
+function pickParasha(parashaId){
+  if (!parashaId) return;
+  parashaPanelOverlay.classList.remove('open');
+  showParasha(parashaId);
+}
 if (parashaGoBtn) parashaGoBtn.addEventListener('click', () => {
-  if (parashaSelect && parashaSelect.value) showParasha(parashaSelect.value);
+  if (parashaSelect) pickParasha(parashaSelect.value);
 });
-if (parashaSelect) parashaSelect.addEventListener('change', () => {
-  if (parashaSelect.value) showParasha(parashaSelect.value);
-});
+if (parashaSelect) parashaSelect.addEventListener('change', () => pickParasha(parashaSelect.value));
