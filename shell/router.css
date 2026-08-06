@@ -773,6 +773,7 @@ html, body {
 .mini-hint { font-weight: 400; color: var(--color-on-surface-ghost); }
 .danger-link { color: var(--color-error); }
 .offline-map { height: 220px; border-radius: var(--radius-md); margin: 8px 0; background: var(--color-map-bg); }
+.journey-map { height: 240px; border-radius: var(--radius-md); margin: 8px 0; background: var(--color-map-bg); }
 
 /* ==================== שדות וכפתורים שנוצרים ב-JS ==================== */
 .f-input, .f-textarea {

@@ -106,14 +106,16 @@ function findPlaceEntryByName(name){
   return (idx && idx.get(normalizeHeb(name))) || null;
 }
 
-function placeLinkedText(value){
-  const text = Array.isArray(value) ? value.join(', ') : String(value == null ? '' : value);
-  if (!placesNameIndex()) return esc(text);
+// סורק טקסט חופשי אחרי מופעי מקום - **רק** דרך lookupPlaceByPhrase/placesNameIndex,
+// בלי אינדקס/התאמה משלו. קורא ל-onHit(place, startIdx, endIdx) לפי סדר ההופעה
+// בטקסט. משותף להדגשת קישורים (placeLinkedText) ולמפת המסע (2.8, journeyPointsFor).
+function scanPlaceMatches(text, onHit){
+  if (!placesNameIndex()) return;
   const toks = [];
   let m;
   HEB_WORD_RE.lastIndex = 0;
   while ((m = HEB_WORD_RE.exec(text)) !== null) toks.push({ s: m.index, e: m.index + m[0].length });
-  let out = '', cursor = 0, i = 0;
+  let i = 0;
   while (i < toks.length){
     let hit = null, span = 1;
     for (let len = Math.min(3, toks.length - i); len >= 1; len--){
@@ -122,14 +124,95 @@ function placeLinkedText(value){
       if (found){ hit = found; span = len; break; }
     }
     if (!hit){ i++; continue; }
-    const s = toks[i].s, e = toks[i + span - 1].e;
+    onHit(hit, toks[i].s, toks[i + span - 1].e);
+    i += span;
+  }
+}
+
+function placeLinkedText(value){
+  const text = Array.isArray(value) ? value.join(', ') : String(value == null ? '' : value);
+  if (!placesNameIndex()) return esc(text);
+  let out = '', cursor = 0;
+  scanPlaceMatches(text, (hit, s, e) => {
     out += esc(text.slice(cursor, s));
     out += `<span class="place-link" data-place="${esc(hit.name)}">${esc(text.slice(s, e))}</span>`;
     cursor = e;
-    i += span;
-  }
+  });
   out += esc(text.slice(cursor));
   return out;
+}
+
+// הנקודה הראשונה שבטקסט של השדה - לצורך מפת המסע. שדה מקום הוא טקסט חופשי
+// ("מערת המכפלה בחברון") ולא שם נקי, ולכן אין מה "לבחור" מלבד המופע הראשון.
+function firstPlaceInText(text){
+  let found = null;
+  scanPlaceMatches(text, (hit) => { if (!found) found = hit; });
+  return found;
+}
+
+// ---- מפת מסע לאישיות (2.8): לידה → מגורים → פטירה → קבורה, על אותה מפה אופלין
+// (Natural Earth + Leaflet) שכבר משמשת את renderOfflineMiniMap ואת מפת המקומות
+// המלאה. אישיות בלי אף מקום עם קואורדינטות - בלי מפה בכלל, לא מפה ריקה.
+const JOURNEY_STAGES = [
+  { field:'birthPlace',  label:'לידה',   color:'#2E8B57' },
+  { field:'dwelling',    label:'מגורים', color:'#1F7FB8' },
+  { field:'deathPlace',  label:'פטירה',  color:'#9C4A2E' },
+  { field:'burialPlace', label:'קבורה',  color:'#6b5637' },
+];
+function journeyPointsFor(entry){
+  const points = [];
+  JOURNEY_STAGES.forEach(stage => {
+    const raw = entry[stage.field];
+    if (!raw) return;
+    const text = Array.isArray(raw) ? raw.join(', ') : String(raw);
+    const place = firstPlaceInText(text);
+    const geo = place && place.methods && place.methods[0] && place.methods[0].geo;
+    if (place && geo && geo.length >= 2){
+      points.push({ label: stage.label, color: stage.color, name: place.name, lat: geo[0], lng: geo[1] });
+    }
+  });
+  return points;
+}
+
+let journeyMapSeq = 0;
+const journeyMapRegistry = new Map(); // id -> points[]
+function registerJourneyMap(points){
+  const id = 'jm' + (++journeyMapSeq);
+  journeyMapRegistry.set(id, points);
+  return id;
+}
+function journeyPinIcon(color, num){
+  const s = 27;
+  const html = `<svg width="${s}" height="${s}" viewBox="0 0 24 24">
+    <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="${color}" stroke="#FFF8E7" stroke-width="1.3"/>
+    <text x="12" y="11.7" text-anchor="middle" font-size="9" font-weight="700" fill="#FFF8E7">${num}</text></svg>`;
+  return L.divIcon({ className:'geo-pin', html, iconSize:[s,s], iconAnchor:[s/2,s], popupAnchor:[0,-s+6] });
+}
+function renderJourneyMap(container, points){
+  if (typeof window.L === 'undefined' || typeof addBaseLayers !== 'function' || !points || !points.length){
+    container.remove();
+    return;
+  }
+  try {
+    const map = L.map(container, { minZoom: 2, maxZoom: MAP_MAX_ZOOM, scrollWheelZoom: false, zoomControl: true });
+    map.attributionControl.setPrefix('');
+    map.attributionControl.addAttribution('Natural Earth');
+    addBaseLayers(map);
+    const latlngs = points.map(p => [p.lat, p.lng]);
+    if (latlngs.length > 1){
+      L.polyline(latlngs, { color: '#6b5637', weight: 2.5, opacity: .75, dashArray: '5,6' }).addTo(map);
+    }
+    points.forEach((p, i) => {
+      L.marker([p.lat, p.lng], { icon: journeyPinIcon(p.color, i + 1) }).addTo(map)
+        .bindTooltip((i + 1) + '. ' + p.label + ': ' + p.name, { direction: 'top' });
+    });
+    if (latlngs.length === 1) map.setView(latlngs[0], 7);
+    else map.fitBounds(latlngs, { padding: [26, 26], maxZoom: MAP_MAX_ZOOM });
+    setTimeout(() => map.invalidateSize(), 120);
+  } catch(e){
+    console.warn('madaei-hatanach: journey map failed', e);
+    container.textContent = 'מפה לא זמינה כרגע.';
+  }
 }
 
 // ---- סכימת שדות לכל מדריך ----
@@ -277,6 +360,15 @@ function renderEntryDetailHTML(entry, catIdOverride){
     }
     html += fieldBlock(label, v);
   });
+
+  // מפת מסע (2.8): לידה→מגורים→פטירה→קבורה, רק אם יש בפועל לפחות מקום אחד עם geo
+  if (personEntry && !disambig){
+    const journeyPoints = journeyPointsFor(entry);
+    if (journeyPoints.length){
+      const jmId = registerJourneyMap(journeyPoints);
+      html += `<div class="field-label">מפת מסע</div><div class="journey-map" data-journey="${esc(jmId)}"></div>`;
+    }
+  }
 
   // שדות מותאמים שהמשתמש הוסיף (קטגוריות חדשות: קישורים, מידע מחז"ל וכו')
   custom.forEach(k => {
@@ -443,6 +535,9 @@ function wireEntryDetail(container, entry, onEdit){
   container.querySelectorAll('.offline-map').forEach(el => {
     const [lat, lng, zoom] = el.dataset.geo.split(',').map(Number);
     renderOfflineMiniMap(el, lat, lng, zoom, el.dataset.cat);
+  });
+  container.querySelectorAll('.journey-map[data-journey]').forEach(el => {
+    renderJourneyMap(el, journeyMapRegistry.get(el.dataset.journey));
   });
   container.querySelectorAll('.person-link').forEach(el => {
     el.addEventListener('click', (ev) => {
