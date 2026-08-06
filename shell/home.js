@@ -34,17 +34,10 @@ async function renderSavedHtmlList(){
     row.querySelector('[data-open]').addEventListener('click', () => openCustomHtmlPage(name));
     row.querySelector('[data-send]').addEventListener('click', async () => {
       const content = await storageGet('madaei_html_page__' + name);
-      if (!hasOtzaria()) { window.alert('שליחה דורשת פתיחה בתוך אוצריא.'); return; }
-      try {
-        await Otzaria.call('feedback.sendEmail', {
-          to: DEV_EMAIL, subject: 'דף HTML מצורף מתמונ״ך - ' + name,
-          body: 'המשתמש הוסיף דף HTML בשם "' + name + '" (תמונ״ך).\n\nתוכן הדף מצורף למטה:\n\n' + (content || ''),
-          includeSystemInfo: true
-        });
-        await Otzaria.call('notifications.showInApp', { message: 'נשלח למפתח, תודה!', type: 'success' }).catch(()=>{});
-      } catch(e){
-        await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחה', type: 'error' }).catch(()=>{});
-      }
+      // 2.13.2 — דרך ממסר הדיווחים (sendToDev ב-personal.js), לא במייל.
+      await sendToDev('דף HTML מצורף — ' + name,
+        'המשתמש הוסיף דף HTML בשם "' + name + '".\n\nתוכן הדף מצורף למטה:\n\n' + (content || ''),
+        'דף HTML');
     });
     row.querySelector('[data-del]').addEventListener('click', async () => {
       if (!window.confirm('למחוק את "' + name + '"?')) return;
@@ -275,9 +268,20 @@ const dailyEventLabel = document.getElementById('dailyEventLabel');
 const dailyEventOverlay = document.getElementById('dailyEventOverlay');
 const dailyEventBody = document.getElementById('dailyEventBody');
 
+// מקור המאורע הופך לקישור לחיץ לספרייה כשהוא נפרש (parseColonVerseRef, dates.js) -
+// הקליק עצמו מחובר אחרי ה-innerHTML, כמו verse-card.clickable ב-entry-detail.js.
 function dateEventRow(ev, monthLabel){
-  return `<div class="src-item"><div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}</div>`
-    + (ev.source ? `<div class="src-note">${esc(ev.source)}</div>` : '') + `</div>`;
+  const parsed = parseColonVerseRef(ev.source);
+  const openAttr = parsed ? ` data-vbook="${esc(parsed.bookId)}" data-vref="${esc(parsed.ref)}"` : '';
+  return `<div class="src-item${parsed ? ' clickable' : ''}"${openAttr}>
+    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}</div>
+    ${ev.source ? `<div class="src-note">${esc(ev.source)}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>` : ''}
+  </div>`;
+}
+function wireDateEventLinks(container){
+  container.querySelectorAll('.src-item.clickable[data-vbook]').forEach(el => {
+    el.addEventListener('click', () => openInReader(el.dataset.vbook, el.dataset.vref));
+  });
 }
 function renderDailyEventBody(){
   const t = todayHebrew();
@@ -295,7 +299,9 @@ function renderDailyEventBody(){
     html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
       + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
   });
+  html += '<p class="mini-note" style="margin-top:14px;">מקור הנתונים: תוסף ״ביוגרפיות״ מאת Yair Daniel.</p>';
   dailyEventBody.innerHTML = html;
+  wireDateEventLinks(dailyEventBody);
 }
 if (dailyEventLabel){
   const t = todayHebrew();
