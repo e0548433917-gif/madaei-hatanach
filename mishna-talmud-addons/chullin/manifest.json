@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "com.chadbedera.chullinguide",
+  "name": "חולין",
+  "version": "1.6.0",
+  "description": "מדריך לסוגיות מרכזיות במסכת חולין — שחיטה, ריאה וסירכות, ואלו טרפות, עם מקורות מקושרים ישירות לספרייה וזיהוי מונחים בלחיצה ימנית.",
+  "author": "חד בדרא",
+  "stability": "beta",
+  "minAppVersion": "0.9.95",
+  "sdkVersion": "1.x",
+  "icon": "icon/icon.png",
+  "entrypoint": "index.html",
+  "permissions": [
+    "reader.context_menu",
+    "app.run_on_startup",
+    "feedback.send_email",
+    "reader.open",
+    "ui.feedback"
+  ],
+  "contributes": {
+    "toolTab": {
+      "title": "חולין",
+      "order": 40,
+      "defaultPinned": true,
+      "iconName": "book_24_regular"
+    }
+  }
+}

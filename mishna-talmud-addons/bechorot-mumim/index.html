@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מדריך מומים</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="corner-dock">
+  <button id="lightbulb-btn" title="שליחת משוב על התוסף">💡 להארות</button>
+  <div id="copyright-badge">© כל הזכויות שמורות · חד בדרא</div>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">משנה בכורות ו-ז · בבלי בכורות לח-מה · רמב״ם הלכות ביאת מקדש ו-ח</div>
+  <h1>מדריך מומים</h1>
+  <p class="sub" id="heroSub">אלו מומים פוסלים בהמה מן המזבח ואלו פוסלים כהן מן העבודה — מדריך שיטתי לפי סדר הרמב״ם, מום אחר מום, עם ציטוט המקור לכל אחד — ובמקום שיש מקבילה ברורה, גם זיהוי רפואי מודרני משוער. לחצו על כרטיס להרחבה.</p>
+  <div class="counts" id="counts"></div>
+  <span id="lookupStatus" class="lookup-status" style="display:none;"></span>
+  <span class="disclosure-line">נוצר באמצעות Claude ע״י חד בדרא · תוכן זה נועד ללימוד עיוני בלבד ואינו הוראה למעשה.</span>
+</header>
+
+<div class="controls">
+  <div class="controls-inner">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="text" autocomplete="off" placeholder="חיפוש מום, כגון תבלול, חרום, יבלת…">
+      <div id="suggestBox" class="suggest-box"></div>
+    </div>
+    <button class="filters-toggle" id="filtersToggle" aria-expanded="false">☰ סינון</button>
+  </div>
+  <div class="filters-summary" id="filtersSummary"></div>
+  <div class="filters-body collapsed" id="filtersBody">
+    <div class="chips-row"><span class="chips-label">סוג הפסול:</span><div class="chips" id="scopeChips"></div></div>
+    <div class="chips-row"><span class="chips-label">איבר:</span><div class="chips" id="chips"></div></div>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="closeBtn">✕</button>
+    <div id="modalInner"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

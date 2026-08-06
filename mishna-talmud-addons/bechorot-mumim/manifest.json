@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "com.chadbedera.mumimguide",
+  "name": "מומים",
+  "version": "3.0.0",
+  "description": "מדריך למומי בהמה ואדם הפוסלים מן המזבח ומן הכהונה — לפי משנה בכורות ו-ז ומשנה תורה לרמב״ם, עם זיהוי מונחים בלחיצה ימנית וקישורים למקורות.",
+  "author": "חד בדרא",
+  "stability": "beta",
+  "minAppVersion": "0.9.95",
+  "sdkVersion": "1.x",
+  "icon": "icon/icon.png",
+  "entrypoint": "index.html",
+  "permissions": [
+    "reader.context_menu",
+    "events.subscribe:theme.changed",
+    "app.run_on_startup",
+    "feedback.send_email",
+    "reader.open",
+    "ui.feedback"
+  ],
+  "contributes": {
+    "toolTab": {
+      "title": "מומים",
+      "order": 40,
+      "defaultPinned": true,
+      "iconName": "book_24_regular"
+    }
+  }
+}

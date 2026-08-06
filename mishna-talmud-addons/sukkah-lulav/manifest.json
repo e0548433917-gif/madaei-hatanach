@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "com.chadbedera.sukkotguide",
+  "name": "סוכה ולולב",
+  "version": "1.2.2",
+  "description": "מדריך לפסולי הסוכה (פרק א) ולפסולי ארבעת המינים (פרק ג) לפי המשנה, הבבלי והירושלמי — מקורות מקושרים וזיהוי מונחים בלחיצה ימנית.",
+  "author": "חד בדרא",
+  "stability": "beta",
+  "minAppVersion": "0.9.95",
+  "sdkVersion": "1.x",
+  "icon": "icon/icon.png",
+  "entrypoint": "index.html",
+  "permissions": [
+    "reader.context_menu",
+    "app.run_on_startup",
+    "feedback.send_email",
+    "reader.open",
+    "ui.feedback",
+    "notifications.send"
+  ],
+  "contributes": {
+    "toolTab": {
+      "title": "סוכה ולולב",
+      "order": 40,
+      "defaultPinned": true,
+      "iconName": "book_24_regular"
+    }
+  }
+}
