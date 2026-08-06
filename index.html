@@ -27,6 +27,14 @@
     <div id="homeSearchDrop" class="hs-drop"></div>
   </div>
 
+  <!-- "מי בפרשה הזו" (2.7): בחירת פרשה מציגה את כל הערכים (מכל המדריכים) שיש להם
+       מקור בתוך טווח הפרשה, בתוך אותו חלון תוצאות זיהוי (#resultsOverlay). -->
+  <div id="parashaPickerWrap">
+    <span id="parashaPickerIcon">📖</span>
+    <select id="parashaSelect" aria-label="מי בפרשה הזו — בחירת פרשה"></select>
+    <button id="parashaGoBtn" type="button">הצג</button>
+  </div>
+
   <div class="cards" id="cardsGrid">
     <div class="card" data-cat="people"><img class="icon-img" src="icon/cats/people.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;👤&lt;/span&gt;'"><span class="label">אישים בתנ״ך</span></div>
     <div class="card" data-cat="places"><img class="icon-img" src="icon/cats/places.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📍&lt;/span&gt;'"><span class="label">מקומות בתנ״ך</span></div>
@@ -206,7 +214,8 @@
 <div id="printRoot" aria-hidden="true"></div>
 
 <!-- שכבת התוסף, מפוצלת ל-12 מודולים (2.11.2). הסדר קריטי ואינו שרירותי:
-     (13 מאז 2.12.0 — co-mentions.js נוסף אחרי refs.js, שממנו הוא לוקח את TANAKH_BOOKS)
+     (13 מאז 2.12.0 — co-mentions.js נוסף אחרי refs.js, שממנו הוא לוקח את TANAKH_BOOKS.
+      14 מאז 2.13.0 — parasha.js נוסף אחרי co-mentions.js, שממנו הוא לוקח את verseKeysOfRef)
      core ראשון כי כולם נשענים עליו, ו-bridge אחרון כי הוא מריץ את האתחול בפועל.
      בכוונה <script> רגיל ולא type="module" — כל הקבצים חולקים scope גלובלי אחד. -->
 <script src="shell/core.js"></script>
@@ -214,6 +223,7 @@
 <script src="shell/identify.js"></script>
 <script src="shell/refs.js"></script>
 <script src="shell/co-mentions.js"></script>
+<script src="shell/parasha.js"></script>
 <script src="shell/guides.js"></script>
 <script src="shell/entry-detail.js"></script>
 <script src="shell/print.js"></script>
