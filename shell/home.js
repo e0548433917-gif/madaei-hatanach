@@ -265,3 +265,46 @@ attachLiveSearch({
   wrapSel: '#guideSearchWrap, #guideIdentifyBtn',
   preferCat: () => currentGuideCat && currentGuideCat.id
 });
+
+// ============================================================
+//  "ערך היום" (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום, מתוך
+//  TANAKH_DATE_EVENTS (guides/_shared/dates.js). דאטה קבועה, בלי רשת.
+// ============================================================
+const dailyEventCard = document.getElementById('dailyEventCard');
+const dailyEventLabel = document.getElementById('dailyEventLabel');
+const dailyEventOverlay = document.getElementById('dailyEventOverlay');
+const dailyEventBody = document.getElementById('dailyEventBody');
+
+function dateEventRow(ev, monthLabel){
+  return `<div class="src-item"><div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}</div>`
+    + (ev.source ? `<div class="src-note">${esc(ev.source)}</div>` : '') + `</div>`;
+}
+function renderDailyEventBody(){
+  const t = todayHebrew();
+  const today = eventsForToday();
+  let html = `<p class="panel-hint">היום ${esc(t.dayLetters)}' ${esc(t.monthName)}</p>`;
+  if (today.length){
+    html += '<div class="field-label">מאורעות התנ״ך היום</div>' + today.map(ev => dateEventRow(ev, t.monthName)).join('');
+  } else {
+    html += '<p class="mini-note">אין מאורע תנ״ך רשום לתאריך זה ברשימה (חלקית - ר׳ הרשימה המלאה למטה).</p>';
+  }
+  html += '<div class="field-label" style="margin-top:16px;">כל מאורעות התנ״ך לפי חודש</div>';
+  HEBREW_MONTHS_ORDER.forEach(month => {
+    const items = TANAKH_DATE_EVENTS.filter(e => e.month === month);
+    if (!items.length) return;
+    html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
+      + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
+  });
+  dailyEventBody.innerHTML = html;
+}
+if (dailyEventLabel){
+  const t = todayHebrew();
+  dailyEventLabel.textContent = 'ערך היום — ' + t.dayLetters + "' " + t.monthName;
+}
+if (dailyEventCard) dailyEventCard.addEventListener('click', () => {
+  renderDailyEventBody();
+  dailyEventOverlay.classList.add('open');
+});
+document.getElementById('dailyEventClose').addEventListener('click', () => {
+  dailyEventOverlay.classList.remove('open');
+});

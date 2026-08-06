@@ -445,6 +445,12 @@ html, body {
   border: 1px solid var(--color-outline-faint); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 6px;
 }
 .saved-html-row button { font-size: .8em; padding: 5px 10px; }
+/* מאורעות התנ״ך לפי חודש (2.10א) - שימוש ב-details/summary הטבעיים של הדפדפן */
+.panel-box .month-details { margin: 6px 0; }
+.panel-box .month-details summary {
+  cursor: pointer; font-weight: 600; font-size: .9em; padding: 4px 0; color: var(--color-primary);
+}
+.panel-box .month-details .src-item { margin-top: 6px; }
 
 /* ==================== חלון תוצאות זיהוי ==================== */
 #resultsOverlay {
@@ -736,11 +742,11 @@ html, body {
 
 #entryModalInner h2, .result-row-detail h2 { margin: 0 0 6px; font-size: 1.45em; line-height: 1.35; }
 #entryModalInner .entry-sub, .result-row-detail .entry-sub { font-size: .83em; color: var(--color-on-surface-faint); margin-bottom: 14px; }
-#entryModalInner .field-label, .result-row-detail .field-label {
+#entryModalInner .field-label, .result-row-detail .field-label, .panel-box .field-label {
   font-size: .86em; font-weight: 700; color: var(--color-primary);
   margin: 18px 0 6px; letter-spacing: .01em;
 }
-#entryModalInner .field-label:first-child, .result-row-detail .field-label:first-child { margin-top: 0; }
+#entryModalInner .field-label:first-child, .result-row-detail .field-label:first-child, .panel-box .field-label:first-child { margin-top: 0; }
 #entryModalInner p, .result-row-detail p { margin: 0 0 8px; font-size: .93em; line-height: 1.7; }
 #entryModalInner .conf-tag, .result-row-detail .conf-tag {
   display: inline-block; font-size: .75em; padding: 3px 12px; border-radius: var(--radius-pill);
@@ -750,7 +756,7 @@ html, body {
 #entryModalInner .method-block, .result-row-detail .method-block {
   border: 1px solid var(--color-outline-faint); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; background: var(--color-surface-3);
 }
-#entryModalInner .verse-card, .result-row-detail .verse-card, #entryModalInner .src-item, .result-row-detail .src-item {
+#entryModalInner .verse-card, .result-row-detail .verse-card, #entryModalInner .src-item, .result-row-detail .src-item, .panel-box .src-item {
   background: var(--color-surface-3); border: 1px solid var(--color-outline-faint);
   border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 8px;
   transition: border-color .15s, background .15s;
@@ -759,9 +765,10 @@ html, body {
 #entryModalInner .verse-card.clickable:hover, .result-row-detail .verse-card.clickable:hover, #entryModalInner .src-item.clickable:hover, .result-row-detail .src-item.clickable:hover {
   border-color: var(--color-primary); background: var(--color-primary-subtle);
 }
-#entryModalInner .verse-ref, .result-row-detail .verse-ref, #entryModalInner .src-source, .result-row-detail .src-source {
+#entryModalInner .verse-ref, .result-row-detail .verse-ref, #entryModalInner .src-source, .result-row-detail .src-source, .panel-box .src-source {
   font-weight: 700; font-size: .86em; color: var(--color-secondary); margin-bottom: 4px;
 }
+.panel-box .src-note { font-size: .85em; color: var(--color-on-surface-dim); }
 /* יושב בתוך .verse-ref שכבר מוקטן - גודל מוחלט כדי שלא יצטבר */
 #entryModalInner .open-hint, .result-row-detail .open-hint { font-size: calc(.78 * var(--fs)); color: var(--color-primary); font-weight: 400; }
 #entryModalInner .verse-text, .result-row-detail .verse-text { font-size: 1em; line-height: 1.85; }

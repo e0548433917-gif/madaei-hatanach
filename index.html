@@ -49,6 +49,8 @@
        הופרדה מששת המדריכים כדי ששורת המדריכים תישאר 3+3 מלאה ולא תיקטע באמצע. -->
   <div class="cards-sep"><span>שלי</span></div>
   <div class="cards" id="extraGrid">
+    <!-- ערך היום (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום -->
+    <div class="card" id="dailyEventCard"><span class="icon">📅</span><span class="label" id="dailyEventLabel">ערך היום</span></div>
     <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
   </div>
   <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
@@ -136,6 +138,14 @@
       <button class="panel-btn" id="parashaGoBtn">הצג</button>
       <button class="panel-btn secondary" id="parashaPanelClose">סגירה</button>
     </div>
+  </div>
+</div>
+
+<div class="panel-overlay" id="dailyEventOverlay">
+  <div class="panel-box">
+    <h2>📅 מאורעות התנ״ך לפי תאריך</h2>
+    <div id="dailyEventBody"></div>
+    <div class="panel-actions"><button class="panel-btn secondary" id="dailyEventClose">סגירה</button></div>
   </div>
 </div>
 
@@ -238,6 +248,9 @@
 <script src="shell/identify.js"></script>
 <script src="shell/refs.js"></script>
 <script src="shell/co-mentions.js"></script>
+<!-- מאורעות התנ״ך לפי תאריך (2.10א) - דאטה משותפת, לא ספציפית למדריך אחד.
+     נשען על numToHeb/gematriaValue מ-co-mentions.js. -->
+<script src="guides/_shared/dates.js"></script>
 <script src="shell/parasha.js"></script>
 <script src="shell/guides.js"></script>
 <script src="shell/entry-detail.js"></script>
