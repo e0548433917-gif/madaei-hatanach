@@ -51,7 +51,7 @@ function buildPrintSheet(sourceLabel, items){
   printRoot.innerHTML = '';
   const head = document.createElement('header');
   head.className = 'print-head';
-  head.innerHTML = '<div class="print-brand">תמונ״ך</div>'
+  head.innerHTML = '<div class="print-brand">עינים למקרא</div>'
     + '<div class="print-meta">' + esc(sourceLabel) + ' · ' + esc(printDateStr())
     + (items.length > 1 ? ' · ' + items.length + ' ערכים' : '') + '</div>';
   printRoot.appendChild(head);

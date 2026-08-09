@@ -399,7 +399,14 @@ backBtn.addEventListener('click', closeFrame);
 // כפתור "חזרה" בתוך כל מדריך רץ בתוך ה-iframe, ולכן משדר הודעה להורה במקום לנווט
 // את עצמו (ניווט של ה-iframe עצמו לא בעייתי, אבל עדיף לסגור את המסגרת ולחזור לעמוד הכניסה).
 window.addEventListener('message', (ev) => {
-  if (ev.data && ev.data.__madaeiHatanachBack) closeFrame();
+  if (!ev.data) return;
+  if (ev.data.__madaeiHatanachBack) closeFrame();
+  // משוב ממדריך מוטמע (guides/talmud-tools/*): עובר לממסר הדיווחים הרגיל,
+  // כי הרשאת שליחת המייל בוטלה ב-2.13.2.
+  if (ev.data.__madaeiHatanachFeedback){
+    const src = String(ev.data.source || 'מדריך מוטמע');
+    sendToDev('משוב — ' + src, String(ev.data.body || ''), src);
+  }
 });
 
 document.querySelectorAll('.card[data-cat]').forEach(card => {

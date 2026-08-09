@@ -1,5 +1,5 @@
 <#
-  סקריפט אריזה למדעי התנ״ך (״תמונ״ך״).
+  סקריפט אריזה למדעי התנ״ך (״עינים למקרא״).
   בכל הרצה: בדיקת שפיות → העלאת מספר הגרסה במניפסט → ערך חדש ב-CHANGELOG →
   אריזת שני תוצרים:
     1. .otzplugin  - קובץ zip רגיל בשם החבילה, להתקנה בתוך אוצריא (חנות התוספים / התקנה מקובץ).
@@ -152,7 +152,7 @@ if (-not $NoChangelog) {
   }
   [void]$entry.AppendLine("")
 
-  $clRaw = if (Test-Path $changelogPath) { Get-Content $changelogPath -Raw -Encoding UTF8 } else { "# CHANGELOG — תמונ״ך`r`n`r`n" }
+  $clRaw = if (Test-Path $changelogPath) { Get-Content $changelogPath -Raw -Encoding UTF8 } else { "# CHANGELOG — עינים למקרא`r`n`r`n" }
   if ($clRaw -match ("(?m)^##\s+" + [regex]::Escape($newVersion) + "\s")) {
     Write-Warning "כבר קיים ערך ל-$newVersion ב-CHANGELOG.md — לא נכתב ערך נוסף."
   } else {
@@ -185,7 +185,9 @@ New-Item -ItemType Directory -Path $stageDir | Out-Null
 # מה לא נשלח למשתמשים. שים לב: assets/ ו-docs/ נכנסו לריפו ב-2.11.3 והחבילה קפצה
 # מ-12MB ל-50MB, כי הם לא היו ברשימה הזו. הם חומרי פיתוח בלבד — אין אליהם שום
 # הפניה מ-index.html או מ-shell/. אותו דבר tools/ (סקריפט ולידציה שרץ ב-node).
-$excludeDirs = @('build', 'dist', '.git', '.claude', 'assets', 'docs', 'tools')
+# mishna-talmud-addons/ הוא גיבוי קוד-מקור בלבד (המניפסטים והאיקונים של 3 התוספים
+# העצמאיים). מה שנטען בפועל הוא guides/talmud-tools/ — ר׳ ט.2 בתוכנית.
+$excludeDirs = @('build', 'dist', '.git', '.claude', 'assets', 'docs', 'tools', 'mishna-talmud-addons')
 $excludeFiles = @('_serve.ps1', 'README.md', 'למפתחים.md', 'פוסט-לפורום.md', '.gitignore', '.gitattributes')
 
 Get-ChildItem -Path $root -Force | Where-Object {
@@ -305,11 +307,11 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 # גוף ה-Release = ערך ה-CHANGELOG של הגרסה הזו בלבד (עד הכותרת ## הבאה)
 $clText = Get-Content $changelogPath -Raw -Encoding UTF8
 $m = [regex]::Match($clText, "(?ms)^##\s+" + [regex]::Escape($newVersion) + "\s.*?(?=^##\s|\z)")
-$relNotes = if ($m.Success) { $m.Value.Trim() } else { "תמונ״ך $newVersion" }
+$relNotes = if ($m.Success) { $m.Value.Trim() } else { "עינים למקרא $newVersion" }
 $notesFile = Join-Path $env:TEMP "madaei-release-$newVersion.md"
 [System.IO.File]::WriteAllText($notesFile, $relNotes, [System.Text.UTF8Encoding]::new($false))
 
-& gh release create $tag $otzpluginPath $standalonePath --title "תמונ״ך $newVersion" --notes-file $notesFile
+& gh release create $tag $otzpluginPath $standalonePath --title "עינים למקרא $newVersion" --notes-file $notesFile
 if ($LASTEXITCODE -ne 0) { Write-Warning "gh release create נכשל. התג כבר נדחף — אפשר ליצור את ה-Release ידנית ולצרף: $otzpluginPath" }
 else { Write-Host "נוצר GitHub Release $tag עם החבילה מצורפת." -ForegroundColor Green }
 Remove-Item $notesFile -Force -ErrorAction SilentlyContinue

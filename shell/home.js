@@ -299,7 +299,7 @@ function renderDailyEventBody(){
     html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
       + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
   });
-  html += '<p class="mini-note" style="margin-top:14px;">מקור הנתונים: תוסף ״ביוגרפיות״ מאת Yair Daniel.</p>';
+  html += '<p class="mini-note" style="margin-top:14px;">מקור עיקרי: תוסף ״ביוגרפיות״ מאת Yair Daniel; חלק מהרשומות ממקורות נוספים (ר׳ מקור בכל רשומה).</p>';
   dailyEventBody.innerHTML = html;
   wireDateEventLinks(dailyEventBody);
 }

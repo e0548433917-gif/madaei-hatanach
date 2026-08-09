@@ -136,7 +136,7 @@ async function handleIdentifyClick(payload){
       const res = await Otzaria.call('ui.showConfirm', {
         title: 'לא נמצאה התאמה ל"' + snippet(text, 40) + '"',
         content: 'לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת קטגוריה, שליחה למפתח או שמירה במחשב.'
-          + (canOpenSelf ? '' : '\n\n(אין מעבר אוטומטי ללשונית בגרסת אוצריא זו — יש לפתוח את תמונ״ך ידנית, הטופס ימתין פתוח.)')
+          + (canOpenSelf ? '' : '\n\n(אין מעבר אוטומטי ללשונית בגרסת אוצריא זו — יש לפתוח את עינים למקרא ידנית, הטופס ימתין פתוח.)')
           + '\n\nהקטע שנבחר: "' + snippet(text, 120) + '"'
       });
       if (res && res.success && res.data && res.data.confirmed === true){
@@ -144,7 +144,7 @@ async function handleIdentifyClick(payload){
       }
     } catch(e){
       await Otzaria.call('notifications.showInApp', {
-        message: 'לא נמצאה התאמה ל"' + text + '" באף אחד ממדריכי תמונ״ך.',
+        message: 'לא נמצאה התאמה ל"' + text + '" באף אחד ממדריכי עינים למקרא.',
         type: 'info'
       }).catch(()=>{});
     }
@@ -176,8 +176,8 @@ async function handleIdentifyClick(payload){
   // ההוראה מופיעה **לפני** רשימת ההתאמות בכוונה: הרשימה היא החלק שגדל בלי גבול,
   // וכל מה שמתחתיה נדחק מחוץ לחלון החתוך. מה שחייב להיקרא נמצא בשתי השורות הראשונות.
   const action = canOpenSelf
-    ? ('לחיצה על אישור תפתח את תמונ״ך עם ' + (matches.length === 1 ? 'הכרטיס המלא.' : 'כל ' + matches.length + ' ההתאמות.'))
-    : 'אין מעבר אוטומטי בגרסת אוצריא זו — יש לפתוח את תמונ״ך ידנית.';
+    ? ('לחיצה על אישור תפתח את עינים למקרא עם ' + (matches.length === 1 ? 'הכרטיס המלא.' : 'כל ' + matches.length + ' ההתאמות.'))
+    : 'אין מעבר אוטומטי בגרסת אוצריא זו — יש לפתוח את עינים למקרא ידנית.';
   const contentParts = [];
   if (matches.length === 1){
     contentParts.push(lineFor(matches[0]));
@@ -205,7 +205,7 @@ function registerUnifiedMenuItem(){
   if (!(window.Otzaria && Otzaria.call)) return;
   Otzaria.call('reader.addContextMenuItem', {
     id: MENU_ITEM_ID,
-    label: 'זהה דצח״מ (ומקדש) בתמונ״ך!',
+    label: 'זיהוי בעינים למקרא',
     icon: 'search_24_regular'
   }).catch(()=>{});
 }
@@ -245,7 +245,7 @@ function waitForOtzaria(elapsed){
     // אחרת storage.get נופל מיד ל-null (הבדיקה hasOtzaria() נכשלת) והכרטיסים
     // לא מופיעים בטעינה ראשונה של עמוד השער, גם אם התוכן קיים בזיכרון.
     renderCustomPageCards();
-    // אם המופע הזה נפתח בעקבות "זהה בתמונ״ך" בספרייה — מציגים את מה שהמתין באחסון.
+    // אם המופע הזה נפתח בעקבות "זיהוי בעינים למקרא" בספרייה — מציגים את מה שהמתין באחסון.
     consumePendingIdentify();
     // ...וממשיכים לבדוק גם אחר כך: המופע הגלוי עשוי להיות טעון מזמן (חשד ב׳).
     startPendingIdentifyWatch();
@@ -340,7 +340,7 @@ function showUpdateNotice(remoteVersion){
   box.innerHTML =
     '<span aria-hidden="true" style="font-size:18px;line-height:1.2;">🔔</span>'
     + '<div style="flex:1;min-width:0;">'
-    +   '<div style="font-weight:600;">גרסה חדשה של תמונ״ך זמינה — ' + esc(remoteVersion) + '</div>'
+    +   '<div style="font-weight:600;">גרסה חדשה של עינים למקרא זמינה — ' + esc(remoteVersion) + '</div>'
     +   '<a href="#" data-external-link="' + esc(UPDATE_RELEASES_URL) + '" '
     +      'style="color:var(--color-link);text-decoration:underline;cursor:pointer;">לדף ההורדות בגיטהב ›</a>'
     + '</div>'

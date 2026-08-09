@@ -49,7 +49,7 @@ function renderResultsListRows(matches, selectedText){
     noResults.style.display = 'block';
     noResults.innerHTML = '<button type="button" class="panel-btn" id="noResPropose">➕ הצעת ערך חדש</button>';
     noResults.querySelector('#noResPropose').addEventListener('click', () => openGenericProposeForm(selectedText));
-    resultsQuote.textContent = 'לא נמצאה התאמה ל"' + selectedText + '" באף אחד ממדריכי תמונ״ך.';
+    resultsQuote.textContent = 'לא נמצאה התאמה ל"' + selectedText + '" באף אחד ממדריכי עינים למקרא.';
   } else {
     noResults.style.display = 'none';
     resultsQuote.textContent = 'נבחר: "' + selectedText + '"';
@@ -124,7 +124,7 @@ function openIdentifyErrorReport(selectedText, matches){
     </div>`;
   entryOverlay.classList.add('open');
   document.getElementById('idErrCancel').addEventListener('click', () => entryOverlay.classList.remove('open'));
-  const buildBody = () => 'דיווח טעות בזיהוי - תמונ״ך\n\nהקטע שנבחר: "' + selectedText + '"\n\nמה זוהה:\n' + (summary || '—')
+  const buildBody = () => 'דיווח טעות בזיהוי - עינים למקרא\n\nהקטע שנבחר: "' + selectedText + '"\n\nמה זוהה:\n' + (summary || '—')
     + '\n\nתיאור הטעות:\n' + (document.getElementById('idErrText').value.trim() || '—');
   document.getElementById('idErrSave').addEventListener('click', () => {
     try {

@@ -98,7 +98,7 @@ async function reportEnv(){
       if (v) otz = String(v);
     } catch(e){}
   }
-  reportEnvCache = 'תמונ״ך ' + plug + ' · אוצריא ' + otz;
+  reportEnvCache = 'עינים למקרא ' + plug + ' · אוצריא ' + otz;
   return reportEnvCache;
 }
 
@@ -323,7 +323,7 @@ async function flushReportOutbox(opts){
 // המשתמש נשאר עם הטקסט ביד, ועם הכתובת שאליה אפשר להדביק אותו.
 function reportItemToText(item){
   return [
-    'דיווח מתוסף תמונ״ך',
+    'דיווח מתוסף עינים למקרא',
     'סוג: ' + (item.kind || '—'),
     'כותרת: ' + (item.title || '—'),
     'סביבה: ' + (item.env || '—'),
@@ -353,7 +353,7 @@ function copyReportText(text){
 
 function saveReportsToFile(items, baseName){
   const text = (items || []).map(reportItemToText).join('\n\n==============================\n\n');
-  const name = (baseName || 'דיווח-תמונך') + '-' + new Date().toISOString().slice(0, 10) + '.txt';
+  const name = (baseName || 'דיווח-עינים-למקרא') + '-' + new Date().toISOString().slice(0, 10) + '.txt';
   try {
     const blob = new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -414,7 +414,7 @@ function buildReportPanel(){
     if (!title && !details.trim()){ window.alert('אין מה להוריד — הדיווח ריק.'); return; }
     reportEnv().then(env => {
       const item = newReportItem(kind, title || 'דיווח מהתוסף', details, env);
-      saveReportsToFile([item], 'דיווח-תמונך');
+      saveReportsToFile([item], 'דיווח-עינים-למקרא');
     });
   });
   ov.querySelector('#reportCopyIssuesLink').addEventListener('click', () => {
@@ -665,7 +665,7 @@ function renderPersonalEdits(){
   bulkBtn.className = 'panel-btn';
   bulkBtn.textContent = '📨 שליחת כל העריכות למפתח (' + edits.length + ')';
   bulkBtn.addEventListener('click', () => {
-    const body = 'עריכות מקומיות מתמונ״ך — ' + edits.length + ' כרטיסים\n\n'
+    const body = 'עריכות מקומיות מעינים למקרא — ' + edits.length + ' כרטיסים\n\n'
       + edits.map(e => '• ' + e.origName + ' (' + catLabelOf(e.catId) + ') — נשמר ' + fmtDate(e.rec.savedAt)).join('\n')
       + '\n\n--- הנתונים המלאים ---\n'
       + edits.map(e => '### ' + e.origName + ' [' + e.catId + ']\n' + JSON.stringify(e.rec.entry, null, 1)).join('\n\n');
@@ -735,7 +735,7 @@ function appendOutboxStatus(){
     dl.className = 'panel-btn secondary';
     dl.style.marginInlineStart = '6px';
     dl.textContent = '💾 הורדה לקובץ';
-    dl.addEventListener('click', () => saveReportsToFile(list, 'דיווחים-ממתינים-תמונך'));
+    dl.addEventListener('click', () => saveReportsToFile(list, 'דיווחים-ממתינים-עינים-למקרא'));
     box.appendChild(dl);
   }).catch(()=>{ box.remove(); });
 }
@@ -815,7 +815,7 @@ function renderPersonalDrafts(){
   bulkBtn.className = 'panel-btn';
   bulkBtn.textContent = '📨 שליחה מרוכזת של הכל (' + drafts.length + ')';
   bulkBtn.addEventListener('click', async () => {
-    const body = 'פריטים שמורים מתמונ״ך — ' + drafts.length + '\n\n'
+    const body = 'פריטים שמורים מעינים למקרא — ' + drafts.length + '\n\n'
       + drafts.map((d, i) => (i + 1) + '.\n' + draftBody(d)).join('\n\n');
     const ok = await sendToDev('שליחה מרוכזת (' + drafts.length + ' פריטים)', body, 'שליחה מרוכזת');
     if (ok && window.confirm('הכל נשלח. למחוק את הפריטים ששמורים במכשיר?')){

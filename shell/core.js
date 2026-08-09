@@ -2,7 +2,7 @@
 // נוצר בפיצול router.js (גרסה 2.11.2). המקור: shell/router.js שורות 1-24, 217-228, 400-459, 1453-1454, 1734-1743.
 // אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
 
-// שכבת ניתוב + זיהוי אחיד לתמונ״ך.
+// שכבת ניתוב + זיהוי אחיד לעינים למקרא.
 // כל מדריך נשאר קובץ עצמאי לגמרי (guides/<cat>/...) — הקובץ הזה רק קורא להם.
 
 const MENU_ITEM_ID = 'madaei-hatanach-identify';
@@ -15,9 +15,9 @@ const BOOKMARKS_KEY = 'madaei_hatanach_bookmarks_v1';
 const CATEGORIES = [
   { id: 'people', label: 'אישים בתנ״ך', icon: '👤', loaderPath: 'guides/people/data/_loader.html' },
   { id: 'places', label: 'מקומות בתנ״ך', icon: '📍', loaderPath: 'guides/places/data/_loader.html' },
-  { id: 'animal', label: 'בע״ח בתנ״ך', icon: '🐾', loaderPath: 'guides/animal/data/_loader.html' },
-  { id: 'flora', label: 'צומח בתנ״ך', icon: '🌿', loaderPath: 'guides/flora/data/_loader.html' },
-  { id: 'domem', label: 'דומם בתנ״ך', icon: '💎', loaderPath: 'guides/domem/data/_loader.html' },
+  { id: 'animal', label: 'בע״ח', icon: '🐾', loaderPath: 'guides/animal/data/_loader.html' },
+  { id: 'flora', label: 'צומח', icon: '🌿', loaderPath: 'guides/flora/data/_loader.html' },
+  { id: 'domem', label: 'דומם', icon: '💎', loaderPath: 'guides/domem/data/_loader.html' },
   { id: 'beithamikdash', label: 'בית המקדש', icon: '🏛️', loaderPath: 'guides/beithamikdash/data/_loader.html' },
 ];
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- בלי זה מסכי טלפון מרנדרים ברוחב וירטואלי של 980px ומקטינים הכול - הטקסט יוצא זעיר -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>תמונ״ך</title>
+<title>עינים למקרא</title>
 <link rel="stylesheet" href="shell/router.css">
 <!-- מפה אופלין (Leaflet + Natural Earth) - נטענת כאן פעם אחת, בלי אינטרנט, לשימוש בכרטיסי מקומות -->
 <link rel="stylesheet" href="guides/places/css/map.css">
@@ -15,7 +15,7 @@
 <script src="guides/places/js/map.js"></script>
 
 <div id="landing">
-  <h1>תמונ״ך</h1>
+  <h1>עינים למקרא</h1>
 
   <!-- שורת חיפוש ראשית: מריצה את אותו מנוע הזיהוי של תפריט ההקשר בספרייה.
        הקלדה = השלמה חיה משמות הערכים; Enter = זיהוי מלא של הטקסט (גם פסוק מודבק). -->
@@ -27,22 +27,22 @@
     <div id="homeSearchDrop" class="hs-drop"></div>
   </div>
 
-  <!-- שורת "לימוד": פרשת השבוע (2.7, פעיל) · נ״ך · משנה ותלמוד (שני האחרונים -
-       placeholder בלבד, ייבנו בסבבים הבאים). נפרדת משורת ששת המדריכים שמתחתיה. -->
+  <!-- שורת "לימוד": פרשת השבוע (2.7, פעיל) · משנה ותלמוד (פעיל, שלד — shell/talmud.js) ·
+       נ״ך (עדיין placeholder). נפרדת משורת ששת המדריכים שמתחתיה. -->
   <div class="cards-sep"><span>לימוד</span></div>
   <div class="cards" id="studyGrid">
     <div class="card" id="parashaCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">פרשת השבוע</span></div>
     <div class="card card-soon" id="nachCard" title="בקרוב"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📜&lt;/span&gt;'"><span class="label">נ״ך</span></div>
-    <div class="card card-soon" id="talmudCard" title="בקרוב"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">משנה ותלמוד</span></div>
+    <div class="card" id="talmudCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">משנה ותלמוד</span></div>
   </div>
 
   <div class="cards-sep"><span>ערכים</span></div>
   <div class="cards" id="cardsGrid">
     <div class="card" data-cat="people"><img class="icon-img" src="icon/cats/people.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;👤&lt;/span&gt;'"><span class="label">אישים בתנ״ך</span></div>
     <div class="card" data-cat="places"><img class="icon-img" src="icon/cats/places.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📍&lt;/span&gt;'"><span class="label">מקומות בתנ״ך</span></div>
-    <div class="card" data-cat="animal"><img class="icon-img" src="icon/cats/animal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🐾&lt;/span&gt;'"><span class="label">בע״ח בתנ״ך</span></div>
-    <div class="card" data-cat="flora"><img class="icon-img" src="icon/cats/flora.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🌿&lt;/span&gt;'"><span class="label">צומח בתנ״ך</span></div>
-    <div class="card" data-cat="domem"><img class="icon-img" src="icon/cats/domem.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;💎&lt;/span&gt;'"><span class="label">דומם בתנ״ך</span></div>
+    <div class="card" data-cat="animal"><img class="icon-img" src="icon/cats/animal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🐾&lt;/span&gt;'"><span class="label">בע״ח</span></div>
+    <div class="card" data-cat="flora"><img class="icon-img" src="icon/cats/flora.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🌿&lt;/span&gt;'"><span class="label">צומח</span></div>
+    <div class="card" data-cat="domem"><img class="icon-img" src="icon/cats/domem.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;💎&lt;/span&gt;'"><span class="label">דומם</span></div>
     <div class="card" data-cat="beithamikdash"><img class="icon-img" src="icon/cats/beithamikdash.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🏛️&lt;/span&gt;'"><span class="label">בית המקדש</span></div>
   </div>
 
@@ -51,10 +51,11 @@
   <div class="cards-sep"><span>שלי</span></div>
   <div class="cards" id="extraGrid">
     <!-- ערך היום (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום -->
-    <div class="card" id="dailyEventCard"><span class="icon">📅</span><span class="label" id="dailyEventLabel">ערך היום</span></div>
+    <div class="card" id="dailyEventCard"><img class="icon-img" src="icon/cats/dailyevent.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📅&lt;/span&gt;'"><span class="label" id="dailyEventLabel">ערך היום</span></div>
     <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
   </div>
   <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
+  <div id="aiDisclaimer">התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.</div>
 </div>
 
 <div id="frameWrap">
@@ -90,6 +91,19 @@
     <div class="filter-row"><span class="filter-label">א-ב:</span><div id="guideAlphaBar"></div></div>
   </div>
   <div id="guideGrid"></div>
+</div>
+
+<!-- ==== משנה ותלמוד (סבב 1: שלד — רשימת מסכתות + כלי עזר; בחירת דף נדחית לסבב הבא) ==== -->
+<div id="talmudView">
+  <div id="talmudViewBar">
+    <button id="talmudBackBtn" type="button">→ חזרה</button>
+    <span id="talmudViewTitle">📚 משנה ותלמוד</span>
+  </div>
+  <div id="talmudBody">
+    <div class="cards-sep"><span>מדריכים וכלי עזר</span></div>
+    <div class="cards" id="talmudToolsGrid"></div>
+    <div id="talmudMasechtotGrid"></div>
+  </div>
 </div>
 
 <!-- ==== האזור האישי ==== -->
@@ -259,6 +273,7 @@
 <script src="guides/_shared/changelog-embedded.js"></script>
 <script src="shell/parasha.js"></script>
 <script src="shell/guides.js"></script>
+<script src="shell/talmud.js"></script>
 <script src="shell/entry-detail.js"></script>
 <script src="shell/print.js"></script>
 <script src="shell/edit-forms.js"></script>
