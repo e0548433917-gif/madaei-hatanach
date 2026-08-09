@@ -36,8 +36,11 @@ const REPORT_FIELD_TITLE   = 'entry.261441606';    // כותרת
 const REPORT_FIELD_DETAILS = 'entry.1548335987';   // פרטים
 const REPORT_FIELD_ENV     = 'entry.932826683';    // סביבה
 const REPORT_OUTBOX_KEY = 'madaei_report_outbox_v1';
+const REPORT_DEBUG_KEY = 'madaei_report_debug_v1';   // 5 הניסיונות האחרונים, לאבחון
+const REPORT_DEBUG_MAX = 5;
 const REPORT_OUTBOX_MAX = 20;             // מעבר לזה — הישן ביותר נמחק
 const REPORT_SEND_TIMEOUT_MS = 8000;      // שלא תישאר בקשה תלויה
+const REPORT_STEP_TIMEOUT_MS = 4000;      // תקרה לכל קריאת גשר/קובץ מקומי
 const REPORT_TITLE_MAX = 120;             // הטריגר חותך ל-120 בכותרת ה-Issue
 const REPORT_DETAILS_MAX = 6000;
 const REPORT_FLUSH_DELAY_MS = 4000;       // אחרי שהתוסף כבר שימושי
@@ -63,18 +66,34 @@ function reportOutboxWrite(list){
   return Promise.resolve(true);
 }
 
+// כל קריאה לגשר של אוצריא או ל-fetch מקבלת תקרת זמן. Promise שנתקע (ולא
+// נכשל!) הוא כישלון שקט שאי-אפשר לאבחן — בדיוק מה שקרה ב-2.13.2, שם
+// reportEnv רץ *לפני* השמירה בתור, וכל תקיעה שלו מנעה גם את השמירה וגם את
+// השליחה בלי שום הודעה. מאז: קודם שומרים, ולכל שלב יש timeout.
+function withTimeout(promise, ms, label){
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const timer = setTimeout(() => { if (!done){ done = true; reject(new Error('timeout: ' + (label || ''))); } }, ms);
+    Promise.resolve(promise).then(
+      v => { if (!done){ done = true; clearTimeout(timer); resolve(v); } },
+      e => { if (!done){ done = true; clearTimeout(timer); reject(e); } }
+    );
+  });
+}
+
 // "סביבה" — גרסת התוסף מהמניפסט שנארז (לא קבוע בקוד שיתיישן) + גרסת אוצריא.
+// לעולם לא זורקת ולעולם לא נתקעת: הגרוע ביותר הוא מחרוזת עם "—".
 let reportEnvCache = null;
 async function reportEnv(){
   if (reportEnvCache) return reportEnvCache;
   let plug = '—', otz = '—';
   try {
-    const res = await fetch('manifest.json', { cache: 'no-store' });
-    if (res && res.ok){ const m = JSON.parse(await res.text()); if (m && m.version) plug = String(m.version); }
+    const res = await withTimeout(fetch('manifest.json', { cache: 'no-store' }), REPORT_STEP_TIMEOUT_MS, 'manifest');
+    if (res && res.ok){ const m = JSON.parse(await withTimeout(res.text(), REPORT_STEP_TIMEOUT_MS, 'manifest-text')); if (m && m.version) plug = String(m.version); }
   } catch(e){}
   if (hasOtzaria()){
     try {
-      const res = await Otzaria.call('app.getInfo');
+      const res = await withTimeout(Otzaria.call('app.getInfo'), REPORT_STEP_TIMEOUT_MS, 'app.getInfo');
       const v = res && res.data && res.data.version;
       if (v) otz = String(v);
     } catch(e){}
@@ -92,26 +111,85 @@ function reportNotify(message, type){
   try { window.alert(message); } catch(e){}
 }
 
-// זורק חריגה אם השליחה נכשלה — וזו ההגדרה היחידה שיש לנו ל"נכשל".
-// גוף URLSearchParams מייצר לבדו Content-Type: application/x-www-form-urlencoded
-// — בדיוק מה שנדרש, ובלי להוסיף כותרת ידנית שתפסול את הבקשה הפשוטה.
-function postReportToRelay(item, env){
-  const body = new URLSearchParams();
-  body.set(REPORT_FIELD_KIND, item.kind || 'דיווח');
-  body.set(REPORT_FIELD_TITLE, item.title || 'דיווח מהתוסף');
-  body.set(REPORT_FIELD_DETAILS, item.details || '');
-  body.set(REPORT_FIELD_ENV, env || item.env || '');
+function reportParams(item, env){
+  const p = new URLSearchParams();
+  p.set(REPORT_FIELD_KIND, item.kind || 'דיווח');
+  p.set(REPORT_FIELD_TITLE, item.title || 'דיווח מהתוסף');
+  p.set(REPORT_FIELD_DETAILS, item.details || '');
+  p.set(REPORT_FIELD_ENV, env || item.env || '');
+  return p;
+}
+
+// מסלול א׳ — fetch רגיל. גוף URLSearchParams מייצר לבדו
+// Content-Type: application/x-www-form-urlencoded, כלומר "בקשה פשוטה" בלי preflight.
+function postViaFetch(params){
   const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
   const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch(e){} }, REPORT_SEND_TIMEOUT_MS);
   return fetch(REPORT_FORM_URL, {
     method: 'POST',
     mode: 'no-cors',
-    body: body,
+    body: params,
     signal: ctrl ? ctrl.signal : undefined
   }).then(
-    () => { clearTimeout(timer); return true; },
+    () => { clearTimeout(timer); return 'fetch'; },
     err => { clearTimeout(timer); throw err; }
   );
+}
+
+// מסלול ב׳ — שליחת טופס אמיתי לתוך iframe מוסתר. זו **ניווט של הדפדפן**
+// ולא קריאת fetch, ולכן היא עוברת גם כשה-WebView של אוצריא חוסם/עוטף fetch.
+// זה הדפוס הוותיק של Google Forms, ואין בו CORS כלל.
+function postViaIframe(params){
+  return new Promise((resolve, reject) => {
+    let ifr, form, done = false, submitted = false;
+    const cleanup = () => { try { ifr && ifr.remove(); } catch(e){} try { form && form.remove(); } catch(e){} };
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true; cleanup(); reject(new Error('iframe timeout'));
+    }, REPORT_SEND_TIMEOUT_MS);
+    try {
+      const name = 'tmnchRelay' + Math.random().toString(36).slice(2, 9);
+      ifr = document.createElement('iframe');
+      ifr.name = name;
+      ifr.setAttribute('aria-hidden', 'true');
+      ifr.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+      // ה-load הראשון הוא about:blank של ההוספה עצמה — סופרים רק את זה שאחרי השליחה
+      ifr.addEventListener('load', () => {
+        if (done || !submitted) return;
+        done = true; clearTimeout(timer); cleanup(); resolve('iframe');
+      });
+      document.body.appendChild(ifr);
+      form = document.createElement('form');
+      form.action = REPORT_FORM_URL;
+      form.method = 'POST';
+      form.target = name;
+      form.style.display = 'none';
+      params.forEach((v, k) => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = k; inp.value = v;
+        form.appendChild(inp);
+      });
+      document.body.appendChild(form);
+      submitted = true;
+      form.submit();
+    } catch(e){
+      if (!done){ done = true; clearTimeout(timer); cleanup(); reject(e); }
+    }
+  });
+}
+
+// זורק חריגה רק אם **כל** המסלולים נכשלו. מחזיר את שם המסלול שהצליח,
+// ושומר את נוסח כל הכישלונות ל-lastError של הפריט (לאבחון באזור האישי).
+async function postReportToRelay(item, env){
+  const params = reportParams(item, env);
+  const errors = [];
+  for (const t of [postViaFetch, postViaIframe]){
+    try { return await t(params); }
+    catch(e){ errors.push((e && (e.name + ': ' + e.message)) || String(e)); }
+  }
+  const err = new Error(errors.join(' | '));
+  err.attempts = errors;
+  throw err;
 }
 
 function newReportItem(kind, title, details, env){
@@ -138,15 +216,55 @@ async function removeFromOutbox(id){
   return list;
 }
 
-// שליחה יזומה של המשתמש: קודם לתור, ורק אחר כך ניסיון רשת.
+// מסמן על הפריט למה הניסיון האחרון נכשל — כדי שאפשר יהיה לראות זאת
+// באזור האישי במקום לנחש.
+async function markOutboxError(id, message){
+  const list = await reportOutboxRead();
+  const hit = list.find(x => x && x.id === id);
+  if (!hit) return list;
+  hit.lastError = String(message || '').slice(0, 300);
+  hit.tries = (hit.tries || 0) + 1;
+  await reportOutboxWrite(list);
+  return list;
+}
+
+// יומן אבחון קצר — בלעדיו "שלחתי ולא הגיע" הוא חידה סתומה.
+// נשמר לצד התור, ומוצג באזור האישי מתחת לשורת הממתינים.
+async function reportDebugLog(entry){
+  try {
+    let list = null;
+    if (hasOtzaria()) list = await withTimeout(storageGetJson(REPORT_DEBUG_KEY), REPORT_STEP_TIMEOUT_MS, 'debug-read').catch(() => null);
+    else list = readJsonLS(REPORT_DEBUG_KEY, []);
+    if (!Array.isArray(list)) list = [];
+    list.push(Object.assign({ at: new Date().toISOString() }, entry));
+    while (list.length > REPORT_DEBUG_MAX) list.shift();
+    if (hasOtzaria()) await storageSetJson(REPORT_DEBUG_KEY, list);
+    else localStorage.setItem(REPORT_DEBUG_KEY, JSON.stringify(list));
+  } catch(e){}
+}
+
+function reportDebugRead(){
+  if (hasOtzaria()) return storageGetJson(REPORT_DEBUG_KEY).then(v => Array.isArray(v) ? v : []).catch(() => []);
+  const v = readJsonLS(REPORT_DEBUG_KEY, []);
+  return Promise.resolve(Array.isArray(v) ? v : []);
+}
+
+// שליחה יזומה של המשתמש: **קודם לתור, ורק אחר כך כל השאר.**
+// הסדר הזה הוא התיקון של 2.13.3: ב-2.13.2 חישוב ה"סביבה" רץ ראשון, וכל
+// תקיעה שלו (קריאת גשר שלא חוזרת) בלעה גם את השמירה וגם את השליחה בשקט.
 // מחזירה true רק אם הבקשה לא זרקה — "נכנס לתור" אינו "נשלח".
 async function sendReport(kind, title, details){
-  const env = await reportEnv();
-  const item = newReportItem(kind, title, details, env);
-  await queueReport(item);
+  const item = newReportItem(kind, title, details, '');
+  await queueReport(item);                       // ← שמור לפני הכול
+  let env = '';
+  try { env = await reportEnv(); } catch(e){}    // best-effort בלבד
+  item.env = env;
   try {
-    await postReportToRelay(item, env);
+    const via = await postReportToRelay(item, env);
+    await reportDebugLog({ ok: true, via: via, title: item.title });
   } catch(e){
+    await reportDebugLog({ ok: false, err: (e && e.message) || String(e), title: item.title });
+    await markOutboxError(item.id, (e && e.message) || String(e));
     // כמו בתוסף "ביוגרפיות" — המשתמש שלחץ "שליחה" מקבל תשובה, לא שקט.
     // ההבדל: כאן הדיווח לא אבד, ולכן ההודעה מרגיעה ולא מבקשת לנסות שוב.
     reportNotify('אין כרגע חיבור לרשת — הדיווח נשמר במכשיר ויישלח אוטומטית בפתיחה הבאה של התוסף.', 'error');
@@ -170,11 +288,19 @@ async function flushReportOutbox(opts){
   try {
     let list = await reportOutboxRead();
     if (!list.length) return { sent: 0, left: 0 };
-    const env = await reportEnv();
+    let env = '';
+    try { env = await reportEnv(); } catch(e){}
     for (const item of list.slice()){
       if (!item || !item.id) continue;
-      try { await postReportToRelay(item, item.env || env); }
-      catch(e){ failed = true; break; }
+      let via = null;
+      try { via = await postReportToRelay(item, item.env || env); }
+      catch(e){
+        failed = true;
+        await reportDebugLog({ ok: false, err: (e && e.message) || String(e), title: item.title });
+        list = await markOutboxError(item.id, (e && e.message) || String(e));
+        break;
+      }
+      await reportDebugLog({ ok: true, via: via, title: item.title });
       sent++;
       list = await removeFromOutbox(item.id);
     }
@@ -589,8 +715,10 @@ function appendOutboxStatus(){
   personalBody.appendChild(box);
   reportOutboxRead().then(list => {
     if (!list.length){ box.remove(); return; }
+    const err = (list.find(x => x && x.lastError) || {}).lastError;
     box.textContent = '📤 ' + (list.length === 1 ? 'דיווח אחד ממתין' : list.length + ' דיווחים ממתינים')
-      + ' לשליחה (אין חיבור, או שהשליחה טרם הצליחה). ';
+      + ' לשליחה (אין חיבור, או שהשליחה טרם הצליחה). '
+      + (err ? '· הסיבה האחרונה: ' + err + ' ' : '');
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'panel-btn secondary';
@@ -612,6 +740,52 @@ function appendOutboxStatus(){
   }).catch(()=>{ box.remove(); });
 }
 
+// אבחון: מה קרה בניסיונות האחרונים, וכפתור לבדיקת חיבור חיה.
+// זו התשובה ל"שלחתי ולא הגיע" — במקום לנחש, רואים אם הבקשה יצאה, ובאיזה מסלול.
+function appendReportDiagnostics(){
+  const wrap = document.createElement('details');
+  wrap.style.margin = '0 0 14px';
+  wrap.innerHTML = '<summary style="cursor:pointer;font-size:.86em;color:var(--color-on-surface-dim);">'
+    + '🔎 בדיקת שליחה (למי שהדיווח שלו לא הגיע)</summary>';
+  const body = document.createElement('div');
+  body.style.cssText = 'font-size:.82em;color:var(--color-on-surface-dim);margin-top:8px;';
+  wrap.appendChild(body);
+  personalBody.appendChild(wrap);
+
+  const testRow = document.createElement('div');
+  testRow.className = 'p-bulk';
+  testRow.style.marginTop = '8px';
+  const testBtn = document.createElement('button');
+  testBtn.type = 'button';
+  testBtn.className = 'panel-btn secondary';
+  testBtn.textContent = '📡 שליחת בדיקה עכשיו';
+  testBtn.addEventListener('click', async () => {
+    testBtn.disabled = true;
+    testBtn.textContent = 'בודק…';
+    const env = await reportEnv().catch(() => '');
+    const item = newReportItem('בדיקה', 'בדיקת חיבור מהתוסף', 'שליחת בדיקה יזומה מהאזור האישי.', env);
+    try {
+      const via = await postReportToRelay(item, env);
+      await reportDebugLog({ ok: true, via: via, title: item.title });
+      reportNotify('הבקשה יצאה במסלול "' + via + '". אם הדיווח לא הופיע בגיטהאב — הבעיה בצד הממסר, לא בתוסף.', 'success');
+    } catch(e){
+      await reportDebugLog({ ok: false, err: (e && e.message) || String(e), title: item.title });
+      reportNotify('הבקשה נכשלה: ' + ((e && e.message) || e), 'error');
+    }
+    renderPersonalBody();
+  });
+  testRow.appendChild(testBtn);
+  wrap.appendChild(testRow);
+
+  reportDebugRead().then(log => {
+    if (!log.length){ body.textContent = 'עדיין לא נרשם ניסיון שליחה במכשיר הזה.'; return; }
+    body.innerHTML = log.slice().reverse().map(r =>
+      '<div style="margin-bottom:4px;">' + (r.ok ? '✅' : '❌') + ' ' + esc(fmtDate(r.at)) + ' — '
+      + esc(r.title || '') + (r.ok ? ' · מסלול: ' + esc(r.via || '—') : ' · ' + esc(r.err || '')) + '</div>'
+    ).join('');
+  }).catch(()=>{ body.textContent = ''; });
+}
+
 function renderPersonalDrafts(){
   const drafts = collectDrafts();
   personalBody.appendChild(sectionHead('📝 הצעות ודיווחים שמורים', drafts.length ? drafts.length + ' פריטים' : ''));
@@ -627,6 +801,7 @@ function renderPersonalDrafts(){
   newRow.appendChild(newBtn);
   personalBody.appendChild(newRow);
   appendOutboxStatus();
+  appendReportDiagnostics();
 
   if (!drafts.length){
     personalBody.insertAdjacentHTML('beforeend',
