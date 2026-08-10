@@ -992,13 +992,13 @@ function whatsNewStatusHTML(local, remote){
     html += '<p class="mini-note">לא הצלחתי לבדוק את הגרסה האחרונה בגיטהאב כרגע (יש צורך בחיבור לרשת).</p>';
   } else if (local && cmpVersion(remote, local) > 0){
     html += '<p><strong>יש גרסה חדשה יותר: ' + esc(remote) + '.</strong></p>'
-      + '<div class="p-bulk"><a href="#" class="panel-btn" data-external-link="' + esc(UPDATE_RELEASES_URL) + '">⬇️ לעדכון — דף ההורדות בגיטהאב</a></div>';
+      + '<div class="p-bulk"><a href="#" class="panel-btn" data-external-link="' + esc(UPDATE_RELEASES_URL) + '" data-requires-net>⬇️ לעדכון — דף ההורדות בגיטהאב</a></div>';
   } else if (local && cmpVersion(remote, local) < 0){
     html += '<p class="mini-note">הגרסה שאצלך (' + esc(local) + ') חדשה מהגרסה האחרונה שפורסמה בגיטהאב (' + esc(remote) + ') — טרם שוחררה שם.</p>';
   } else {
     html += '<p>✅ מעודכן לגרסה האחרונה (' + esc(remote) + ').</p>';
   }
-  html += '<p class="mini-note" style="margin-top:10px;"><a href="#" data-external-link="' + esc(UPDATE_RELEASES_URL) + '">📦 כל הגרסאות בגיטהאב ↗</a></p>';
+  html += '<p class="mini-note" style="margin-top:10px;"><a href="#" data-external-link="' + esc(UPDATE_RELEASES_URL) + '" data-requires-net>📦 כל הגרסאות בגיטהאב ↗</a></p>';
   return html;
 }
 

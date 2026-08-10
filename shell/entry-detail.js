@@ -390,7 +390,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
         const mapsUrl = `https://www.google.com/maps?q=${m.geo[0]},${m.geo[1]}`;
         html += `<p style="display:flex;gap:12px;flex-wrap:wrap;">
           <a href="#" class="focus-main-map" data-geo="${m.geo[0]},${m.geo[1]},${m.geo[2]||7}" data-name="${esc(entry.name)}">🗺️ הצג במפה הראשית</a>
-          <a href="${mapsUrl}" data-external-link="${mapsUrl}">📍 פתח במפות גוגל ↗</a>
+          <a href="${mapsUrl}" data-external-link="${mapsUrl}" data-requires-net>📍 פתח במפות גוגל ↗</a>
         </p>`;
       }
       html += `</div>`;
@@ -433,7 +433,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
       const src = midrashSource(m), note = midrashNote(m);
       if (!src && !note) return;   // בלי זה נוצרה תיבה ריקה לגמרי
       const parsed = src ? parseMidrashRef(src) : null;
-      html += `<div class="src-item${parsed?' clickable':''}" data-mref="${i}">${src?`<div class="src-source">${esc(src)}${parsed?' <span class="open-hint">↗ פתח בספרייה</span>':''}</div>`:''}${note?`<div class="src-note">${esc(note)}</div>`:''}${m.link?`<a href="${esc(m.link)}" data-external-link="${esc(m.link)}">קישור ↗</a>`:''}</div>`;
+      html += `<div class="src-item${parsed?' clickable':''}" data-mref="${i}">${src?`<div class="src-source">${esc(src)}${parsed?' <span class="open-hint">↗ פתח בספרייה</span>':''}</div>`:''}${note?`<div class="src-note">${esc(note)}</div>`:''}${m.link?`<a href="${esc(m.link)}" data-external-link="${esc(m.link)}" data-requires-net>קישור ↗</a>`:''}</div>`;
     });
   }
   if (entry.academic && entry.academic.length){
@@ -441,7 +441,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
     entry.academic.forEach(a => {
       const txt = (typeof a === 'string') ? a : (a.citation || a.note || a.text || a.ref || '');
       if (!txt) return;
-      html += `<div class="src-item">${esc(txt)}${a.link?` <a href="${esc(a.link)}" data-external-link="${esc(a.link)}">קישור ↗</a>`:''}</div>`;
+      html += `<div class="src-item">${esc(txt)}${a.link?` <a href="${esc(a.link)}" data-external-link="${esc(a.link)}" data-requires-net>קישור ↗</a>`:''}</div>`;
     });
   }
   if (gallery.length){

@@ -107,7 +107,54 @@ document.addEventListener('click', (e) => {
   if (!link) return;
   e.preventDefault();
   e.stopPropagation();
+  if (!isOnline) return; // נעילת רשת — הכפתור כבר מסומן net-disabled, זו רק הגנה כפולה
   const url = link.getAttribute('data-external-link');
   if (url) confirmOpenExternal(url);
   else if (window.Otzaria && Otzaria.call) Otzaria.call('ui.showError', { message: 'קישור זה אינו נגיש מתוך התוסף.' }).catch(() => {});
 }, true); // capture — לתפוס את הלחיצה לפני שהדפדפן מנווט
+
+// ---- הסתרת פעולות שדורשות אינטרנט כשאין חיבור ----
+// רק אלמנטים עם data-external-link (פתיחת אתר חיצוני) מסומנים data-requires-net.
+// דיווח באגים (personal.js) לא מסומן בכוונה — הוא עובד אופליין (outbox מקומי).
+// net-disabled = display:none לגמרי (לא רק עמעום/נעילה) — ר' router.css.
+let isOnline = navigator.onLine;
+
+function applyOnlineState() {
+  document.querySelectorAll('[data-requires-net]').forEach((el) => {
+    el.disabled = !isOnline;
+    el.classList.toggle('net-disabled', !isOnline);
+  });
+}
+
+async function verifyOnline() {
+  try {
+    const res = await Promise.race([
+      Otzaria.call('network.fetch', { url: 'https://otzaria.org', method: 'HEAD' }),
+      new Promise((_, reject) => setTimeout(reject, 3000)),
+    ]);
+    isOnline = res.success;   // כל תשובה מהשרת מוכיחה חיבור, גם 404
+  } catch {
+    isOnline = false;         // כולל פסילה ב-timeout: רשת בלי אינטרנט
+  }
+  applyOnlineState();
+}
+
+window.addEventListener('online',  () => { verifyOnline(); });
+window.addEventListener('offline', () => { isOnline = false; applyOnlineState(); });
+applyOnlineState();
+verifyOnline();
+
+// אלמנטי data-requires-net נוצרים ברובם דינמית (פאנלים/פופאפים שנפתחים אחרי הטעינה),
+// אז סריקה חד-פעמית בעלייה לא מספיקה — צופים בהוספות ל-DOM ומיישמים עליהן את המצב
+// הידוע כבר (isOnline). זו לא בדיקת רשת חוזרת, רק סנכרון תצוגה לאלמנט חדש.
+new MutationObserver((mutations) => {
+  for (const m of mutations) {
+    for (const node of m.addedNodes) {
+      if (node.nodeType !== 1) continue;
+      if (node.matches && node.matches('[data-requires-net]') || (node.querySelector && node.querySelector('[data-requires-net]'))) {
+        applyOnlineState();
+        return;
+      }
+    }
+  }
+}).observe(document.body, { childList: true, subtree: true });

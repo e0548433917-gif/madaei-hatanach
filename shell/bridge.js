@@ -341,7 +341,7 @@ function showUpdateNotice(remoteVersion){
     '<span aria-hidden="true" style="font-size:18px;line-height:1.2;">🔔</span>'
     + '<div style="flex:1;min-width:0;">'
     +   '<div style="font-weight:600;">גרסה חדשה של עינים למקרא זמינה — ' + esc(remoteVersion) + '</div>'
-    +   '<a href="#" data-external-link="' + esc(UPDATE_RELEASES_URL) + '" '
+    +   '<a href="#" data-external-link="' + esc(UPDATE_RELEASES_URL) + '" data-requires-net '
     +      'style="color:var(--color-link);text-decoration:underline;cursor:pointer;">לדף ההורדות בגיטהב ›</a>'
     + '</div>'
     + '<button type="button" data-update-notice-close title="סגירה" aria-label="סגירה" '
