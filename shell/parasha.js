@@ -129,10 +129,6 @@ if (parashaCard) parashaCard.addEventListener('click', () => {
 if (parashaPanelClose) parashaPanelClose.addEventListener('click', () => {
   parashaPanelOverlay.classList.remove('open');
 });
-// נ״ך עדיין לא נבנה (2.10ב ואילך) - לא נשאר מת בלי תגובה. משנה ותלמוד נבנה
-// בסבב הזה (shell/talmud.js) ומקבל שם את הקישור שלו.
-document.getElementById('nachCard').addEventListener('click', () => window.alert('בקרוב — עדיין לא נבנה במדריך.'));
-
 function populateParashaSelect(){
   if (!parashaSelect) return;
   let html = '<option value="" selected disabled>מי בפרשה הזו — בחרו פרשה…</option>';

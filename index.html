@@ -27,12 +27,17 @@
     <div id="homeSearchDrop" class="hs-drop"></div>
   </div>
 
-  <!-- שורת "לימוד": פרשת השבוע (2.7, פעיל) · משנה ותלמוד (פעיל, שלד — shell/talmud.js) ·
-       נ״ך (עדיין placeholder). נפרדת משורת ששת המדריכים שמתחתיה. -->
+  <!-- שורת "לימוד". למעלה שלושת שערי הלימוד (מפרט 4.0 ב.1 — shell/shas.js), כולם
+       באיקון ה"ספרים"; ירושלמי ייכנס כרביעי. למטה פרשת השבוע (2.7) ומשנה ותלמוד
+       (shell/talmud.js), שיורדים לשורה התחתונה בב.2–ב.3. -->
   <div class="cards-sep"><span>לימוד</span></div>
+  <div class="cards" id="studyGatesGrid">
+    <div class="card" id="tanakhCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">תנ״ך</span></div>
+    <div class="card" id="mishnaCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📕&lt;/span&gt;'"><span class="label">משנה</span></div>
+    <div class="card" id="bavliCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">בבלי</span></div>
+  </div>
   <div class="cards" id="studyGrid">
     <div class="card" id="parashaCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">פרשת השבוע</span></div>
-    <div class="card card-soon" id="nachCard" title="בקרוב"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📜&lt;/span&gt;'"><span class="label">נ״ך</span></div>
     <div class="card" id="talmudCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">משנה ותלמוד</span></div>
   </div>
 
@@ -157,6 +162,21 @@
   </div>
 </div>
 
+<!-- פאנל אחד משותף לשלושת שערי הלימוד (תנ״ך · משנה · בבלי) — התוכן מתמלא לפי
+     השער שנלחץ, ר׳ STUDY_GATES ב-shell/shas.js -->
+<div class="panel-overlay" id="studyPanelOverlay">
+  <div class="panel-box">
+    <h2 id="studyPanelTitle"></h2>
+    <p class="panel-hint" id="studyPanelHint"></p>
+    <select id="studySelectA" aria-label="בחירת ספר או מסכת"></select>
+    <select id="studySelectB" aria-label="בחירת פרק או דף" disabled></select>
+    <div class="panel-actions">
+      <button class="panel-btn" id="studyGoBtn">הצג</button>
+      <button class="panel-btn secondary" id="studyPanelClose">סגירה</button>
+    </div>
+  </div>
+</div>
+
 <div class="panel-overlay" id="dailyEventOverlay">
   <div class="panel-box">
     <h2>📅 מאורעות התנ״ך לפי תאריך</h2>
@@ -272,6 +292,9 @@
      נכשל בפועל בתוך ה-WebView של אוצריא. -->
 <script src="guides/_shared/changelog-embedded.js"></script>
 <script src="shell/parasha.js"></script>
+<!-- שלושת שערי הלימוד (מפרט 4.0 ב.1). אחרי parasha.js — לוקח ממנו את
+     ensureAllGuidesLoaded/parashaDataReady; לפני talmud.js — שלוקח מכאן את 63 המסכתות. -->
+<script src="shell/shas.js"></script>
 <script src="shell/guides.js"></script>
 <script src="shell/talmud.js"></script>
 <script src="shell/entry-detail.js"></script>
