@@ -1,27 +1,27 @@
-// "משנה ותלמוד" — עמוד רשימת מסכתות + מדריכים וכלי עזר. נוצר בסבב 1.
-// בחירת דף בתוך מסכת ("מה יש בדף") נדחית לסבב הבא — כרגע כרטיס-מסכת הוא placeholder.
+// "ציורים וכלי עזר" (מפרט 4.0, ב.3) — עמוד המסכתות: כרטיס לכל אחת מ-63 המסכתות,
+// לפי סדר המשנה. זו לא רשימה נפרדת מ"כלי העזר" — היא כלי העזר, ממוינים לפי סדר
+// המסכתות: מסכת עם כלי עזר מוטמע פותחת אותו בלחיצה, מסכת בלי — placeholder.
+// לשעבר "משנה ותלמוד" (סבב 1); רשימת המסכתות עצמה כבר לא נכתבת כאן — נגזרת
+// מ-MISHNA_MASECHTOT (shell/shas.js), ששם גם בורר המסכת של שערי משנה/בבלי.
 // אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
 // טוען אחרי guides.js (landing/frameWrap/guideFrame/frameTitle/closeFrame משם).
 
-// 63 המסכתות, לפי סדר המשנה (שישה סדרים). נגזרות מ-MISHNA_MASECHTOT (shell/shas.js)
-// ולא נכתבות כאן שוב — שתי רשימות של אותם 63 שמות היו נפרדות זו מזו בעריכה הראשונה.
 const MASECHTOT_SEDARIM = SEDER_ORDER.map(seder => ({
   seder: seder,
   list: MISHNA_MASECHTOT.filter(m => m.seder === seder).map(m => m.name),
 }));
 
-// שלושת התוספים הקיימים שמוצגים כאן כ"גרסה ראשונית" — נפתחים כדף עצמאי בפריים
-// הקיים (guideFrame, כמו openCustomHtmlPage ב-home.js), אבל דרך src אמיתי ולא
-// srcdoc: כך הקבצים (script.js/style.css/diagrams.js) נטענים ישירות מהדיסק,
-// בלי לעבור דרך storage/טעינת-טקסט - פחות טוקנים וזיכרון גם בעתיד.
-const TALMUD_TOOLS = [
-  { icon: '🥩', title: 'תוסף חולין', path: 'guides/talmud-tools/chullin/index.html' },
-  { icon: '🐄', title: 'תוסף מומים — מסכת בכורות', path: 'guides/talmud-tools/mumim-bechorot/index.html' },
-  { icon: '🌿', title: 'תוסף סוכה ולולב', path: 'guides/talmud-tools/sukkah-lulav/index.html' },
-];
+// שלושת כלי העזר הקיימים, משובצים במסכת שלהם (מפרט 4.0, ב.3) במקום במדור נפרד.
+// נפתחים כדף עצמאי בפריים הקיים (guideFrame, כמו openCustomHtmlPage ב-home.js),
+// דרך src אמיתי ולא srcdoc: כך הקבצים (script.js/style.css/diagrams.js) נטענים
+// ישירות מהדיסק, בלי לעבור דרך storage/טעינת-טקסט - פחות טוקנים וזיכרון גם בעתיד.
+const MASECHET_TOOLS = {
+  'חולין': { title: 'תוסף חולין', path: 'guides/talmud-tools/chullin/index.html', icon: 'icon/masechtot/chullin.png' },
+  'בכורות': { title: 'תוסף מומים — מסכת בכורות', path: 'guides/talmud-tools/mumim-bechorot/index.html', icon: 'icon/masechtot/bechorot.png' },
+  'סוכה': { title: 'תוסף סוכה ולולב', path: 'guides/talmud-tools/sukkah-lulav/index.html', icon: 'icon/masechtot/sukkah.png' },
+};
 
 const talmudView = document.getElementById('talmudView');
-const talmudToolsGrid = document.getElementById('talmudToolsGrid');
 const talmudMasechtotGrid = document.getElementById('talmudMasechtotGrid');
 let talmudRendered = false;
 
@@ -32,28 +32,29 @@ function openExternalGuide(path, title){
   frameWrap.classList.add('open');
 }
 
-function renderTalmudTools(){
-  talmudToolsGrid.innerHTML = '';
-  TALMUD_TOOLS.forEach(tool => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<span class="icon">${tool.icon}</span><span class="label">${esc(tool.title)}<span class="talmud-tool-badge">גרסה ראשונית</span></span>`;
-    card.addEventListener('click', () => openExternalGuide(tool.path, tool.title));
-    talmudToolsGrid.appendChild(card);
-  });
+// אין איקון מוכן למסכת = האיקון הראשי של אוצריא (מפרט 4.0, ב.4) — לא אמוג'י, לא המצאה.
+function masechetCardHtml(name){
+  const tool = MASECHET_TOOLS[name];
+  const icon = (tool && tool.icon) || 'icon/icon.png';
+  const badge = tool ? '<span class="talmud-tool-badge">גרסה ראשונית</span>' : '';
+  return `<div class="card" data-masechet="${esc(name)}">` +
+    `<img class="icon-img" src="${esc(icon)}" alt="" onerror="this.src='icon/icon.png'">` +
+    `<span class="label">${esc(name)}${badge}</span></div>`;
 }
 
 function renderMasechtot(){
-  talmudMasechtotGrid.innerHTML = '<div class="cards-sep"><span>מסכתות המשנה והתלמוד</span></div>' +
-    MASECHTOT_SEDARIM.map(s => `
+  talmudMasechtotGrid.innerHTML = MASECHTOT_SEDARIM.map(s => `
       <h3 class="masechet-seder-head">סדר ${esc(s.seder)}</h3>
-      <div class="masechtot-grid">
-        ${s.list.map(name => `<div class="masechet-card" data-masechet="${esc(name)}">${esc(name)}</div>`).join('')}
+      <div class="cards masechtot-grid">
+        ${s.list.map(masechetCardHtml).join('')}
       </div>
     `).join('');
-  talmudMasechtotGrid.querySelectorAll('.masechet-card').forEach(el => {
+  talmudMasechtotGrid.querySelectorAll('.card').forEach(el => {
     el.addEventListener('click', () => {
-      window.alert('מסכת ' + el.dataset.masechet + ' — בחירת דף ותוכן יתאפשרו בעדכון עתידי.');
+      const name = el.dataset.masechet;
+      const tool = MASECHET_TOOLS[name];
+      if (tool) openExternalGuide(tool.path, tool.title);
+      else window.alert('מסכת ' + name + ' — בחירת דף ותוכן יתאפשרו בעדכון עתידי.');
     });
   });
 }
@@ -61,7 +62,7 @@ function renderMasechtot(){
 function openTalmudView(){
   landing.style.display = 'none';
   frameWrap.classList.remove('open');
-  if (!talmudRendered){ renderTalmudTools(); renderMasechtot(); talmudRendered = true; }
+  if (!talmudRendered){ renderMasechtot(); talmudRendered = true; }
   talmudView.classList.add('open');
 }
 function closeTalmudView(){

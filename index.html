@@ -28,8 +28,8 @@
   </div>
 
   <!-- שורת "לימוד". למעלה שלושת שערי הלימוד (מפרט 4.0 ב.1 — shell/shas.js), כולם
-       באיקון ה"ספרים"; ירושלמי ייכנס כרביעי. למטה פרשת השבוע (2.7) ומשנה ותלמוד
-       (shell/talmud.js), שיורדים לשורה התחתונה בב.2–ב.3. -->
+       באיקון ה"ספרים"; ירושלמי ייכנס כרביעי. למטה (ב.2): פרשת השבוע · ערך היום ·
+       ציורים וכלי עזר (shell/talmud.js — לשעבר "משנה ותלמוד", ר' ב.3). -->
   <div class="cards-sep"><span>לימוד</span></div>
   <div class="cards" id="studyGatesGrid">
     <div class="card" id="tanakhCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">תנ״ך</span></div>
@@ -38,7 +38,9 @@
   </div>
   <div class="cards" id="studyGrid">
     <div class="card" id="parashaCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">פרשת השבוע</span></div>
-    <div class="card" id="talmudCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">משנה ותלמוד</span></div>
+    <!-- ערך היום (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום -->
+    <div class="card" id="dailyEventCard"><img class="icon-img" src="icon/cats/dailyevent.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📅&lt;/span&gt;'"><span class="label" id="dailyEventLabel">ערך היום</span></div>
+    <div class="card" id="talmudCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">ציורים וכלי עזר</span></div>
   </div>
 
   <div class="cards-sep"><span>ערכים</span></div>
@@ -51,12 +53,9 @@
     <div class="card" data-cat="beithamikdash"><img class="icon-img" src="icon/cats/beithamikdash.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🏛️&lt;/span&gt;'"><span class="label">בית המקדש</span></div>
   </div>
 
-  <!-- שורה שנייה: מה ששייך למשתמש עצמו (האזור האישי + דפי HTML שהוא הוסיף).
-       הופרדה מששת המדריכים כדי ששורת המדריכים תישאר 3+3 מלאה ולא תיקטע באמצע. -->
+  <!-- שורה שנייה: מה ששייך למשתמש עצמו (האזור האישי + דפי HTML שהוא הוסיף). -->
   <div class="cards-sep"><span>שלי</span></div>
   <div class="cards" id="extraGrid">
-    <!-- ערך היום (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום -->
-    <div class="card" id="dailyEventCard"><img class="icon-img" src="icon/cats/dailyevent.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📅&lt;/span&gt;'"><span class="label" id="dailyEventLabel">ערך היום</span></div>
     <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
   </div>
   <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
@@ -98,15 +97,14 @@
   <div id="guideGrid"></div>
 </div>
 
-<!-- ==== משנה ותלמוד (סבב 1: שלד — רשימת מסכתות + כלי עזר; בחירת דף נדחית לסבב הבא) ==== -->
+<!-- ==== ציורים וכלי עזר (מפרט 4.0, ב.3) — 63 המסכתות לפי סדר, כרטיס לכל אחת;
+     מסכת עם כלי עזר מוטמע (חולין · בכורות · סוכה) פותחת אותו בלחיצה ==== -->
 <div id="talmudView">
   <div id="talmudViewBar">
     <button id="talmudBackBtn" type="button">→ חזרה</button>
-    <span id="talmudViewTitle">📚 משנה ותלמוד</span>
+    <span id="talmudViewTitle">📚 ציורים וכלי עזר</span>
   </div>
   <div id="talmudBody">
-    <div class="cards-sep"><span>מדריכים וכלי עזר</span></div>
-    <div class="cards" id="talmudToolsGrid"></div>
     <div id="talmudMasechtotGrid"></div>
   </div>
 </div>
