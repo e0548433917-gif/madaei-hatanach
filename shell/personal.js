@@ -746,7 +746,15 @@ function appendReportDiagnostics(){
   const wrap = document.createElement('details');
   wrap.style.margin = '0 0 14px';
   wrap.innerHTML = '<summary style="cursor:pointer;font-size:.86em;color:var(--color-on-surface-dim);">'
-    + '🔎 בדיקת שליחה (למי שהדיווח שלו לא הגיע)</summary>';
+    + '🔎 בדיקת שליחה (למי שהדיווח שלו לא הגיע)</summary>'
+    // ה-mode:'no-cors' ההכרחי כאן (גוגל לא מחזירה תשובה קריאה) הוא גם נקודה עיוורת:
+    // "הבקשה יצאה" רק אומר שהדפדפן/ה-WebView לא זרק שגיאה - לא שהיא באמת הגיעה
+    // ליעד. סנן תוכן שמחזיר "הצלחה" מזויפת לבקשה חסומה (כמו שקרה בעבר עם
+    // script.google.com/…/exec, שנחסם בנתיב הפנימי אף שהדומיין עצמו היה פתוח)
+    // ייצור בדיוק את התסמין הזה: "נשלח" בתוסף, ושום דבר לא נפתח בגיטהאב.
+    + '<p class="mini-note" style="margin:6px 0 0;">"יצאה" אינו "התקבלה" — אם סינון '
+    +   'תוכן ברשת חוסם בשקט את הנתיב הזה (מוכר מ-script.google.com בעבר), הבדיקה '
+    +   'כאן תראה הצלחה בכל זאת. האימות הוודאי היחיד: פתיחת Issue חדש בגיטהאב.</p>';
   const body = document.createElement('div');
   body.style.cssText = 'font-size:.82em;color:var(--color-on-surface-dim);margin-top:8px;';
   wrap.appendChild(body);
@@ -767,7 +775,9 @@ function appendReportDiagnostics(){
     try {
       const via = await postReportToRelay(item, env);
       await reportDebugLog({ ok: true, via: via, title: item.title });
-      reportNotify('הבקשה יצאה במסלול "' + via + '". אם הדיווח לא הופיע בגיטהאב — הבעיה בצד הממסר, לא בתוסף.', 'success');
+      // בכוונה לא "נשלח בהצלחה" - זו רק אמירה שהדפדפן לא זרק שגיאה, לא שגוגל קיבלה.
+      reportNotify('הבקשה יצאה במסלול "' + via + '" בלי שגיאה. זה עדיין לא אישור הגעה — '
+        + 'בדקו אם נפתח Issue חדש בגיטהאב תוך דקה-שתיים.', 'success');
     } catch(e){
       await reportDebugLog({ ok: false, err: (e && e.message) || String(e), title: item.title });
       reportNotify('הבקשה נכשלה: ' + ((e && e.message) || e), 'error');
