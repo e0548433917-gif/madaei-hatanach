@@ -16,20 +16,32 @@ const personalBody = document.getElementById('personalBody');
 let activePersonalTab = 'bookmarks';
 
 // ============================================================
-//  4.1 — ממסר הדיווחים (2.13.2)
+//  4.1 — ממסר הדיווחים (2.13.2, מסלול ראשי הוחלף ב-2.15.1)
 //  שלושה תנאים מחייבים: לא מייל · לא קישור חיצוני · לא ליפול כשאין רשת.
 //
-//  המסלול (ר' docs/הקמת-ממסר-דיווחים.md):
-//    התוסף ──POST──> docs.google.com/.../formResponse   (פתוח בנטפרי)
-//                          └─> גיליון ─> טריגר Apps Script ─> GitHub Issue
-//  הטריגר רץ על שרתי גוגל, ולכן api.github.com לא נוגע ברשת של המשתמש כלל,
-//  ואין טוקן ואין סוד משותף בתוך החבילה.
+//  ✅ מסלול א׳ (ראשי) — Web App (doPost + פריסה כ-`/exec`) על אותו פרויקט
+//  Apps Script הקיים. **זה בדיוק הדפוס שהתוסף "ביוגרפיות" מריץ בהצלחה בפועל
+//  בתוך אוצריא** (ר' סקריפט-גוגל-אוצריא.txt, שסופק ע"י מפתחו): fetch רגיל
+//  (לא no-cors!) עם CORS preflight אמיתי - EmailJS שם שולח
+//  Content-Type: application/json ומקבל תשובה קריאה בחזרה. זו ההוכחה
+//  שה-WebView של אוצריא **תומך** ב-fetch מלא, כולל preflight - אז אין סיבה
+//  להסתפק בניחוש עיוור דרך no-cors כמו קודם. Content-Type כאן הוא
+//  text/plain דווקא (לא application/json): בניגוד ל-EmailJS, Web App של
+//  Apps Script לא מיישם doOptions, ופרילייט אמיתי היה נכשל שם - text/plain
+//  הוא "בקשה פשוטה" בלי preflight, ו-doPost קורא את e.postData.contents
+//  כטקסט גולמי בכל מקרה ומפרק בעצמו עם JSON.parse (בדיוק כמו הסקריפט של
+//  אוצריא עצמה). "הצלחה" כאן היא result.success===true אמיתי, לא ניחוש.
 //
-//  ה-POST הוא "בקשה פשוטה" (x-www-form-urlencoded) ולכן אין CORS preflight.
-//  גוגל לא מחזירה תשובה שניתן לקרוא (mode:'no-cors'), ולכן "הצלחה" מוגדרת
-//  כ**הבקשה לא זרקה חריגה** — ומכאן שה-outbox חובה: הפריט נמחק מהתור רק
-//  אחרי שליחה שלא זרקה, ואם זרקה הוא נשאר לניסיון הבא בפתיחה הבאה.
+//  מסלול ב׳ (גיבוי) — docs.google.com/.../formResponse, כפי שהיה עד כה:
+//  אם script.google.com חסום אצל משתמש מסוים אבל docs.google.com פתוח,
+//  עדיין יש דרך לצאת. כאן עדיין no-cors, ולכן "הצלחה" = "לא זרק" בלבד -
+//  ומכאן שה-outbox חובה: פריט נמחק מהתור רק אחרי שליחה שלא זרקה, ואם זרקה
+//  הוא נשאר לניסיון הבא בפתיחה הבאה.
 // ============================================================
+// כתובת ה-Web App אחרי פריסה (Deploy → New deployment → Web app →
+// Execute as: Me → Who has access: Anyone) של אותו פרויקט "דיווחים —
+// עינים למקרא". ריקה = מדלגים ישר למסלול ב׳. ר' docs/הקמת-ממסר-דיווחים.md.
+const REPORT_WEBAPP_URL = '';
 const REPORT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd7NiGDUahnwpaestosEcDxPJoAkYXzVRUa2yB5EiXkLPSWvQ/formResponse';
 const REPORT_FIELD_KIND    = 'entry.1407711891';   // סוג
 const REPORT_FIELD_TITLE   = 'entry.261441606';    // כותרת
@@ -120,7 +132,42 @@ function reportParams(item, env){
   return p;
 }
 
-// מסלול א׳ — fetch רגיל. גוף URLSearchParams מייצר לבדו
+// מסלול א׳ (ראשי) — Web App עם תשובה אמיתית שאפשר לקרוא, לא no-cors.
+// "הצלחה" כאן היא result.success===true בפועל. ר' הערת הארכיטקטורה למעלה.
+function postViaWebApp(item, env){
+  if (!REPORT_WEBAPP_URL) return Promise.reject(new Error('webapp not configured'));
+  const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch(e){} }, REPORT_SEND_TIMEOUT_MS);
+  const payload = {
+    kind: item.kind || 'דיווח',
+    title: item.title || 'דיווח מהתוסף',
+    details: item.details || '',
+    env: env || item.env || ''
+  };
+  return fetch(REPORT_WEBAPP_URL, {
+    method: 'POST',
+    // text/plain ולא application/json בכוונה: "בקשה פשוטה" בלי CORS preflight
+    // (ר' הסבר מפורט למעלה) — doPost מפרק בעצמו עם JSON.parse.
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(
+    res => {
+      clearTimeout(timer);
+      return res.text().then(text => {
+        let data = null;
+        try { data = JSON.parse(text); } catch(e){}
+        if (!data || data.success !== true){
+          throw new Error('webapp: HTTP ' + res.status + ' — ' + String(text || '').slice(0, 200));
+        }
+        return 'webapp';
+      });
+    },
+    err => { clearTimeout(timer); throw err; }
+  );
+}
+
+// מסלול ב׳ (גיבוי) — fetch עם no-cors לטופס. גוף URLSearchParams מייצר לבדו
 // Content-Type: application/x-www-form-urlencoded, כלומר "בקשה פשוטה" בלי preflight.
 function postViaFetch(params){
   const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
@@ -136,9 +183,12 @@ function postViaFetch(params){
   );
 }
 
-// מסלול ב׳ — שליחת טופס אמיתי לתוך iframe מוסתר. זו **ניווט של הדפדפן**
+// מסלול ג׳ — שליחת טופס אמיתי לתוך iframe מוסתר. זו **ניווט של הדפדפן**
 // ולא קריאת fetch, ולכן היא עוברת גם כשה-WebView של אוצריא חוסם/עוטף fetch.
 // זה הדפוס הוותיק של Google Forms, ואין בו CORS כלל.
+// ⚠️ סיכון ידוע: אם ה-WebView חוסם ניווט לגמרי אבל עדיין מיידה load על
+// about:blank, זה עלול להיקרא "הצלחה" בטעות. לכן הוא רק המסלול השלישי -
+// אחרי שגם ה-Web App וגם ה-fetch הרגיל נכשלו בפועל (לא רק "לא הוגדר").
 function postViaIframe(params){
   return new Promise((resolve, reject) => {
     let ifr, form, done = false, submitted = false;
@@ -180,9 +230,14 @@ function postViaIframe(params){
 
 // זורק חריגה רק אם **כל** המסלולים נכשלו. מחזיר את שם המסלול שהצליח,
 // ושומר את נוסח כל הכישלונות ל-lastError של הפריט (לאבחון באזור האישי).
+// Web App קודם (תשובה אמיתית) — הטופס רק אם הוא לא הוגדר או נכשל בפועל.
 async function postReportToRelay(item, env){
-  const params = reportParams(item, env);
   const errors = [];
+  if (REPORT_WEBAPP_URL){
+    try { return await postViaWebApp(item, env); }
+    catch(e){ errors.push((e && (e.name + ': ' + e.message)) || String(e)); }
+  }
+  const params = reportParams(item, env);
   for (const t of [postViaFetch, postViaIframe]){
     try { return await t(params); }
     catch(e){ errors.push((e && (e.name + ': ' + e.message)) || String(e)); }
@@ -986,9 +1041,9 @@ function loadChangelogBlocks(){
     };
   }));
 }
-function renderChangelogInto(container, blocks){
+function renderChangelogInto(container, blocks, missingLabel){
   if (!blocks || !blocks.length){
-    container.innerHTML = '<p class="mini-note">לא הצלחתי לטעון את יומן השינויים (CHANGELOG.md).</p>';
+    container.innerHTML = '<p class="mini-note">לא הצלחתי לטעון את ' + (missingLabel || 'יומן השינויים (CHANGELOG.md)') + '.</p>';
     return;
   }
   // יומן מלא מההתחלה - הגרסאות האחרונות פתוחות, השאר מקופל (details/summary),
@@ -996,6 +1051,21 @@ function renderChangelogInto(container, blocks){
   container.innerHTML = blocks.map((b, i) =>
     `<details class="month-details"${i < 3 ? ' open' : ''}><summary>${esc(b.header)}</summary>${mdLiteToHtml(b.body)}</details>`
   ).join('');
+}
+
+// EMBEDDED_ROADMAP_MD (guides/_shared/roadmap-embedded.js) מוטבע ב-build/pack.ps1
+// באותו אופן בדיוק כמו EMBEDDED_CHANGELOG_MD למעלה, מתוך ROADMAP.md שבשורש
+// הריפו - לא קבוע ידני יותר, ולא fetch בזמן ריצה.
+function loadRoadmapBlocks(){
+  const text = (typeof EMBEDDED_ROADMAP_MD !== 'undefined') ? EMBEDDED_ROADMAP_MD : '';
+  if (!text) return Promise.resolve(null);
+  return Promise.resolve(text.split(/\n(?=## )/).filter(p => p.trim().indexOf('## ') === 0).map(p => {
+    const nl = p.indexOf('\n');
+    return {
+      header: (nl === -1 ? p : p.slice(0, nl)).replace(/^##\s*/, '').trim(),
+      body: nl === -1 ? '' : p.slice(nl + 1).trim()
+    };
+  }));
 }
 
 function renderPersonalWhatsNew(){
@@ -1019,14 +1089,11 @@ function renderPersonalWhatsNew(){
   changelogWrap.innerHTML = '<p class="mini-note">טוען יומן שינויים...</p>';
   personalBody.appendChild(changelogWrap);
 
-  // תקציר קצר של מה שעוד מתוכנן - קבוע ידני (לא מ-docs/, שלא ארוז בחבילה
-  // בכוונה). לעדכן ידנית בכל סבב, יחד עם הערך ב-CHANGELOG.md.
+  // מוטבע מ-ROADMAP.md בזמן האריזה (ר' loadRoadmapBlocks למעלה) - מתעדכן אוטומטית
+  // בכל אריזה, בלי תחזוקה ידנית נפרדת מ-docs/.
   personalBody.appendChild(sectionHead('🛣️ מה מתוכנן בהמשך', ''));
   const roadmapWrap = document.createElement('div');
-  roadmapWrap.innerHTML = '<p class="mini-note" style="margin-top:0">'
-    + 'תצוגת ״נ״ך״ מלאה · טעינה עצלה של הדאטה (פתיחה מיידית יותר) · שיפורי פופאפ הזיהוי '
-    + '· תיקוני עריכה בדפי HTML מותאמים · האחדת איקונים בכל התוסף · לקראת הגרסה 3.0.0.'
-    + '</p>';
+  roadmapWrap.innerHTML = '<p class="mini-note" style="margin-top:0">טוען תכנון עתידי...</p>';
   personalBody.appendChild(roadmapWrap);
 
   async function refreshStatus(){
@@ -1038,6 +1105,7 @@ function renderPersonalWhatsNew(){
   refreshBtn.addEventListener('click', refreshStatus);
   refreshStatus();
   loadChangelogBlocks().then(blocks => renderChangelogInto(changelogWrap, blocks));
+  loadRoadmapBlocks().then(blocks => renderChangelogInto(roadmapWrap, blocks, 'מה מתוכנן (ROADMAP.md)'));
 }
 
 // בפתיחת התוסף: אם נשארו דיווחים בתור מפעם קודמת — ניסיון שקט לשלוח אותם.

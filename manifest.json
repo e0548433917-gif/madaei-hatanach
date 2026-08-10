@@ -29,7 +29,9 @@
     "allowlist": [
       "https://raw.githubusercontent.com",
       "https://api.github.com",
-      "https://docs.google.com"
+      "https://docs.google.com",
+      "https://script.google.com",
+      "https://script.googleusercontent.com"
     ]
   },
   "contributes": {
