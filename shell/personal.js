@@ -38,10 +38,10 @@ let activePersonalTab = 'bookmarks';
 //  ומכאן שה-outbox חובה: פריט נמחק מהתור רק אחרי שליחה שלא זרקה, ואם זרקה
 //  הוא נשאר לניסיון הבא בפתיחה הבאה.
 // ============================================================
-// כתובת ה-Web App אחרי פריסה (Deploy → New deployment → Web app →
-// Execute as: Me → Who has access: Anyone) של אותו פרויקט "דיווחים —
-// עינים למקרא". ריקה = מדלגים ישר למסלול ב׳. ר' docs/הקמת-ממסר-דיווחים.md.
-const REPORT_WEBAPP_URL = '';
+// נפרס ואומת 10.8.26 — curl/fetch אמיתי דרך הכתובת הזו פתח את
+// github.com/e0548433917-gif/madaei-hatanach/issues/8 בפועל, עם
+// success:true אמיתי בתשובה (לא ניחוש דרך no-cors).
+const REPORT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxzlCAZzhaEM68jRqqekW8InrtbSiZrtiiIjgCKOInUvyBG43wLY29MYY6PrbHijpO6/exec';
 const REPORT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd7NiGDUahnwpaestosEcDxPJoAkYXzVRUa2yB5EiXkLPSWvQ/formResponse';
 const REPORT_FIELD_KIND    = 'entry.1407711891';   // סוג
 const REPORT_FIELD_TITLE   = 'entry.261441606';    // כותרת
