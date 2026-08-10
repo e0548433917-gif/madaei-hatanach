@@ -166,6 +166,9 @@ html, body {
 @media (min-width: 620px){
   .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+/* רווח בין שורת שלושת שערי הלימוד לשורת פרשה/ערך היום/ציורים - שתיהן .cards
+   נפרדות בלי .cards-sep ביניהן, ובלעדי זה הן נדבקות זו לזו */
+#studyGatesGrid { margin-bottom: clamp(10px, 1.6vw, 16px); }
 /* מפריד עדין בין שורת המדריכים לשורה של המשתמש עצמו */
 .cards-sep {
   display: flex; align-items: center; gap: 10px;
