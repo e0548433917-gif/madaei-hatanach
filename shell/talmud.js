@@ -15,9 +15,12 @@ const MASECHTOT_SEDARIM = SEDER_ORDER.map(seder => ({
 // נפתחים כדף עצמאי בפריים הקיים (guideFrame, כמו openCustomHtmlPage ב-home.js),
 // דרך src אמיתי ולא srcdoc: כך הקבצים (script.js/style.css/diagrams.js) נטענים
 // ישירות מהדיסק, בלי לעבור דרך storage/טעינת-טקסט - פחות טוקנים וזיכרון גם בעתיד.
+// 'בכורות' הומר לכרטסת ילידית (מפרט 4.0, ד.1) — guideId פותח דרך openGuide,
+// בדיוק כמו domem/beithamikdash, במקום openExternalGuide (iframe). חולין וסוכה
+// עדיין ימתינו להמרה משלהם.
 const MASECHET_TOOLS = {
   'חולין': { title: 'תוסף חולין', path: 'guides/talmud-tools/chullin/index.html', icon: 'icon/masechtot/chullin.png' },
-  'בכורות': { title: 'תוסף מומים — מסכת בכורות', path: 'guides/talmud-tools/mumim-bechorot/index.html', icon: 'icon/masechtot/bechorot.png' },
+  'בכורות': { title: 'מומים — מסכת בכורות', guideId: 'mumim', icon: 'icon/masechtot/bechorot.png' },
   'סוכה': { title: 'תוסף סוכה ולולב', path: 'guides/talmud-tools/sukkah-lulav/index.html', icon: 'icon/masechtot/sukkah.png' },
 };
 
@@ -36,7 +39,9 @@ function openExternalGuide(path, title){
 function masechetCardHtml(name){
   const tool = MASECHET_TOOLS[name];
   const icon = (tool && tool.icon) || 'icon/icon.png';
-  const badge = tool ? '<span class="talmud-tool-badge">גרסה ראשונית</span>' : '';
+  // הבאדג' "גרסה ראשונית" מציין כלי-עזר שעדיין iframe חיצוני (מפרט 4.0, ד) —
+  // guideId = כרטסת ילידית מלאה, לא זמנית.
+  const badge = (tool && !tool.guideId) ? '<span class="talmud-tool-badge">גרסה ראשונית</span>' : '';
   return `<div class="card" data-masechet="${esc(name)}">` +
     `<img class="icon-img" src="${esc(icon)}" alt="" onerror="this.src='icon/icon.png'">` +
     `<span class="label">${esc(name)}${badge}</span></div>`;
@@ -53,7 +58,8 @@ function renderMasechtot(){
     el.addEventListener('click', () => {
       const name = el.dataset.masechet;
       const tool = MASECHET_TOOLS[name];
-      if (tool) openExternalGuide(tool.path, tool.title);
+      if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
+      else if (tool) openExternalGuide(tool.path, tool.title);
       else window.alert('מסכת ' + name + ' — בחירת דף ותוכן יתאפשרו בעדכון עתידי.');
     });
   });

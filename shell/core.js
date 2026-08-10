@@ -19,6 +19,7 @@ const CATEGORIES = [
   { id: 'flora', label: 'צומח', icon: '🌿', loaderPath: 'guides/flora/data/_loader.html' },
   { id: 'domem', label: 'דומם', icon: '💎', loaderPath: 'guides/domem/data/_loader.html' },
   { id: 'beithamikdash', label: 'בית המקדש', icon: '🏛️', loaderPath: 'guides/beithamikdash/data/_loader.html' },
+  { id: 'mumim', label: 'מומים', icon: '🩺', loaderPath: 'guides/mumim/data/_loader.html' },
 ];
 
 const dataCache = {}; // id -> [{name, cat, aliases}]

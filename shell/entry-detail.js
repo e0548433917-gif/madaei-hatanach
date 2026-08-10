@@ -237,7 +237,8 @@ const GUIDE_FIELDS = {
   animal: ['explanation','latin','wiki','confidence','note'],
   flora:  ['explanation','latin','wiki','confidence','note'],
   domem:  ['tribe','explanation','identification','note'],
-  beithamikdash: ['explanation','identification','note']
+  beithamikdash: ['explanation','identification','note'],
+  mumim:  ['explanation','modern','note']
 };
 // שדות שיושבים בתוך methods[0] ולא ישירות על הערך (חי/צומח/מקומות/מקדש)
 const METHOD_FIELDS = new Set(['explanation','latin','wiki','confidence','modern','mapQuery']);
