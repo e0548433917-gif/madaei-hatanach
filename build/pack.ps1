@@ -177,6 +177,22 @@ $embedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתו�
 [System.IO.File]::WriteAllText($changelogEmbedPath, $embedContent, [System.Text.UTF8Encoding]::new($false))
 Write-Host "הוטמע CHANGELOG.md כקבוע JS: guides/_shared/changelog-embedded.js"
 
+# ---- 1ד. הטמעת ROADMAP.md כקבוע JS (guides/_shared/roadmap-embedded.js) ----
+# אותו דפוס בדיוק כמו 1ג, עבור "מה מתוכנן בהמשך" (personal.js). ROADMAP.md
+# עצמו נערך ביד מול docs/ (אינו נגזר אוטומטית מהן) — כאן רק מטביעים את מה
+# שכתוב בו כרגע, כדי שהתוסף הארוז לעולם לא יציג גרסה ישנה יותר משהריפו עצמו.
+$roadmapPath = Join-Path $root "ROADMAP.md"
+if (Test-Path $roadmapPath) {
+  $roadmapEmbedPath = Join-Path $root "guides\_shared\roadmap-embedded.js"
+  $rmFinal = Get-Content $roadmapPath -Raw -Encoding UTF8
+  $rmJson = $rmFinal | ConvertTo-Json -Compress
+  $rmEmbedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך ROADMAP.md - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_ROADMAP_MD = $rmJson;`r`n"
+  [System.IO.File]::WriteAllText($roadmapEmbedPath, $rmEmbedContent, [System.Text.UTF8Encoding]::new($false))
+  Write-Host "הוטמע ROADMAP.md כקבוע JS: guides/_shared/roadmap-embedded.js"
+} else {
+  Write-Warning "ROADMAP.md לא נמצא בשורש הריפו — guides/_shared/roadmap-embedded.js לא עודכן."
+}
+
 # ---- 2. הכנת תיקיית staging נקייה (בלי קבצי build/debug) ----
 $stageDir = Join-Path $env:TEMP "madaei-hatanach-stage"
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
