@@ -56,12 +56,14 @@ const REPORT_STEP_TIMEOUT_MS = 4000;      // תקרה לכל קריאת גשר/�
 const REPORT_TITLE_MAX = 120;             // הטריגר חותך ל-120 בכותרת ה-Issue
 const REPORT_DETAILS_MAX = 6000;
 const REPORT_FLUSH_DELAY_MS = 4000;       // אחרי שהתוסף כבר שימושי
+// "משוב" ראשון בכוונה - זו נקודת הכניסה החופשית/הכי-פחות-מחייבת (במקום לשונית
+// "משוב למפתח" הנפרדת שבוטלה - ר' renderPersonalDrafts). "בקשת הצטרפות" (ג.4.4)
+// נכנסה לאותה רשימה במקום ערוץ תקשורת חמישי.
 const REPORT_KINDS = [
+  { id: 'משוב',       label: '💬 משוב — הערה, טעות, או סתם לומר תודה' },
   { id: 'באג בקוד',   label: '🐞 באג בקוד — משהו בתוסף לא עובד' },
   { id: 'טעות בתוכן', label: '📖 טעות בתוכן — פרט לא נכון בערך' },
   { id: 'הצעה',       label: '💡 הצעה — רעיון לשיפור' },
-  // מפרט 4.0, ג.4.4 — ההזמנה להצטרף (הבאנר ב״ציורים וכלי עזר״ וה-placeholder
-  // של מסכת בלי מדריך) נכנסת לממסר הקיים כסוג נוסף, ולא כערוץ רביעי נפרד.
   { id: 'בקשת הצטרפות', label: '🤝 בקשת הצטרפות — לעזור בכתיבה ובעריכה' }
 ];
 // כתובת הדיווחים הידנית — למי שמעדיף לפתוח Issue בעצמו, או שהשליחה אצלו חסומה.
@@ -440,13 +442,13 @@ function buildReportPanel(){
   ov.id = 'reportPanelOverlay';
   ov.setAttribute('dir', 'rtl');
   ov.innerHTML = '<div class="panel-box">'
-    + '<h2>🐞 דיווח למפתח</h2>'
-    + '<p class="panel-hint">הדיווח נשלח ישירות מתוך התוסף — בלי מייל ובלי לצאת לדפדפן. '
-    +   'אם אין כרגע חיבור לרשת, הוא נשמר במכשיר ונשלח לבד בפתיחה הבאה.</p>'
-    + '<select id="reportKind" aria-label="סוג הדיווח">'
+    + '<h2>✉️ הודעה למפתח</h2>'
+    + '<p class="panel-hint">ההודעה נשלחת ישירות מתוך התוסף — בלי מייל ובלי לצאת לדפדפן. '
+    +   'אם אין כרגע חיבור לרשת, היא נשמרת במכשיר ונשלחת לבד בפתיחה הבאה.</p>'
+    + '<select id="reportKind" aria-label="סוג ההודעה">'
     +   REPORT_KINDS.map(k => '<option value="' + esc(k.id) + '">' + esc(k.label) + '</option>').join('')
     + '</select>'
-    + '<input type="text" id="reportTitle" maxlength="' + REPORT_TITLE_MAX + '" placeholder="כותרת קצרה — במשפט אחד">'
+    + '<input type="text" id="reportTitle" maxlength="' + REPORT_TITLE_MAX + '" placeholder="כותרת קצרה (רשות — אם ריק, נלקחת מהשורה הראשונה שלמטה)">'
     + '<textarea id="reportDetails" placeholder="מה קרה? איפה? מה ציפיתם שיקרה? ככל שיהיה מפורט יותר — כך קל יותר לתקן."></textarea>'
     + '<div class="panel-actions">'
     +   '<button class="panel-btn" type="button" id="reportSend">📨 שליחה</button>'
@@ -506,13 +508,16 @@ async function submitReportPanel(){
   const btn = ov.querySelector('#reportSend');
   const title = ov.querySelector('#reportTitle');
   const details = ov.querySelector('#reportDetails');
-  if (!title.value.trim()){ window.alert('יש לכתוב כותרת קצרה לדיווח.'); title.focus(); return; }
+  // כותרת רשות (מפרט 4.0, ג.4.4 - איחוד הלשוניות): אם נשארה ריקה, נגזרת
+  // מהשורה הראשונה של הפירוט - בדיוק כמו שהתנהגה לשונית "משוב" הישנה.
+  const effectiveTitle = title.value.trim() || details.value.trim().split('\n')[0];
+  if (!effectiveTitle){ window.alert('יש לכתוב כותרת או פירוט.'); details.focus(); return; }
   if (btn.disabled) return;
   btn.disabled = true;
   const label = btn.textContent;
   btn.textContent = 'שולח…';
   try {
-    await sendReport(ov.querySelector('#reportKind').value, title.value, details.value);
+    await sendReport(ov.querySelector('#reportKind').value, effectiveTitle, details.value);
   } finally {
     btn.disabled = false;
     btn.textContent = label;
@@ -673,7 +678,6 @@ function renderPersonalBody(){
   if (activePersonalTab === 'edits') return renderPersonalEdits();
   if (activePersonalTab === 'drafts') return renderPersonalDrafts();
   if (activePersonalTab === 'pages') return renderPersonalPages();
-  if (activePersonalTab === 'feedback') return renderPersonalFeedback();
   if (activePersonalTab === 'whatsnew') return renderPersonalWhatsNew();
 }
 
@@ -858,18 +862,38 @@ function renderPersonalDrafts(){
   const drafts = collectDrafts();
   personalBody.appendChild(sectionHead('📝 הצעות ודיווחים שמורים', drafts.length ? drafts.length + ' פריטים' : ''));
 
-  // 4.1 — הכניסה לדיווח חופשי (באג / טעות בתוכן / הצעה)
+  // 4.1 — הכניסה לדיווח חופשי (משוב / באג / טעות בתוכן / הצעה / בקשת הצטרפות),
+  // כולן דרך אותו פאנל משותף (REPORT_KINDS) - ר' openReportPanel/buildReportPanel.
   const newRow = document.createElement('div');
   newRow.className = 'p-bulk';
   const newBtn = document.createElement('button');
   newBtn.type = 'button';
   newBtn.className = 'panel-btn';
-  newBtn.textContent = '🐞 דיווח חדש למפתח';
+  newBtn.textContent = '✉️ הודעה חדשה למפתח';
   newBtn.addEventListener('click', () => openReportPanel());
   newRow.appendChild(newBtn);
   personalBody.appendChild(newRow);
   appendOutboxStatus();
   appendReportDiagnostics();
+
+  // הצטרפות לעריכה (מפרט 4.0, ג.4.4) — עד 2.16.1 הייתה לשונית "משוב למפתח"
+  // נפרדת עם קישור חיצוני; אוחדה לכאן (11.8.26) כי שתי הלשוניות עברו לאותו
+  // sendReport בפועל, וקישור לדף ה-Issues חשף את שם המשתמש בגיטהאב וגם נעלם
+  // לגמרי כשאין רשת (ר' buildReportPanel). הבקשה יוצאת כסוג "בקשת הצטרפות"
+  // בממסר הקיים, ועובדת אופליין דרך ה-outbox המקומי כמו כל דיווח אחר.
+  const joinWrap = document.createElement('div');
+  joinWrap.className = 'p-bulk';
+  joinWrap.style.marginTop = '10px';
+  joinWrap.innerHTML = '<p class="mini-note" style="margin-bottom:8px;">'
+    + 'עדיין יש עבודה רבה בהשלמת התוכן, ביצירת ציורי עזר לכל המסכתות ועוד — '
+    + 'נשמח אם תוכלו לעזור, בכל היקף.</p>';
+  const joinBtn = document.createElement('button');
+  joinBtn.type = 'button';
+  joinBtn.className = 'panel-btn secondary';
+  joinBtn.textContent = '🤝 הצטרפות לעריכה';
+  joinBtn.addEventListener('click', () => openReportPanel({ kind: 'בקשת הצטרפות' }));
+  joinWrap.appendChild(joinBtn);
+  personalBody.appendChild(joinWrap);
 
   if (!drafts.length){
     personalBody.insertAdjacentHTML('beforeend',
@@ -955,52 +979,6 @@ async function renderPersonalPages(){
         } }
     ]));
   });
-}
-
-function renderPersonalFeedback(){
-  personalBody.appendChild(sectionHead('💬 משוב והערות למפתח', ''));
-  const wrap = document.createElement('div');
-  wrap.innerHTML = '<p class="mini-note" style="margin-top:0">'
-    + 'אפשר להעיר על כל דבר — טעות בערך, רעיון לשיפור, או סתם לומר תודה. '
-    + 'ההודעה נשלחת ישירות מתוך התוסף; אם אין כרגע חיבור לרשת היא נשמרת ותישלח לבד בפתיחה הבאה.</p>';
-  const ta = document.createElement('textarea');
-  ta.placeholder = 'כתבו כאן את ההערה שלכם...';
-  wrap.appendChild(ta);
-  const row = document.createElement('div');
-  row.className = 'p-bulk';
-  row.style.marginTop = '12px';
-  const send = document.createElement('button');
-  send.type = 'button';
-  send.className = 'panel-btn';
-  send.textContent = '📨 שליחה למפתח';
-  send.addEventListener('click', async () => {
-    const body = ta.value.trim();
-    if (!body) return;
-    // הכותרת היא השורה הראשונה של המשוב — כך ל-Issue יש שם אמיתי ולא "משוב" סתמי.
-    const ok = await sendToDev(body.split('\n')[0], body, 'משוב');
-    if (ok) ta.value = '';
-  });
-  row.appendChild(send);
-  wrap.appendChild(row);
-  personalBody.appendChild(wrap);
-
-  // הצטרפות לעריכה (מפרט 4.0, ג.4.4) — נשלחת דרך ממסר הדיווחים הקיים, כסוג
-  // "בקשת הצטרפות" בפאנל הדיווח. **בכוונה לא קישור לדף ה-Issues:** הכתובת הזו
-  // אינה מוצגת בממשק (ר' ההערה ב-buildReportPanel — היא חושפת את שם המשתמש
-  // בגיטהאב), וקישור חיצוני גם היה נעלם לגמרי באופליין (net-disabled), בעוד
-  // שהממסר עובד אופליין דרך ה-outbox המקומי.
-  const joinWrap = document.createElement('div');
-  joinWrap.className = 'p-bulk';
-  joinWrap.style.marginTop = '18px';
-  joinWrap.innerHTML = '<p class="mini-note" style="margin-bottom:8px;">'
-    + 'רוצים לעזור להגדיל תורה — להוסיף מדריך למסכת, לתקן טעות, או להצטרף לעריכה? מוזמנים.</p>';
-  const joinBtn = document.createElement('button');
-  joinBtn.type = 'button';
-  joinBtn.className = 'panel-btn secondary';
-  joinBtn.textContent = '🤝 הצטרפות לעריכה';
-  joinBtn.addEventListener('click', () => openReportPanel({ kind: 'בקשת הצטרפות' }));
-  joinWrap.appendChild(joinBtn);
-  personalBody.appendChild(joinWrap);
 }
 
 // ============================================================
