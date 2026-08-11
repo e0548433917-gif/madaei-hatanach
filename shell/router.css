@@ -159,7 +159,9 @@ html, body {
 .cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(10px, 1.6vw, 16px);
+  /* בערכת "רגיל" (--card-pad: 12px) זה שקול ל-clamp(10px,1.6vw,16px) הישן -
+     עכשיו גם שורת עמוד הבית מגיבה להגדרת הצפיפות, לא רק .entry-card. */
+  gap: clamp(calc(var(--card-pad) * .83), 1.6vw, calc(var(--card-pad) * 1.33));
   max-width: 640px;
   margin: 0 auto;
 }
@@ -185,7 +187,9 @@ html, body {
   background: var(--color-surface);
   border: 1px solid var(--color-outline-faint);
   border-radius: var(--radius-md);
-  padding: clamp(12px, 2vw, 20px) 10px;
+  /* בערכת "רגיל" (--card-pad: 12px) זה שקול ל-clamp(12px,2vw,20px) הישן -
+     כרטיסי הבית והמסכתות מגיבים עכשיו להגדרת הצפיפות כמו .entry-card. */
+  padding: clamp(var(--card-pad), 2vw, calc(var(--card-pad) * 1.65)) 10px;
   text-align: center;
   cursor: pointer;
   transition: box-shadow .15s, transform .15s, border-color .15s, background .15s;
@@ -507,6 +511,14 @@ html, body {
   flex: 0 0 auto; font-size: .86em; color: var(--color-on-surface-dim);
   margin-bottom: 0; padding-bottom: 12px;
 }
+/* מצב חיבור הנקדן המקומי (פיילוט זיהוי-הקשרי, ר' nikud-engine.js) - שורה דקה
+   ואופציונלית מעל צ'יפי הסינון; ריקה = לא מוצגת (:empty). */
+#nikudStatus {
+  flex: 0 0 auto; font-size: .8em; color: var(--color-on-surface-faint);
+  margin-bottom: 10px;
+}
+#nikudStatus:empty { display: none; margin: 0; }
+#nikudStatus.on { color: var(--color-on-surface-dim); }
 #resultsChips {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--color-outline-faint);
@@ -749,7 +761,10 @@ html, body {
 .masechtot-grid {
   max-width: none;
   margin: 0 0 6px;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  /* יחס קבוע ל--card-min, לא ערך קשיח: 63 כרטיסים צריכים מינימום קטן משמעותית
+     מ-.entry-card (200px), אבל עדיין נגררים אחרי הגדרת הצפיפות. ביחס 0.55
+     "רגיל" (200px) יוצא בדיוק 110px - הערך הקודם, אז זו לא שינוי ברירת מחדל. */
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-min) * .55), 1fr));
 }
 
 /* כרטיס ערך - M3 outlined card (elevation 0 במנוחה) */

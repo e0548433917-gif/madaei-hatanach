@@ -3,6 +3,18 @@
 // אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
 
 
+// עוטפת את identify() עם בדיקת-ההקשר החיה מול הנקדן (ר' nikud-engine.js) - פיילוט
+// ממוקד לפתרון מילים דו-משמעיות מ-STOPWORDS. משמשת גם את home.js (חיפוש חופשי).
+// לא סורקת פורטים כאן (NikudEngine.isConnected בלבד) - כדי שלא תוסיף השהיה לנתיב
+// הלחיצה כשאין הנקדן פתוח; הסריקה ברקע דרך NikudEngine.watch() שהופעל למטה.
+async function identifyWithLiveContext(text){
+  let allowStopwords = null;
+  if (window.NikudEngine && NikudEngine.isConnected()){
+    try { allowStopwords = await NikudEngine.resolveAmbiguousStopwords(text); } catch(e){}
+  }
+  return identify(text, { allowStopwords });
+}
+
 let openSelfSupportedCache = null;
 async function isOpenSelfSupported(){
   if (openSelfSupportedCache != null) return openSelfSupportedCache;
@@ -67,7 +79,7 @@ async function consumePendingIdentify(){
     // בקשה ישנה (למשל התוסף נפתח ידנית שבוע אחר כך) לא מוצגת
     if (rec.ts && (Date.now() - rec.ts) > 120000) return;
     if (rec.mode === 'propose'){ openGenericProposeForm(rec.text); return; }
-    const matches = await identify(rec.text);
+    const matches = await identifyWithLiveContext(rec.text);
     showResults(matches, rec.text);
   } finally {
     consumingPending = false;
@@ -112,7 +124,7 @@ async function handleIdentifyClick(payload){
     }
     return;
   }
-  const matches = await identify(text);
+  const matches = await identifyWithLiveContext(text);
 
   if (!(window.Otzaria && Otzaria.call)){
     bringToFront();
@@ -254,6 +266,10 @@ function waitForOtzaria(elapsed){
   setTimeout(() => waitForOtzaria(elapsed + 200), 200);
 }
 waitForOtzaria(0);
+
+// חיבור-רקע אופציונלי לנקדן המקומי, לא תלוי ב-Otzaria - ר' identifyWithLiveContext
+// למעלה ו-nikud-engine.js. שקט לגמרי אם הנקדן לא פועל (STOPWORDS מתנהג כמו היום).
+if (window.NikudEngine) NikudEngine.watch();
 
 // טעינה מוקדמת ברקע של כל מאגרי הזיהוי, כדי שהחיפוש הראשון יהיה מיידי.
 preloadAllGuides(CATEGORIES, 0);

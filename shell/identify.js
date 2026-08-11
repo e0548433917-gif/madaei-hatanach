@@ -112,7 +112,12 @@ function invalidateLookup(catId){
   if (typeof invalidateCoMentions === 'function') invalidateCoMentions();
 }
 
-async function identify(rawText){
+// opts.allowStopwords (אופציונלי): Set<string> של מילים מנורמלות (normalizeHeb) שלא
+// ייפסלו למרות היותן ב-STOPWORDS. פרמטר-נתונים גרידא - identify.js עצמו לא יודע
+// שהמקור הוא בדיקת-הקשר חיה מול הנקדן (shell/nikud-engine.js); הוא רק צריך לרוץ
+// בלי DOM/רשת גם ב-Node (ר' tools/validate.js), ולכן ה-opts שקוף/אופציונלי לגמרי.
+async function identify(rawText, opts){
+  const allowStopwords = (opts && opts.allowStopwords) || null;
   const words = tokenizeHeb(rawText);
   if (!words.length) return [];
   const results = []; // {catId, catLabel, name, entry, matchedVia}
@@ -121,7 +126,8 @@ async function identify(rawText){
     const { exact, loose } = await getLookup(cat);
     const seen = new Set(); // entry (object identity) already added for this category
     for (const w of words){
-      if (STOPWORDS.has(normalizeHeb(w))) continue;
+      const normW = normalizeHeb(w);
+      if (STOPWORDS.has(normW) && !(allowStopwords && allowStopwords.has(normW))) continue;
       const forms = candidateForms(w);
       let hitEntries = null;
       for (const f of forms){ if (exact.has(f)){ hitEntries = exact.get(f); break; } }

@@ -29,6 +29,20 @@ function renderResultsChips(matches, activeCat, onSelect){
   });
 }
 
+// מצב חיבור הנקדן המקומי, בקצרה - כדי שמי שרוצה זיהוי הקשרי משופר (ר' nikud-engine.js)
+// ישים לב שיש לו אפשרות להפעיל אותו. NikudEngine.isConnected() משקף את הבדיקה
+// האחרונה של watch() ברקע (bridge.js) - לא סורקת פורטים כאן, כדי לא להשהות את הרינדור.
+function renderNikudStatus(){
+  const el = document.getElementById('nikudStatus');
+  if (!el) return;
+  if (!window.NikudEngine){ el.textContent = ''; return; }
+  const connected = NikudEngine.isConnected();
+  el.textContent = connected
+    ? '🟢 הנקדן המקומי מחובר — זיהוי הקשרי של מילים דו-משמעיות פעיל'
+    : '⚪ הנקדן המקומי לא מחובר — הפעלתו (כמו ב״שומר השם״) משפרת זיהוי של מילים דו-משמעיות';
+  el.classList.toggle('on', connected);
+}
+
 function showResults(matches, selectedText){
   let activeResultsCat = 'all';
   printCtxResults = { matches: matches, selectedText: selectedText };   // ל״ייצוא כרטסת״ (print.js)
@@ -39,6 +53,7 @@ function showResults(matches, selectedText){
     renderResultsListRows(filtered, selectedText);
   }
   render();
+  renderNikudStatus();
 
   resultsOverlay.classList.add('open');
 }
