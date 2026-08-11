@@ -15,11 +15,11 @@ const MASECHTOT_SEDARIM = SEDER_ORDER.map(seder => ({
 // נפתחים כדף עצמאי בפריים הקיים (guideFrame, כמו openCustomHtmlPage ב-home.js),
 // דרך src אמיתי ולא srcdoc: כך הקבצים (script.js/style.css/diagrams.js) נטענים
 // ישירות מהדיסק, בלי לעבור דרך storage/טעינת-טקסט - פחות טוקנים וזיכרון גם בעתיד.
-// 'בכורות' הומר לכרטסת ילידית (מפרט 4.0, ד.1) — guideId פותח דרך openGuide,
-// בדיוק כמו domem/beithamikdash, במקום openExternalGuide (iframe). חולין וסוכה
-// עדיין ימתינו להמרה משלהם.
+// 'בכורות' ו'חולין' הומרו לכרטסת ילידית (מפרט 4.0, ד.1) — guideId פותח דרך
+// openGuide, בדיוק כמו domem/beithamikdash, במקום openExternalGuide (iframe).
+// סוכה עדיין ממתינה להמרה משלה.
 const MASECHET_TOOLS = {
-  'חולין': { title: 'תוסף חולין', path: 'guides/talmud-tools/chullin/index.html', icon: 'icon/masechtot/chullin.png' },
+  'חולין': { title: 'חולין', guideId: 'chullin', icon: 'icon/masechtot/chullin.png' },
   'בכורות': { title: 'מומים — מסכת בכורות', guideId: 'mumim', icon: 'icon/masechtot/bechorot.png' },
   'סוכה': { title: 'תוסף סוכה ולולב', path: 'guides/talmud-tools/sukkah-lulav/index.html', icon: 'icon/masechtot/sukkah.png' },
 };

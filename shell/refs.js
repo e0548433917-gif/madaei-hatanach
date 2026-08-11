@@ -64,6 +64,9 @@ function parseMidrashRef(source){
   // כללי: "פרקי דרבי אליעזר, פרק י"
   m = s.match(/^([א-ת" ]+?),\s*פרק\s+([א-ת]{1,3})$/);
   if (m) return { bookId: m[1].trim(), ref: 'פרק ' + m[2] };
+  // שולחן ערוך: "שולחן ערוך, יורה דעה כ, א" (אותה שיטה כמו רמב"ם: bookId = "ספר, חלק")
+  m = s.match(/^שולחן ערוך,?\s+(אורח חיים|יורה דעה|אבן העזר|חושן משפט)\s+([א-ת]{1,3})\s*,\s*[א-ת]{1,3}$/);
+  if (m) return { bookId: 'שולחן ערוך, ' + m[1].trim(), ref: 'סימן ' + m[2] };
   return null;
 }
 
@@ -117,9 +120,12 @@ document.addEventListener('click', (e) => {
 // רק אלמנטים עם data-external-link (פתיחת אתר חיצוני) מסומנים data-requires-net.
 // דיווח באגים (personal.js) לא מסומן בכוונה — הוא עובד אופליין (outbox מקומי).
 // net-disabled = display:none לגמרי (לא רק עמעום/נעילה) — ר' router.css.
-let isOnline = navigator.onLine;
+// כל הפונקציות כאן מוגנות ב-typeof כדי שהקובץ יישאר טעין בבטחה גם בסביבת ה-vm
+// המצומצמת של tools/lib/load.js (loadRefParsers) - אין שם navigator/MutationObserver.
+let isOnline = (typeof navigator !== 'undefined') ? navigator.onLine : true;
 
 function applyOnlineState() {
+  if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
   document.querySelectorAll('[data-requires-net]').forEach((el) => {
     el.disabled = !isOnline;
     el.classList.toggle('net-disabled', !isOnline);
@@ -127,6 +133,7 @@ function applyOnlineState() {
 }
 
 async function verifyOnline() {
+  if (typeof Otzaria === 'undefined' || !Otzaria.call) return;
   try {
     const res = await Promise.race([
       Otzaria.call('network.fetch', { url: 'https://otzaria.org', method: 'HEAD' }),
@@ -139,22 +146,26 @@ async function verifyOnline() {
   applyOnlineState();
 }
 
-window.addEventListener('online',  () => { verifyOnline(); });
-window.addEventListener('offline', () => { isOnline = false; applyOnlineState(); });
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('online',  () => { verifyOnline(); });
+  window.addEventListener('offline', () => { isOnline = false; applyOnlineState(); });
+}
 applyOnlineState();
 verifyOnline();
 
 // אלמנטי data-requires-net נוצרים ברובם דינמית (פאנלים/פופאפים שנפתחים אחרי הטעינה),
 // אז סריקה חד-פעמית בעלייה לא מספיקה — צופים בהוספות ל-DOM ומיישמים עליהן את המצב
 // הידוע כבר (isOnline). זו לא בדיקת רשת חוזרת, רק סנכרון תצוגה לאלמנט חדש.
-new MutationObserver((mutations) => {
-  for (const m of mutations) {
-    for (const node of m.addedNodes) {
-      if (node.nodeType !== 1) continue;
-      if (node.matches && node.matches('[data-requires-net]') || (node.querySelector && node.querySelector('[data-requires-net]'))) {
-        applyOnlineState();
-        return;
+if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' && document.body) {
+  new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (node.matches && node.matches('[data-requires-net]') || (node.querySelector && node.querySelector('[data-requires-net]'))) {
+          applyOnlineState();
+          return;
+        }
       }
     }
-  }
-}).observe(document.body, { childList: true, subtree: true });
+  }).observe(document.body, { childList: true, subtree: true });
+}
