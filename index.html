@@ -105,6 +105,11 @@
     <span id="talmudViewTitle">📚 ציורים וכלי עזר</span>
   </div>
   <div id="talmudBody">
+    <div class="talmud-partial-banner" id="talmudPartialBanner">
+      🚧 <b>מהדורה חלקית</b> — כרגע יש מדריכים מוטמעים רק לשלוש מסכתות (סוכה · בכורות · חולין).
+      יש ברשותכם מדריך למסכת נוספת? אפשר לשלוח אותו או להוסיף אותו ידנית
+      <a href="#" id="talmudBannerAddLink">דרך האזור האישי</a>.
+    </div>
     <div id="talmudMasechtotGrid"></div>
   </div>
 </div>
@@ -189,6 +194,16 @@
     <p class="panel-hint">בחרו קובץ HTML מהמחשב — הוא יישמר לצמיתות (גם אחרי סגירת אוצריא) ויופיע כאן ברשימה.</p>
     <input type="text" id="addHtmlName" placeholder="שם לזיהוי הדף (למשל: לוח שנה אישי)">
     <input type="file" id="addHtmlFile" accept=".html,.htm,text/html">
+    <div class="set-group">
+      <label class="set-title">מיקום הדף</label>
+      <div class="set-opts" id="addHtmlPlacement">
+        <button class="set-opt active" type="button" data-val="home">עמוד ראשי</button>
+        <button class="set-opt" type="button" data-val="masechet">ליד מסכת מסוימת</button>
+      </div>
+    </div>
+    <select id="addHtmlMasechet" aria-label="בחירת מסכת" style="display:none"></select>
+    <p class="panel-hint">איקון לדף (רשות) — בלי בחירה יוצג האיקון הראשי של התוסף.</p>
+    <input type="file" id="addHtmlIcon" accept="image/*">
     <div class="panel-actions">
       <button class="panel-btn" id="addHtmlSave">💾 שמירה</button>
       <button class="panel-btn secondary" id="addHtmlClose">סגירה</button>
@@ -279,6 +294,7 @@
      בכוונה <script> רגיל ולא type="module" — כל הקבצים חולקים scope גלובלי אחד. -->
 <script src="shell/core.js"></script>
 <script src="shell/data.js"></script>
+<script src="shell/nikud-engine.js"></script>
 <script src="shell/identify.js"></script>
 <script src="shell/refs.js"></script>
 <script src="shell/co-mentions.js"></script>

@@ -930,8 +930,10 @@ async function renderPersonalPages(){
       personalEmpty('אין עדיין דפים שמורים. דף שנוסף כאן נשמר לצמיתות ומקבל ריבוע משלו בעמוד השער.'));
     return;
   }
-  index.forEach(name => {
-    personalBody.appendChild(personalRow(name, 'דף HTML שמור', [
+  index.forEach(page => {
+    const name = page.name;
+    const sub = (page.placement === 'masechet' && page.masechet) ? ('דף HTML שמור · מסכת ' + page.masechet) : 'דף HTML שמור · עמוד ראשי';
+    personalBody.appendChild(personalRow(name, sub, [
       { label: 'פתיחה', onClick: () => { closePersonalArea(); openCustomHtmlPage(name); } },
       { label: 'שליחה', secondary: true, onClick: async () => {
           const content = await storageGet('madaei_html_page__' + name);
@@ -942,8 +944,9 @@ async function renderPersonalPages(){
       { label: 'מחיקה', secondary: true, onClick: async () => {
           if (!window.confirm('למחוק את "' + name + '"?')) return;
           const idx2 = await getHtmlPagesIndex();
-          await storageSet(HTML_PAGES_INDEX_KEY, idx2.filter(n => n !== name));
+          await saveHtmlPagesIndex(idx2.filter(p => p.name !== name));
           await storageSet('madaei_html_page__' + name, null);
+          talmudRendered = false;
           renderCustomPageCards();
           renderPersonalBody();
         } }
@@ -977,6 +980,18 @@ function renderPersonalFeedback(){
   row.appendChild(send);
   wrap.appendChild(row);
   personalBody.appendChild(wrap);
+
+  // הצטרפות לעריכה (מפרט 4.0, ג.4.4) — קישור לדף הגיטהאב של הריפו, דרך
+  // data-external-link/confirmOpenExternal הקיימים (refs.js), כמו כל קישור חיצוני
+  // אחר כאן. נבחר על פני הודעת sendToDev כי זו בקשת הצטרפות לפרויקט קוד פתוח,
+  // לא דיווח על התוסף - העמוד עצמו (issues/README) הוא הכתובת הנכונה לזה.
+  const joinWrap = document.createElement('div');
+  joinWrap.className = 'p-bulk';
+  joinWrap.style.marginTop = '18px';
+  joinWrap.innerHTML = '<p class="mini-note" style="margin-bottom:8px;">'
+    + 'רוצים לעזור להגדיל תורה — להוסיף מדריך למסכת, לתקן טעות, או סתם להצטרף לעריכה? מוזמנים.</p>'
+    + '<a href="#" class="panel-btn secondary" data-external-link="' + esc(REPORT_ISSUES_URL) + '" data-requires-net>🤝 הצטרפות לעריכה — דף הפרויקט בגיטהאב</a>';
+  personalBody.appendChild(joinWrap);
 }
 
 // ============================================================
@@ -1081,6 +1096,7 @@ function renderPersonalWhatsNew(){
   refreshBtn.type = 'button';
   refreshBtn.className = 'panel-btn secondary';
   refreshBtn.textContent = '🔄 בדיקת עדכון עכשיו';
+  refreshBtn.setAttribute('data-requires-net', '');
   bulk.appendChild(refreshBtn);
   personalBody.appendChild(bulk);
 

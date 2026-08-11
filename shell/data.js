@@ -229,6 +229,19 @@ function storageGetJson(key){
   });
 }
 
+// עד 2.15.1 האינדקס היה מערך שמות (מחרוזות) בלבד. מ-2.16 (מפרט 4.0, ג׳) כל איבר
+// הוא אובייקט {name, placement, masechet, icon} — placement: 'home' | 'masechet'.
+// storageGetJson קורא בסובלנות גם ערך שנשמר כאובייקט/מערך ממש (כמו שהפורמט הישן
+// נשמר, לפני שהמעבר ל-storageSetJson) וגם מחרוזת JSON (הפורמט מ-2.16 ואילך) —
+// כך שאין צורך בקריאת storage כפולה כדי לתמוך בשני הפורמטים.
 async function getHtmlPagesIndex(){
-  return (await storageGet(HTML_PAGES_INDEX_KEY)) || [];
+  const raw = await storageGetJson(HTML_PAGES_INDEX_KEY);
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map(item => (typeof item === 'string')
+    ? { name: item, placement: 'home', masechet: null, icon: null }
+    : { name: item.name, placement: item.placement || 'home', masechet: item.masechet || null, icon: item.icon || null });
+}
+
+function saveHtmlPagesIndex(list){
+  return storageSetJson(HTML_PAGES_INDEX_KEY, list);
 }

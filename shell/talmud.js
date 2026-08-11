@@ -36,31 +36,40 @@ function openExternalGuide(path, title){
 }
 
 // אין איקון מוכן למסכת = האיקון הראשי של אוצריא (מפרט 4.0, ב.4) — לא אמוג'י, לא המצאה.
-function masechetCardHtml(name){
+// page = דף HTML אישי שהמשתמש הצמיד למסכת הזו דרך "האזור האישי" (מפרט 4.0, ג.1),
+// אם יש כזה ואין כלי-עזר מובנה (MASECHET_TOOLS) - שתי המערכות לא מתנגשות כי
+// MASECHET_TOOLS הוא תמיד עדיפות ראשונה.
+function masechetCardHtml(name, page){
   const tool = MASECHET_TOOLS[name];
-  const icon = (tool && tool.icon) || 'icon/icon.png';
+  const icon = (tool && tool.icon) || (page && page.icon) || 'icon/icon.png';
   // הבאדג' "גרסה ראשונית" מציין כלי-עזר שעדיין iframe חיצוני (מפרט 4.0, ד) —
   // guideId = כרטסת ילידית מלאה, לא זמנית.
-  const badge = (tool && !tool.guideId) ? '<span class="talmud-tool-badge">גרסה ראשונית</span>' : '';
+  const badge = (tool && !tool.guideId) ? '<span class="talmud-tool-badge">גרסה ראשונית</span>'
+    : (!tool && page) ? '<span class="talmud-tool-badge">דף אישי</span>' : '';
   return `<div class="card" data-masechet="${esc(name)}">` +
     `<img class="icon-img" src="${esc(icon)}" alt="" onerror="this.src='icon/icon.png'">` +
     `<span class="label">${esc(name)}${badge}</span></div>`;
 }
 
-function renderMasechtot(){
+async function renderMasechtot(){
+  const htmlIndex = await getHtmlPagesIndex();
+  const masechetPages = {};
+  htmlIndex.forEach(p => { if (p.placement === 'masechet' && p.masechet) masechetPages[p.masechet] = p; });
   talmudMasechtotGrid.innerHTML = MASECHTOT_SEDARIM.map(s => `
       <h3 class="masechet-seder-head">סדר ${esc(s.seder)}</h3>
       <div class="cards masechtot-grid">
-        ${s.list.map(masechetCardHtml).join('')}
+        ${s.list.map(name => masechetCardHtml(name, masechetPages[name])).join('')}
       </div>
     `).join('');
   talmudMasechtotGrid.querySelectorAll('.card').forEach(el => {
     el.addEventListener('click', () => {
       const name = el.dataset.masechet;
       const tool = MASECHET_TOOLS[name];
+      const page = masechetPages[name];
       if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
       else if (tool) openExternalGuide(tool.path, tool.title);
-      else window.alert('מסכת ' + name + ' — בחירת דף ותוכן יתאפשרו בעדכון עתידי.');
+      else if (page) openCustomHtmlPage(page.name);
+      else window.alert('מסכת ' + name + ' — אין עדיין מדריך למסכת זו. אי״ה ייבנה בעתיד, ומי שרוצה לעזור להגדיל תורה מוזמן להצטרף.');
     });
   });
 }
@@ -78,3 +87,11 @@ function closeTalmudView(){
 
 document.getElementById('talmudCard').addEventListener('click', openTalmudView);
 document.getElementById('talmudBackBtn').addEventListener('click', closeTalmudView);
+// באנר "מהדורה חלקית" (מפרט 4.0, ג.4.2) - מפנה לפאנל הוספת דף HTML באזור האישי.
+const talmudBannerAddLink = document.getElementById('talmudBannerAddLink');
+if (talmudBannerAddLink) talmudBannerAddLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  closeTalmudView();
+  openPersonalArea('pages');
+  openAddHtmlPanel();
+});

@@ -151,7 +151,8 @@ async function identify(rawText){
 async function identifyInCustomPages(normalizedText){
   const index = await getHtmlPagesIndex();
   const results = [];
-  for (const name of index){
+  for (const page of index){
+    const name = page.name;
     const content = await storageGet('madaei_html_page__' + name);
     if (!content) continue;
     const plain = normalizeHeb(content.replace(/<[^>]*>/g, ' '));

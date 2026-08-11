@@ -8,12 +8,37 @@
 // היא הכניסה היחידה, והשליחה עצמה עוברת דרך sendToDev.
 
 // ---- הוספת דף HTML (נשמר לצמיתות דרך storage.get/set, כמו בתוסף "צופה HTML") ----
+// מ-2.16 (מפרט 4.0, ג׳): לכל דף גם מיקום (עמוד ראשי / ליד מסכת) ואיקון אופציונלי.
 const addHtmlOverlay = document.getElementById('addHtmlOverlay');
 const addHtmlName = document.getElementById('addHtmlName');
 const addHtmlFile = document.getElementById('addHtmlFile');
+const addHtmlPlacementWrap = document.getElementById('addHtmlPlacement');
+const addHtmlMasechetSel = document.getElementById('addHtmlMasechet');
+const addHtmlIconInput = document.getElementById('addHtmlIcon');
 const savedHtmlList = document.getElementById('savedHtmlList');
 let pendingHtmlContent = null;
+let pendingIconContent = null;
+let addHtmlPlacementVal = 'home';
 
+// רשימת 63 המסכתות מקובצת לפי סדר, כמו studySelectA ב-shas.js — נבנית פעם אחת,
+// כי MISHNA_MASECHTOT/SEDER_ORDER (shas.js) קבועים ונטענים לפני home.js.
+if (addHtmlMasechetSel){
+  addHtmlMasechetSel.innerHTML = '<option value="" selected disabled>בחרו מסכת…</option>' +
+    SEDER_ORDER.map(seder => `<optgroup label="סדר ${esc(seder)}">` +
+      MISHNA_MASECHTOT.filter(m => m.seder === seder).map(m => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('') +
+      '</optgroup>').join('');
+}
+
+function resetAddHtmlForm(){
+  addHtmlName.value = '';
+  addHtmlFile.value = '';
+  pendingHtmlContent = null;
+  if (addHtmlIconInput) addHtmlIconInput.value = '';
+  pendingIconContent = null;
+  addHtmlPlacementVal = 'home';
+  if (addHtmlPlacementWrap) addHtmlPlacementWrap.querySelectorAll('.set-opt').forEach(b => b.classList.toggle('active', b.dataset.val === 'home'));
+  if (addHtmlMasechetSel){ addHtmlMasechetSel.value = ''; addHtmlMasechetSel.style.display = 'none'; }
+}
 
 async function renderSavedHtmlList(){
   const index = await getHtmlPagesIndex();
@@ -22,10 +47,12 @@ async function renderSavedHtmlList(){
     savedHtmlList.innerHTML = '<div class="mini-note">אין עדיין דפים שמורים.</div>';
     return;
   }
-  for (const name of index){
+  for (const page of index){
+    const name = page.name;
+    const placeLabel = (page.placement === 'masechet' && page.masechet) ? ('מסכת ' + page.masechet) : 'עמוד ראשי';
     const row = document.createElement('div');
     row.className = 'saved-html-row';
-    row.innerHTML = `<span>${name}</span>
+    row.innerHTML = `<span>${esc(name)} <span class="mini-note">(${esc(placeLabel)})</span></span>
       <span>
         <button class="panel-btn" data-open>פתיחה</button>
         <button class="panel-btn secondary" data-send>שליחה למפתח</button>
@@ -42,8 +69,9 @@ async function renderSavedHtmlList(){
     row.querySelector('[data-del]').addEventListener('click', async () => {
       if (!window.confirm('למחוק את "' + name + '"?')) return;
       const idx2 = await getHtmlPagesIndex();
-      await storageSet(HTML_PAGES_INDEX_KEY, idx2.filter(n => n !== name));
+      await saveHtmlPagesIndex(idx2.filter(p => p.name !== name));
       await storageSet('madaei_html_page__' + name, null);
+      talmudRendered = false;   // ליד מסכת ייתכן שהיה מוצמד דף שנמחק - יש לבנות מחדש
       renderSavedHtmlList();
       renderCustomPageCards();
       refreshPersonalIfOpen();
@@ -65,6 +93,7 @@ async function openCustomHtmlPage(name){
 }
 
 function openAddHtmlPanel(){
+  resetAddHtmlForm();
   addHtmlOverlay.classList.add('open');
   renderSavedHtmlList();
 }
@@ -79,22 +108,40 @@ addHtmlFile.addEventListener('change', () => {
   reader.onload = () => { pendingHtmlContent = reader.result; };
   reader.readAsText(file);
 });
+if (addHtmlPlacementWrap) addHtmlPlacementWrap.addEventListener('click', (e) => {
+  const b = e.target.closest('.set-opt');
+  if (!b) return;
+  addHtmlPlacementVal = b.dataset.val;
+  addHtmlPlacementWrap.querySelectorAll('.set-opt').forEach(x => x.classList.toggle('active', x === b));
+  if (addHtmlMasechetSel) addHtmlMasechetSel.style.display = (addHtmlPlacementVal === 'masechet') ? '' : 'none';
+});
+if (addHtmlIconInput) addHtmlIconInput.addEventListener('change', () => {
+  const file = addHtmlIconInput.files && addHtmlIconInput.files[0];
+  if (!file){ pendingIconContent = null; return; }
+  const reader = new FileReader();
+  reader.onload = () => { pendingIconContent = reader.result; };
+  reader.readAsDataURL(file);
+});
 document.getElementById('addHtmlSave').addEventListener('click', async () => {
   const name = addHtmlName.value.trim();
   if (!name){ window.alert('יש לתת שם לדף'); return; }
   if (!pendingHtmlContent){ window.alert('יש לבחור קובץ HTML'); return; }
   if (!hasOtzaria()){ window.alert('שמירה קבועה דורשת פתיחה בתוך אוצריא.'); return; }
+  const masechet = (addHtmlPlacementVal === 'masechet') ? (addHtmlMasechetSel && addHtmlMasechetSel.value) : null;
+  if (addHtmlPlacementVal === 'masechet' && !masechet){ window.alert('יש לבחור מסכת'); return; }
   const index = await getHtmlPagesIndex();
-  if (!index.includes(name)) index.push(name);
-  await storageSet(HTML_PAGES_INDEX_KEY, index);
+  const entry = { name: name, placement: addHtmlPlacementVal, masechet: masechet, icon: pendingIconContent };
+  const existingIdx = index.findIndex(p => p.name === name);
+  if (existingIdx >= 0) index[existingIdx] = entry; else index.push(entry);
+  await saveHtmlPagesIndex(index);
   await storageSet('madaei_html_page__' + name, pendingHtmlContent);
-  addHtmlName.value = '';
-  addHtmlFile.value = '';
-  pendingHtmlContent = null;
   await Otzaria.call('notifications.showInApp', { message: 'הדף נשמר לצמיתות', type: 'success' }).catch(()=>{});
+  resetAddHtmlForm();
+  addHtmlOverlay.classList.remove('open');   // מפרט 4.0 ג.3 — שמירה סוגרת את הפאנל
   renderSavedHtmlList();
   renderCustomPageCards();
   refreshPersonalIfOpen();
+  talmudRendered = false;   // אם הדף הוצמד למסכת - יש לבנות מחדש את כרטיסי המסכתות
 });
 
 // ---- ריבועים בעמוד השער עבור דפי HTML שנשמרו ----
@@ -105,12 +152,16 @@ async function renderCustomPageCards(){
   extraGrid.querySelectorAll('.card[data-custom-page]').forEach(el => el.remove());
   const index = await getHtmlPagesIndex();
   const anchor = document.getElementById('personalCard');   // הכרטיסים נכנסים לפני "האזור האישי"
-  index.forEach(name => {
+  // דף שהוצמד למסכת (placement:'masechet') מקבל כרטיס בעמוד המסכתות במקום כאן - ר' talmud.js.
+  index.filter(page => page.placement !== 'masechet').forEach(page => {
     const card = document.createElement('div');
     card.className = 'card';
-    card.setAttribute('data-custom-page', name);
-    card.innerHTML = `<span class="icon">📄</span><span class="label">${esc(name)}</span>`;
-    card.addEventListener('click', () => openCustomHtmlPage(name));
+    card.setAttribute('data-custom-page', page.name);
+    const iconHtml = page.icon
+      ? `<img class="icon-img" src="${esc(page.icon)}" alt="" onerror="this.outerHTML='&lt;span class=\\'icon\\'&gt;📄&lt;/span&gt;'">`
+      : '<span class="icon">📄</span>';
+    card.innerHTML = iconHtml + `<span class="label">${esc(page.name)}</span>`;
+    card.addEventListener('click', () => openCustomHtmlPage(page.name));
     extraGrid.insertBefore(card, anchor);
   });
 }
