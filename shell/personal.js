@@ -59,7 +59,10 @@ const REPORT_FLUSH_DELAY_MS = 4000;       // אחרי שהתוסף כבר שימ
 const REPORT_KINDS = [
   { id: 'באג בקוד',   label: '🐞 באג בקוד — משהו בתוסף לא עובד' },
   { id: 'טעות בתוכן', label: '📖 טעות בתוכן — פרט לא נכון בערך' },
-  { id: 'הצעה',       label: '💡 הצעה — רעיון לשיפור' }
+  { id: 'הצעה',       label: '💡 הצעה — רעיון לשיפור' },
+  // מפרט 4.0, ג.4.4 — ההזמנה להצטרף (הבאנר ב״ציורים וכלי עזר״ וה-placeholder
+  // של מסכת בלי מדריך) נכנסת לממסר הקיים כסוג נוסף, ולא כערוץ רביעי נפרד.
+  { id: 'בקשת הצטרפות', label: '🤝 בקשת הצטרפות — לעזור בכתיבה ובעריכה' }
 ];
 // כתובת הדיווחים הידנית — למי שמעדיף לפתוח Issue בעצמו, או שהשליחה אצלו חסומה.
 // לא נפתחת בניווט ישיר אלא דרך data-external-link ⇒ confirmOpenExternal (refs.js).
@@ -981,16 +984,22 @@ function renderPersonalFeedback(){
   wrap.appendChild(row);
   personalBody.appendChild(wrap);
 
-  // הצטרפות לעריכה (מפרט 4.0, ג.4.4) — קישור לדף הגיטהאב של הריפו, דרך
-  // data-external-link/confirmOpenExternal הקיימים (refs.js), כמו כל קישור חיצוני
-  // אחר כאן. נבחר על פני הודעת sendToDev כי זו בקשת הצטרפות לפרויקט קוד פתוח,
-  // לא דיווח על התוסף - העמוד עצמו (issues/README) הוא הכתובת הנכונה לזה.
+  // הצטרפות לעריכה (מפרט 4.0, ג.4.4) — נשלחת דרך ממסר הדיווחים הקיים, כסוג
+  // "בקשת הצטרפות" בפאנל הדיווח. **בכוונה לא קישור לדף ה-Issues:** הכתובת הזו
+  // אינה מוצגת בממשק (ר' ההערה ב-buildReportPanel — היא חושפת את שם המשתמש
+  // בגיטהאב), וקישור חיצוני גם היה נעלם לגמרי באופליין (net-disabled), בעוד
+  // שהממסר עובד אופליין דרך ה-outbox המקומי.
   const joinWrap = document.createElement('div');
   joinWrap.className = 'p-bulk';
   joinWrap.style.marginTop = '18px';
   joinWrap.innerHTML = '<p class="mini-note" style="margin-bottom:8px;">'
-    + 'רוצים לעזור להגדיל תורה — להוסיף מדריך למסכת, לתקן טעות, או סתם להצטרף לעריכה? מוזמנים.</p>'
-    + '<a href="#" class="panel-btn secondary" data-external-link="' + esc(REPORT_ISSUES_URL) + '" data-requires-net>🤝 הצטרפות לעריכה — דף הפרויקט בגיטהאב</a>';
+    + 'רוצים לעזור להגדיל תורה — להוסיף מדריך למסכת, לתקן טעות, או להצטרף לעריכה? מוזמנים.</p>';
+  const joinBtn = document.createElement('button');
+  joinBtn.type = 'button';
+  joinBtn.className = 'panel-btn secondary';
+  joinBtn.textContent = '🤝 הצטרפות לעריכה';
+  joinBtn.addEventListener('click', () => openReportPanel({ kind: 'בקשת הצטרפות' }));
+  joinWrap.appendChild(joinBtn);
   personalBody.appendChild(joinWrap);
 }
 
