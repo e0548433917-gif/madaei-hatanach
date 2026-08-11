@@ -3,8 +3,35 @@
 // אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
 
 
+// בדיקה חיה: האם מקור שהמשתמש מקליד בטופס העריכה ייפתח כקישור לספרייה. לפני
+// שהתווסף הרמז הזה, מקור בניסוח לא-תואם (למשל "רמב״ם, ביאת מקדש" בלי "הלכות" —
+// ר' תיקון ד.1א למומים) נשמר בלי שום התראה ופשוט לא נפתח, בלי שהמשתמש יבין למה.
+// parseVerseRef/parseMidrashRef (shell/refs.js) כבר נטען לפני קובץ זה ב-index.html.
+function attachRefCheck(textareaId, statusId, kind){
+  const ta = document.getElementById(textareaId);
+  const status = document.getElementById(statusId);
+  if (!ta || !status) return;
+  function update(){
+    const lines = ta.value.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length){ status.innerHTML = ''; return; }
+    status.innerHTML = lines.map(line => {
+      const ref = line.split('|')[0].trim();
+      if (!ref) return '';
+      const ok = !!(kind === 'verses' ? parseVerseRef(ref) : parseMidrashRef(ref));
+      const style = ok ? 'color:var(--color-success,#2e7d32);' : 'color:var(--color-on-surface-faint,#888);';
+      return `<div style="font-size:12px;${style}">${ok ? '✓' : '○'} ${esc(ref)}`
+        + (ok ? '' : ' — לא יזוהה כקישור לספרייה (יוצג כטקסט בלבד)') + `</div>`;
+    }).join('');
+  }
+  ta.addEventListener('input', update);
+  update();
+}
+
 // עורך מלא: כל השדות של המדריך (גם הריקים), מקורות (פסוקים/חז"ל), תמונה, וקטגוריות
-// מותאמות שהמשתמש מוסיף בעצמו. שמירה מקומית או שליחת הצעה למפתח.
+// מותאמות שהמשתמש מוסיף בעצמו. שמירה מקומית או שליחת הצעה למפתח. משמש גם להוספת
+// ערך חדש לגמרי (openGenericProposeForm למטה בונה entry ריק ומעביר לכאן) — כך
+// שמקור/כינוי שנוסף בערך חדש עובר באותו צינור בדיוק (קישור לספרייה, "מוזכר יחד
+// עם" אחרי invalidateLookup) כמו עריכת ערך קיים, במקום להיות רק טיוטת הצעה.
 function openGenericEditForm(entry, catIdOverride){
   const catId = catIdOverride || (currentGuideCat ? currentGuideCat.id : null);
   const { base, custom } = guideFieldsFor(catId, entry);
@@ -44,17 +71,25 @@ function openGenericEditForm(entry, catIdOverride){
     <div class="field-label">כינויים נוספים <span class="mini-hint">(מופרד בפסיקים)</span></div>
     <input type="text" data-fld="aliases" value="${esc((entry.aliases||[]).join(', '))}" class="f-input">
 
+    ${(catsCache[catId] || []).length ? `
+    <div class="field-label">תת-קטגוריה</div>
+    <select data-fld="cat" class="f-input">${(catsCache[catId]||[]).map(c =>
+      `<option value="${esc(c.id)}"${c.id === entry.cat ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}</select>
+    ` : ''}
+
     ${base.map(inputFor).join('')}
 
     <div class="field-label">תמונה <span class="mini-hint">(קישור או קובץ מהמחשב)</span></div>
     <input type="text" data-fld="customImage" value="${esc(entry.customImage||'')}" placeholder="https://... או בחרו קובץ למטה" class="f-input">
     <input type="file" id="editImgFile" accept="image/*" style="margin-top:6px;">
 
-    <div class="field-label">מקורות בתנ״ך <span class="mini-hint">(שורה לכל מקור: מראה־מקום | טקסט)</span></div>
-    <textarea data-multi="verses" class="f-textarea" style="min-height:70px">${esc(versesText)}</textarea>
+    <div class="field-label">מקורות בתנ״ך <span class="mini-hint">(שורה לכל מקור: מראה־מקום | טקסט — למשל "בראשית יב, א")</span></div>
+    <textarea data-multi="verses" id="editVersesTa" class="f-textarea" style="min-height:70px">${esc(versesText)}</textarea>
+    <div id="editVersesCheck" class="ref-check-box"></div>
 
-    <div class="field-label">מקורות חז״ל <span class="mini-hint">(שורה לכל מקור: מקור | תוכן | קישור)</span></div>
-    <textarea data-multi="midrash" class="f-textarea" style="min-height:70px">${esc(midrashText)}</textarea>
+    <div class="field-label">מקורות חז״ל <span class="mini-hint">(שורה לכל מקור: מקור | תוכן | קישור — פורמטים לדוגמה: "בבלי, בכורות מג." · "משנה, בכורות ז, א" · "רמב״ם, הלכות ביאת המקדש ח, א")</span></div>
+    <textarea data-multi="midrash" id="editMidrashTa" class="f-textarea" style="min-height:70px">${esc(midrashText)}</textarea>
+    <div id="editMidrashCheck" class="ref-check-box"></div>
 
     <div class="field-label">מקורות נוספים / קישורים <span class="mini-hint">(שורה לכל מקור)</span></div>
     <textarea data-multi="academic" class="f-textarea">${esc(academicText)}</textarea>
@@ -73,6 +108,8 @@ function openGenericEditForm(entry, catIdOverride){
       ${editExists ? '<button class="nf-btn secondary danger-link" id="genEditRestore">↺ שחזור לגרסת המקור</button>' : ''}
     </div>`;
   entryOverlay.classList.add('open');
+  attachRefCheck('editVersesTa', 'editVersesCheck', 'verses');
+  attachRefCheck('editMidrashTa', 'editMidrashCheck', 'midrash');
 
   const restoreBtn = document.getElementById('genEditRestore');
   if (restoreBtn) restoreBtn.addEventListener('click', () => {
@@ -173,81 +210,94 @@ function openGenericEditForm(entry, catIdOverride){
     return lines.join('\n') || '(לא זוהה שינוי)';
   }
 
-  document.getElementById('genEditCancel').addEventListener('click', () => openEntryDetail(entry));
+  // ערך חדש שעדיין לא נשמר (openGenericProposeForm למטה) אינו חבר ב-dataCache[catId]
+  // עדיין — פתיחת "כרטיס הערך" עליו לפני שמירה תיראה שבורה (בלי cat/תמונה תקינים).
+  function isRegistered(){ return !!(dataCache[catId] && dataCache[catId].indexOf(entry) !== -1); }
+  // רושם ערך חדש לגמרי בתוך dataCache[catId] (ולכן גם currentGuideData, אותו מערך
+  // בדיוק) - מאותו רגע הוא כרטיס אמיתי: parseMidrashRef/parseVerseRef על המקורות
+  // שלו (קישור לספרייה) ו"מוזכר יחד עם" (אחרי invalidateLookup) עובדים בדיוק כמו
+  // על ערך שהגיע מקובץ הדאטה. ערך קיים שכבר רשום - לא עושה כלום.
+  function registerIfNew(){
+    if (isRegistered()) return;
+    if (!dataCache[catId]) dataCache[catId] = [];
+    dataCache[catId].push(entry);
+  }
+
+  document.getElementById('genEditCancel').addEventListener('click', () => {
+    if (isRegistered()) openEntryDetail(entry); else entryOverlay.classList.remove('open');
+  });
   document.getElementById('genEditSave').addEventListener('click', () => {
+    const wasNew = !isRegistered();
     apply(collect());
+    if (!entry.name){ window.alert('יש למלא שם לערך.'); return; }
+    registerIfNew();
     const ok = saveEntryEdit(catId, origName, entry);
-    invalidateLookup(catId);          // כדי שכינויים/שמות חדשים ייכנסו למנוע הזיהוי מיד
+    invalidateLookup(catId);          // כדי שכינויים/שמות חדשים ייכנסו למנוע הזיהוי מיד, וגם co-mentions
     renderGuideGrid(guideSearchBox.value);
     if (!ok) window.alert('השינוי הוחל, אך שמירתו הקבועה נכשלה (ייתכן שאחסון הדפדפן מלא) — הוא לא ישרוד רענון.');
+    else if (wasNew) window.alert('הערך "' + entry.name + '" נוסף ונשמר במכשיר זה.');
     openEntryDetail(entry);
   });
   document.getElementById('genEditSend').addEventListener('click', async () => {
+    const wasNew = !isRegistered();
     const c = collect();
+    if (!c.fields.name){ window.alert('יש למלא שם לערך.'); return; }
     const diff = buildDiff(c);
     apply(c);
+    registerIfNew();
     renderGuideGrid(guideSearchBox.value);
     // 2.13.2 — דרך ממסר הדיווחים (personal.js), לא במייל. שמירה בתור + שליחה שקטה.
+    const label = wasNew ? 'הצעת ערך חדש' : 'הצעת עריכה';
     await sendToDev(
-      'הצעת עריכה — ' + entry.name + ' (' + (CATEGORIES.find(x=>x.id===catId)||{label:''}).label + ')',
-      'הצעת עריכה לערך: ' + entry.name + '\n\n' + diff,
-      'הצעת עריכה'
+      label + ' — ' + entry.name + ' (' + (CATEGORIES.find(x=>x.id===catId)||{label:''}).label + ')',
+      label + ' לערך: ' + entry.name + '\n\n' + diff,
+      label
     );
     openEntryDetail(entry);
   });
 }
 
+// שלב 1 (בחירת מדריך+שם) ואז שלב 2 - אותו עורך מלא שמשמש לעריכת ערך קיים
+// (openGenericEditForm), עם כל השדות, הבדיקה החיה של פורמט המקורות, ושני כפתורי
+// השמירה/שליחה. עד עכשיו הטופס הזה יצר רק "טיוטת הצעה" נפרדת (<cat>_nf_drafts_v1,
+// שני שדות טקסט חופשי) שלא הפכה לערך אמיתי: לא נכנסה ל-dataCache, לא הוצגה ככרטיס,
+// ולכן מקור שהוקלד בה לא נבדק מול parseMidrashRef/parseVerseRef ולא קיבל קישור
+// לספרייה - וגם "מוזכר יחד עם" לא היה יכול לפעול על ערך שלא קיים בפועל. הטיוטות
+// הישנות (אם יש) עדיין מוצגות ב"האזור האישי" (personal.js) - רק שאין יותר כתיבה
+// חדשה לשם; ערך שנוצר כאן נשמר כמו כל עריכה אחרת (<cat>_edits_v1, "העריכות שלי").
 function openGenericProposeForm(prefillName){
   const safeText = esc(prefillName || '');
   const defaultCatId = currentGuideCat ? currentGuideCat.id : CATEGORIES[0].id;
   const catOptions = CATEGORIES.map(c =>
     `<option value="${c.id}"${c.id === defaultCatId ? ' selected' : ''}>${c.icon} ${esc(c.label)}</option>`).join('');
   entryModalInner.innerHTML = `
-    <h2>${prefillName ? '"' + safeText + '" אינו קיים עדיין במדריך' : 'הצעת ערך חדש'}</h2>
-    <div class="entry-sub">אפשר להציע להוסיף אותו בגרסה הבאה — לשלוח למפתח או לשמור במחשב שלך</div>
+    <h2>${prefillName ? '"' + safeText + '" אינו קיים עדיין במדריך' : 'הוספת ערך חדש'}</h2>
+    <div class="entry-sub">בחרו מדריך ושם, ואז ממלאים את הכרטיס המלא — מקורות, זיהוי, תמונה — בדיוק כמו בעריכת ערך קיים.</div>
     <div class="field-label">לאיזה מדריך שייך הערך?</div>
     <select id="genNfCat" class="f-input">${catOptions}</select>
     <div class="field-label">שם הערך</div>
     <input type="text" id="genNfName" value="${safeText}" class="f-input">
-    <div class="field-label">מקור בספרייה (פסוק)</div>
-    <textarea id="genNfSource" class="f-textarea" style="min-height:50px"></textarea>
-    <div class="field-label">הערות נוספות (זיהוי מוצע, תמונות, קישורים)</div>
-    <textarea id="genNfNotes" class="f-textarea" style="min-height:50px"></textarea>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
-      <button class="nf-btn" id="genNfSave">💾 שמירה במכשיר</button>
-      <button class="nf-btn" id="genNfSend">📨 שליחה למפתח</button>
+      <button class="nf-btn" id="genNfContinue">המשך למילוי הכרטיס ←</button>
       <button class="nf-btn secondary" id="genNfCancel">ביטול</button>
     </div>`;
   entryOverlay.classList.add('open');
   document.getElementById('genNfCancel').addEventListener('click', () => entryOverlay.classList.remove('open'));
-  function selectedCat(){
-    return CATEGORIES.find(c => c.id === document.getElementById('genNfCat').value) || CATEGORIES[0];
-  }
-  function fields(){
-    return {
-      name: document.getElementById('genNfName').value.trim(),
-      source: document.getElementById('genNfSource').value.trim(),
-      notes: document.getElementById('genNfNotes').value.trim()
-    };
-  }
-  document.getElementById('genNfSave').addEventListener('click', () => {
-    const f = fields();
-    if (!f.name){ window.alert('יש למלא שם'); return; }
-    try {
-      const key = selectedCat().id + '_nf_drafts_v1';
-      const drafts = JSON.parse(localStorage.getItem(key) || '[]');
-      drafts.push({ ...f, category: selectedCat().label, savedAt: new Date().toISOString() });
-      localStorage.setItem(key, JSON.stringify(drafts));
-      window.alert('הטיוטה נשמרה במכשיר זה. ניתן לשלוח אותה למפתח בכל שלב.');
-    } catch(e){ window.alert('שמירת הטיוטה נכשלה.'); }
-  });
-  document.getElementById('genNfSend').addEventListener('click', async () => {
-    const f = fields();
-    if (!f.name){ window.alert('יש למלא שם'); return; }
-    const cat = selectedCat();
-    const body = 'הצעת תוספת למדריך ' + cat.label + '\n\nההוספה המוצעת: ' + f.name + '\nהמקור בספרייה: ' + (f.source||'—') + '\nהערות נוספות: ' + (f.notes||'—');
-    // 2.13.2 — דרך ממסר הדיווחים. הפאנל נסגר בכל מקרה: גם אם אין רשת ההצעה כבר שמורה בתור.
-    await sendToDev('הצעת תוספת — ' + f.name + ' (' + cat.label + ')', body, 'הצעת ערך');
-    entryOverlay.classList.remove('open');
+  document.getElementById('genNfContinue').addEventListener('click', async () => {
+    const catId = document.getElementById('genNfCat').value;
+    const name = document.getElementById('genNfName').value.trim();
+    if (!name){ window.alert('יש למלא שם'); return; }
+    const cat = CATEGORIES.find(c => c.id === catId);
+    const btn = document.getElementById('genNfContinue');
+    btn.disabled = true;
+    const data = await loadGuideData(cat);   // ודאי שהמדריך נטען (dataCache[catId] אמיתי) לפני שרושמים ערך חדש לתוכו
+    if (data.some(e => e.name === name)){
+      btn.disabled = false;
+      window.alert('כבר קיים ערך בשם "' + name + '" במדריך ' + cat.label + '. לעריכתו — פתחו אותו ולחצו על ✏️.');
+      return;
+    }
+    const firstCat = (catsCache[catId] || [])[0];
+    const entry = { name: name, aliases: [], cat: firstCat ? firstCat.id : undefined, __origName: name };
+    openGenericEditForm(entry, catId);
   });
 }
