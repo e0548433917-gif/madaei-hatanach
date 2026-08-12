@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>דומם בתנ״ך</title>
+<title>דומם</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -127,7 +127,7 @@
 
 <header class="hero">
   <div class="eyebrow">מסע בעולם הדוממים שבתנ״ך</div>
-  <h1>דומם בתנ״ך</h1>
+  <h1>דומם</h1>
   <p class="sub" id="heroSub">אבני החושן, אבנים ומתכות, תכשיטים, מטבעות וכלים — הסבר, מקורות, וזיהוי מודרני היכן שידוע. לחצו על כרטיס להרחבה.</p>
   <span id="lookupStatus" class="lookup-status" style="display:none;"></span>
   <span class="disclosure-line">נוצר באמצעות Claude ע״י חד בדרא · זיהויי האבנים והחפצים המובאים כאן הם לפי מיטב המסורת והמחקר, ובחלקם שנויים במחלוקת בין הפרשנים — אין לראות בכך פסק הלכה או קביעה מדעית סופית.</span>
@@ -392,7 +392,7 @@ function openEditForm(item){
     render();
     if (window.Otzaria && Otzaria.call){
       try {
-        await Otzaria.call('feedback.sendEmail', { to: DOMEM_REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - דומם בתנ״ך', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
+        await Otzaria.call('feedback.sendEmail', { to: DOMEM_REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - דומם', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
         await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
       } catch(e){
         await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
@@ -441,9 +441,9 @@ function openNotFoundModal(searchedText){
     const name = document.getElementById('dnfName').value.trim();
     const source = document.getElementById('dnfSource').value.trim();
     const notes = document.getElementById('dnfNotes').value.trim();
-    const body = 'הצעת תוספת למדריך דומם בתנ״ך\n\nההוספה המוצעת: ' + name + '\nהמקור בספרייה: ' + (source||'—') + '\nהערות נוספות: ' + (notes||'—');
+    const body = 'הצעת תוספת למדריך דומם\n\nההוספה המוצעת: ' + name + '\nהמקור בספרייה: ' + (source||'—') + '\nהערות נוספות: ' + (notes||'—');
     try {
-      await Otzaria.call('feedback.sendEmail', { to: DOMEM_REPORT_EMAIL, subject: 'הצעת תוספת - דומם בתנ״ך', body: body, includeSystemInfo: true });
+      await Otzaria.call('feedback.sendEmail', { to: DOMEM_REPORT_EMAIL, subject: 'הצעת תוספת - דומם', body: body, includeSystemInfo: true });
       await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
     } catch(e){
       await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
@@ -555,7 +555,7 @@ document.getElementById('lightbulb-btn').addEventListener('click', ()=>{
     if (window.Otzaria && Otzaria.call){
       Otzaria.call('feedback.sendEmail', {
         to: 'E0548433917@outlook.com',
-        subject: 'משוב על תוסף דומם בתנ״ך',
+        subject: 'משוב על תוסף דומם',
         body: ''
       }).catch(()=>{ window.alert('לא ניתן לפתוח משוב כרגע. ניתן לפנות ל-E0548433917@outlook.com'); });
     } else {

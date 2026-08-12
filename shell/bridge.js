@@ -15,18 +15,25 @@ async function identifyWithLiveContext(text){
   return identify(text, { allowStopwords });
 }
 
-let openSelfSupportedCache = null;
-async function isOpenSelfSupported(){
-  if (openSelfSupportedCache != null) return openSelfSupportedCache;
-  if (!(window.Otzaria && Otzaria.call)){ openSelfSupportedCache = false; return false; }
+// 0.9.96 הוא הסף לשתי יכולות שונות שבמקרה נכנסו יחד: plugin.openSelf (מעבר ללשונית)
+// והתרומות הדקלרטיביות (contributes.startup). הבדיקה אחת, כי גם הקריאה אחת.
+// אם אי-אפשר לבדוק — מניחים גרסה תומכת ולא חוסמים.
+// 'foreground' = הלשונית שהמשתמש רואה, 'background' = מנוע הרקע העצל שאוצריא
+// מדליקה בלחיצה על פריט תפריט ההקשר המוצהר. נקבע ב-plugin.boot.
+let runMode = 'foreground';
+
+let modernAppCache = null;
+async function isModernApp(){
+  if (modernAppCache != null) return modernAppCache;
+  if (!(window.Otzaria && Otzaria.call)){ modernAppCache = false; return false; }
   try {
     const res = await Otzaria.call('app.getInfo');
     const version = res && res.data && res.data.version;
-    openSelfSupportedCache = !version || cmpVersion(version, '0.9.96') >= 0;
+    modernAppCache = !version || cmpVersion(version, '0.9.96') >= 0;
   } catch(e){
-    openSelfSupportedCache = true; // אם אי-אפשר לבדוק, מניחים גרסה תומכת ולא חוסמים
+    modernAppCache = true;
   }
-  return openSelfSupportedCache;
+  return modernAppCache;
 }
 
 function bringToFront(){
@@ -132,7 +139,7 @@ async function handleIdentifyClick(payload){
     return;
   }
 
-  const canOpenSelf = await isOpenSelfSupported();
+  const canOpenSelf = await isModernApp();
 
   // הפופאפ של אוצריא (ui.showConfirm) חתוך בגובה ואין לנו שליטה על ה-CSS שלו. כשמסמנים
   // פסקה שלמה הקטע הנבחר לבדו ממלא את כל החלון והכפתורים/ההוראה נדחקים מחוץ לתצוגה,
@@ -213,8 +220,13 @@ async function handleIdentifyClick(payload){
   }
 }
 
-function registerUnifiedMenuItem(){
+// מ-0.9.96 הפריט מוצהר ב-manifest.json (contributes.startup.contextMenuItems) ואוצריא
+// מציגה אותו בלי להריץ את התוסף בכלל — זו הדרישה שנאכפת מ-0.9.98. רישום נוסף בזמן
+// ריצה היה יוצר פריט כפול באותו id, ולכן כאן נשאר רק מסלול התאימות לאחור: 0.9.95,
+// שאינה מכירה את ההצהרה, עדיין צריכה את הקריאה.
+async function registerUnifiedMenuItem(){
   if (!(window.Otzaria && Otzaria.call)) return;
+  if (await isModernApp()) return;
   Otzaria.call('reader.addContextMenuItem', {
     id: MENU_ITEM_ID,
     label: 'זיהוי בעינים למקרא',
@@ -245,13 +257,19 @@ function waitForOtzaria(elapsed){
   if (window.Otzaria && typeof Otzaria.on === 'function'){
     Otzaria.on('plugin.boot', registerUnifiedMenuItem);
     Otzaria.on('plugin.boot', (p) => { if (p && p.theme) onOtzariaTheme(p.theme); });
+    Otzaria.on('plugin.boot', (p) => { runMode = (p && p.app && p.app.runMode) || 'foreground'; });
     Otzaria.on('theme.changed', onOtzariaTheme);
     // גם משיכה יזומה — plugin.boot כבר עשוי היה לרוץ לפני שנרשמנו
     Otzaria.call('app.getTheme').then(res => { if (res && res.data) onOtzariaTheme(res.data); }).catch(()=>{});
     restorePrefsFromOtzaria();
     restoreBookmarksFromOtzaria();
     Otzaria.on('reader.context_menu_item_clicked', (payload) => {
-      if (payload && payload.itemId === MENU_ITEM_ID) handleIdentifyClick(payload);
+      if (!payload || payload.itemId !== MENU_ITEM_ID) return;
+      // במופע רקע: מסיימים מפורשות אחרי שהלחיצה טופלה, במקום להמתין לכיבוי
+      // האוטומטי אחרי שלוש דקות חוסר פעילות.
+      handleIdentifyClick(payload).finally(() => {
+        if (runMode === 'background') Otzaria.call('plugin.backgroundDone').catch(()=>{});
+      });
     });
     // חשוב: לרנדר את כרטיסי דפי ה-HTML השמורים רק אחרי ש-Otzaria אכן זמין -
     // אחרת storage.get נופל מיד ל-null (הבדיקה hasOtzaria() נכשלת) והכרטיסים
@@ -388,4 +406,6 @@ async function checkForUpdate(){
 }
 
 // ברקע ובלי לעכב שום דבר: אחרי שהשער כבר מצויר והמדריכים בטעינה מוקדמת.
-setTimeout(() => { checkForUpdate(); }, UPDATE_CHECK_DELAY_MS);
+// מדלגים במופע רקע: הוא נדלק כדי לטפל בלחיצה אחת ולכבות, ובקשת רשת שם רק הייתה
+// מאריכה את חייו — ואת ההודעה ממילא אין מי שיראה.
+setTimeout(() => { if (runMode !== 'background') checkForUpdate(); }, UPDATE_CHECK_DELAY_MS);

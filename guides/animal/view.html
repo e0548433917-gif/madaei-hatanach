@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>בעלי חיים בתנ״ך</title>
+<title>בעלי חיים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -205,7 +205,7 @@
 
 <header class="hero">
   <div class="eyebrow">מסע בעקבות היצורים החיים שבין דפי המקרא</div>
-  <h1>מדריך בעלי החיים בתנ״ך</h1>
+  <h1>מדריך בעלי החיים</h1>
   <p class="sub" id="heroSub">בעלי חיים ויצורים, זיהוים המדעי, מקורות מקראיים מלאים, ומדרשי חז״ל — לחצו על כל כרטיס להרחבה.</p>
   <span class="badge-note" id="badgeNote">✓ מהדורה מורחבת (כולל 4 יצורי אגדה מחז״ל) עם פסוקים מלאים, מקורות חז״ל, שיטות זיהוי חלופיות היכן שיש מחלוקת, ומקורות אקדמיים.</span>
   <span id="lookupStatus" class="lookup-status" style="display:none;"></span>
@@ -578,7 +578,7 @@ function openEditForm(item){
     render();
     if (window.Otzaria && Otzaria.call){
       try {
-        await Otzaria.call('feedback.sendEmail', { to: REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - בעלי חיים בתנ״ך', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
+        await Otzaria.call('feedback.sendEmail', { to: REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - בעלי חיים', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
         await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
       } catch(e){
         await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
@@ -930,7 +930,7 @@ function openNotFoundModal(searchedText){
     const name = document.getElementById('nfName').value.trim();
     const source = document.getElementById('nfSource').value.trim();
     const notes = document.getElementById('nfNotes').value.trim();
-    return `הצעת תוספת למדריך בעלי החיים בתנ״ך\nלשליחה אל: ${REPORT_EMAIL}\n\nההוספה המוצעת: ${name}\nהמקור בספרייה: ${source || '—'}\nהערות נוספות: ${notes || '—'}\n`;
+    return `הצעת תוספת למדריך בעלי החיים\nלשליחה אל: ${REPORT_EMAIL}\n\nההוספה המוצעת: ${name}\nהמקור בספרייה: ${source || '—'}\nהערות נוספות: ${notes || '—'}\n`;
   }
 
   document.getElementById('nfSave').addEventListener('click', ()=>{
@@ -952,7 +952,7 @@ function openNotFoundModal(searchedText){
     try {
       await Otzaria.call('feedback.sendEmail', {
         to: REPORT_EMAIL,
-        subject: 'הצעת תוספת - מדריך בעלי החיים בתנ״ך',
+        subject: 'הצעת תוספת - מדריך בעלי החיים',
         body: buildReport(),
         includeSystemInfo: true
       });

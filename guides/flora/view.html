@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>צומח בתנ״ך</title>
+<title>צומח</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -158,7 +158,7 @@
 
 <header class="hero">
   <div class="eyebrow">מסע בין הדגן, הפרי והעץ שבין דפי המקרא</div>
-  <h1>מדריך הצומח בתנ״ך</h1>
+  <h1>מדריך הצומח</h1>
   <p class="sub" id="heroSub">צמחי המקרא, זיהוים המדעי ומקורות מקראיים — לחצו על כל כרטיס להרחבה.</p>
   <span class="badge-note" id="badgeNote">✓ כרטיסים תמציתיים מהמקורות — פסוקים, מדרשים ומקורות מחקר מורחבים יתווספו בהמשך.</span>
   <span id="lookupStatus" class="lookup-status" style="display:none;"></span>
@@ -478,7 +478,7 @@ function openEditForm(item){
     render();
     if (window.Otzaria && Otzaria.call){
       try {
-        await Otzaria.call('feedback.sendEmail', { to: FLORA_REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - צומח בתנ״ך', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
+        await Otzaria.call('feedback.sendEmail', { to: FLORA_REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - צומח', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
         await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
       } catch(e){
         await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
@@ -527,9 +527,9 @@ function openNotFoundModal(searchedText){
     const name = document.getElementById('fnfName').value.trim();
     const source = document.getElementById('fnfSource').value.trim();
     const notes = document.getElementById('fnfNotes').value.trim();
-    const body = 'הצעת תוספת למדריך צומח בתנ״ך\n\nההוספה המוצעת: ' + name + '\nהמקור בספרייה: ' + (source||'—') + '\nהערות נוספות: ' + (notes||'—');
+    const body = 'הצעת תוספת למדריך צומח\n\nההוספה המוצעת: ' + name + '\nהמקור בספרייה: ' + (source||'—') + '\nהערות נוספות: ' + (notes||'—');
     try {
-      await Otzaria.call('feedback.sendEmail', { to: FLORA_REPORT_EMAIL, subject: 'הצעת תוספת - צומח בתנ״ך', body: body, includeSystemInfo: true });
+      await Otzaria.call('feedback.sendEmail', { to: FLORA_REPORT_EMAIL, subject: 'הצעת תוספת - צומח', body: body, includeSystemInfo: true });
       await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
     } catch(e){
       await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});

@@ -111,7 +111,11 @@ async function reportEnv(){
   if (hasOtzaria()){
     try {
       const res = await withTimeout(Otzaria.call('app.getInfo'), REPORT_STEP_TIMEOUT_MS, 'app.getInfo');
-      const v = res && res.data && res.data.version;
+      // הגשר לא תמיד עוטף ב-.data (ר' com.software_bug_report.newplugin -
+      // התוסף הרשמי לדיווח באגים - שמטפל בשתי הצורות). res.data.version
+      // הבלעדי גרם ל"אוצריא —" בדיווחים בכל פעם שהתשובה הגיעה שטוחה.
+      const data = (res && res.data) || res || {};
+      const v = data && data.version;
       if (v) otz = String(v);
     } catch(e){}
   }

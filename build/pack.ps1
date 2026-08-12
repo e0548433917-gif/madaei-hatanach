@@ -52,6 +52,9 @@ $PSNativeCommandUseErrorActionPreference = $false
 $root = Split-Path -Parent $PSScriptRoot
 $manifestPath  = Join-Path $root "manifest.json"
 $changelogPath = Join-Path $root "CHANGELOG.md"
+# מוגדר כאן ולא ליד סעיף 1ד שמשתמש בו: סעיף 1ב2 (סנכרון ROADMAP) רץ *לפניו*
+# וקורא אותו, וכשהוא היה מוגדר רק למטה הערך שם היה $null ו-Test-Path נפל.
+$roadmapPath = Join-Path $root "ROADMAP.md"
 $distDir = Join-Path $root "dist"
 
 if (-not (Test-Path $distDir)) { New-Item -ItemType Directory -Path $distDir | Out-Null }
@@ -163,6 +166,38 @@ if (-not $NoChangelog) {
     [System.IO.File]::WriteAllText($changelogPath, $clNew, [System.Text.UTF8Encoding]::new($false))
     Write-Host "נכתב ערך CHANGELOG: $newVersion — $heDate ($enDate), $($body.Count) תבליטים"
   }
+
+  # ---- 1ב2. סנכרון ROADMAP.md מול הערך החדש ----
+  # כל סעיף ב-ROADMAP.md מתחיל בקוד מודגש (**ד**, **ג**, **2.7ב** וכו׳) - אותה
+  # מוסכמה בדיוק שמשמשת לתייג תבליטי CHANGELOG (ר׳ "ד.1א — כרטסת..." וכו׳).
+  # כשתבליט חדש ב-CHANGELOG פותח באותו קוד בדיוק כמו סעיף קיים ב-ROADMAP - הסעיף
+  # שם מסומן "✅ שוחרר ב-<גרסה>", לא נמחק: קוד "טווח" (כמו ב.2–ב.4) או "אב" (ד)
+  # עלול לכסות כמה תבליטים חלקיים ולא באמת להיסגר במלואו מתבליט בודד, ומחיקה
+  # עיוורת הייתה עלולה לאבד משימות שעדיין פתוחות. הסימון רק מוסיף - מישהו
+  # (מפתח או Claude בסבב הבא) עדיין צריך להחליט אם למחוק בפועל.
+  if ((Test-Path $roadmapPath) -and $body.Count) {
+    function Get-ItemCode([string]$line, [switch]$Bold) {
+      $pat = if ($Bold) { '^\*\s+(?:\S+\s+)?\*\*([^\*—]+?)\s*—' } else { '^\s*([^\s—]+)\s*[׳״]?\s*—' }
+      if ($line -match $pat) { return ($Matches[1] -replace '[׳״]', '').Trim() }
+      return $null
+    }
+    $newCodes = @($body | ForEach-Object { Get-ItemCode $_ } | Where-Object { $_ })
+    if ($newCodes.Count) {
+      $rmLines = Get-Content $roadmapPath -Encoding UTF8
+      $rmChanged = $false
+      for ($i = 0; $i -lt $rmLines.Count; $i++) {
+        $code = Get-ItemCode $rmLines[$i] -Bold
+        if ($code -and ($newCodes -contains $code) -and ($rmLines[$i] -notmatch '✅')) {
+          $rmLines[$i] = $rmLines[$i] -replace '^(\*\s+)', "`$1✅ שוחרר ב-$newVersion`: "
+          Write-Host ("ROADMAP.md: סומן כבוצע ($code)") -ForegroundColor Green
+          $rmChanged = $true
+        }
+      }
+      if ($rmChanged) {
+        [System.IO.File]::WriteAllText($roadmapPath, (($rmLines -join "`r`n") + "`r`n"), [System.Text.UTF8Encoding]::new($false))
+      }
+    }
+  }
 }
 
 # ---- 1ג. הטמעת CHANGELOG.md כקבוע JS (guides/_shared/changelog-embedded.js) ----
@@ -181,7 +216,6 @@ Write-Host "הוטמע CHANGELOG.md כקבוע JS: guides/_shared/changelog-embe
 # אותו דפוס בדיוק כמו 1ג, עבור "מה מתוכנן בהמשך" (personal.js). ROADMAP.md
 # עצמו נערך ביד מול docs/ (אינו נגזר אוטומטית מהן) — כאן רק מטביעים את מה
 # שכתוב בו כרגע, כדי שהתוסף הארוז לעולם לא יציג גרסה ישנה יותר משהריפו עצמו.
-$roadmapPath = Join-Path $root "ROADMAP.md"
 if (Test-Path $roadmapPath) {
   $roadmapEmbedPath = Join-Path $root "guides\_shared\roadmap-embedded.js"
   $rmFinal = Get-Content $roadmapPath -Raw -Encoding UTF8

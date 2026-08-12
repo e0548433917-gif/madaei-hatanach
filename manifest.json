@@ -1,19 +1,20 @@
 {
   "id": "com.chadbedera.madaeihatanach",
   "name": "עינים למקרא",
-  "version": "2.15.1",
+  "version": "2.16.1",
   "description": "מדריך מאוחד לתנ״ך: אישים, מקומות, בעלי חיים, צומח, דומם ובית המקדש — זיהוי אחיד בלחיצה ימנית, תמונות ומפה ללא אינטרנט.",
   "author": "חד בדרא",
   "schemaVersion": 1,
   "sdkVersion": "1.x",
   "stability": "beta",
-  "minAppVersion": "0.9.95",
+  "minAppVersion": "0.9.96",
   "icon": "icon/icon.png",
   "entrypoint": "index.html",
   "permissions": [
     "reader.context_menu",
     "reader.open",
     "app.run_on_startup",
+    "app.startup_contributions",
     "notifications.send",
     "ui.feedback",
     "app.open_url",
@@ -22,6 +23,7 @@
     "plugin.storage.write",
     "app.info.read",
     "network.access",
+    "network.localhost",
     "events.subscribe:theme.changed"
   ],
   "network": {
@@ -31,7 +33,18 @@
       "https://api.github.com",
       "https://docs.google.com",
       "https://script.google.com",
-      "https://script.googleusercontent.com"
+      "https://script.googleusercontent.com",
+      "http://127.0.0.1:5000",
+      "http://127.0.0.1:5001",
+      "http://127.0.0.1:5002",
+      "http://127.0.0.1:5003",
+      "http://127.0.0.1:5004",
+      "http://127.0.0.1:5005",
+      "http://127.0.0.1:5006",
+      "http://127.0.0.1:5007",
+      "http://127.0.0.1:5008",
+      "http://127.0.0.1:5009",
+      "http://127.0.0.1:5010"
     ]
   },
   "contributes": {
@@ -40,6 +53,18 @@
       "order": 40,
       "defaultPinned": true,
       "iconName": "book_24_regular"
+    },
+    "startup": {
+      "contextMenuItems": [
+        {
+          "id": "madaei-hatanach-identify",
+          "type": "item",
+          "title": "זיהוי בעינים למקרא",
+          "icon": "search_24_regular",
+          "contexts": ["reader-text"]
+        }
+      ],
+      "keepAlive": false
     }
   }
 }

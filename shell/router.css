@@ -142,16 +142,41 @@ html, body {
   animation: spin .75s linear infinite;
 }
 
-/* ==================== עמוד השער ==================== */
-#landing {
-  padding: 24px;
-  height: 100%;
-  overflow-y: auto;
+/* ==================== הסרגל העליון ====================
+   דרישה מפורשת ב-DESIGN_GUIDE של אוצריא: ללשונית תוסף אין סרגל כותרת מובנה,
+   ולכן ה-WebView חייב לספק אותו בעצמו. שלושת הפרטים שהוולידטור בודק:
+   גובה 56px (44 בנייד), רקע surface-container-high, ו-flex-shrink:0 כדי שלא
+   ייגלל עם התוכן. גודל הגופן נעול ב-px ולא ב-em בכוונה — הסרגל אינו אמור
+   לגדול עם הגדרת גודל הטקסט של הספר, בניגוד לכל שאר התוסף. */
+.topbar, #guideViewBar, #talmudViewBar, #personalBar, #frameBar {
+  display: flex; align-items: center; gap: 10px;
+  /* שוליים משמאל - מקום לכפתור ההגדרות הצף */
+  padding: 0 16px 0 56px;
+  min-height: 56px;
+  background: var(--color-surface-container-highest);
+  border-bottom: 1px solid var(--color-outline-faint);
+  flex: 0 0 auto;
 }
-#landing h1 {
-  font-size: 1.45em;
-  margin: 0 0 18px;
-  text-align: center;
+.topbar h1, #guideViewTitle, #talmudViewTitle, #personalTitle, #frameTitle {
+  font-size: 16px; font-weight: 600; margin: 0;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@media (max-width: 600px){
+  .topbar, #guideViewBar, #talmudViewBar, #personalBar, #frameBar { min-height: 44px; }
+}
+
+/* ==================== עמוד השער ==================== */
+/* הגלילה יושבת ב-#landingBody ולא ב-#landing עצמו, אחרת הסרגל נגלל החוצה. */
+#landing {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#landingBody {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 24px;
 }
 /* ששת המדריכים הם מספר קבוע, ולכן מספר עמודות קבוע ולא auto-fit: ב-auto-fit יצאו
    ארבע עמודות במסך רחב, כלומר שורה של 4 ושורה קטועה של 2 (ועם האזור האישי - 4+3).
@@ -308,13 +333,7 @@ html, body {
   z-index: 400;
 }
 #personalView.open { display: flex; }
-#personalBar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px 10px 56px;
-  background: var(--color-surface-container-highest);
-  border-bottom: 1px solid var(--color-outline-faint);
-  flex: 0 0 auto; flex-wrap: wrap;
-}
+#personalBar { flex-wrap: wrap; padding-block: 6px; }
 #personalBackBtn {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer;
@@ -322,7 +341,6 @@ html, body {
   white-space: nowrap; transition: background .15s, border-color .15s;
 }
 #personalBackBtn:hover { background: var(--color-hover); border-color: var(--color-primary); }
-#personalTitle { font-weight: 700; font-size: 1em; }
 #personalTabs {
   display: flex; flex-wrap: wrap; gap: 8px;
   padding: 10px 16px; background: var(--color-surface-2);
@@ -388,20 +406,12 @@ html, body {
   z-index: 500;
 }
 #frameWrap.open { display: flex; }
-#frameBar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px;
-  background: var(--color-surface-container-highest);
-  border-bottom: 1px solid var(--color-outline-faint);
-  flex: 0 0 auto;
-}
 #backBtn {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer;
   font-family: var(--font-main); font-size: .93em; color: var(--color-on-surface);
 }
 #backBtn:hover { background: var(--color-hover); }
-#frameTitle { font-weight: 600; font-size: .93em; }
 #guideFrame {
   flex: 1 1 auto;
   border: none;
@@ -582,15 +592,7 @@ html, body {
   z-index: 400;
 }
 #guideView.open { display: flex; }
-#guideViewBar {
-  display: flex; align-items: center; gap: 10px;
-  /* שוליים משמאל - מקום לכפתור ההגדרות הצף */
-  padding: 10px 16px 10px 56px;
-  background: var(--color-surface-container-highest);
-  border-bottom: 1px solid var(--color-outline-faint);
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-}
+#guideViewBar { flex-wrap: wrap; padding-block: 6px; }
 #guideBackBtn, #guideAddNewBtn, #guideIdentifyBtn, #guideFiltersToggle, #guidePrintBtn, #guideTimelineToggle {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer;
@@ -626,7 +628,6 @@ html, body {
   grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
   gap: 12px;
 }
-#guideViewTitle { font-weight: 700; font-size: 1em; white-space: nowrap; }
 #guideSearchWrap { position: relative; flex: 1 1 220px; min-width: 160px; display: flex; }
 #guideSearchBox {
   flex: 1 1 auto; min-width: 0;
@@ -723,20 +724,12 @@ html, body {
   z-index: 400;
 }
 #talmudView.open { display: flex; }
-#talmudViewBar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px 10px 56px;
-  background: var(--color-surface-container-highest);
-  border-bottom: 1px solid var(--color-outline-faint);
-  flex: 0 0 auto;
-}
 #talmudBackBtn {
   border: 1px solid var(--color-outline); background: var(--color-surface);
   border-radius: var(--radius-pill); padding: 6px 14px; cursor: pointer;
   font-family: var(--font-main); font-size: .86em; color: var(--color-on-surface);
 }
 #talmudBackBtn:hover { background: var(--color-hover); border-color: var(--color-primary); }
-#talmudViewTitle { font-weight: 700; font-size: 1em; }
 #talmudBody { flex: 1 1 auto; overflow-y: auto; padding: 18px; }
 
 /* מפרט 4.0, ג.4.2 - באנר "מהדורה חלקית" בראש עמוד המסכתות. */
