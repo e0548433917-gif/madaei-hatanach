@@ -247,6 +247,17 @@ html, body {
 }
 :root[data-theme="dark"] .card .icon-img { filter: drop-shadow(0 0 1px var(--color-glow)); }
 
+/* סבב 4.8 — איקוני קטגוריה מוטמעים בשורות טקסט (צ׳יפי סינון, שורות תוצאה,
+   כותרת מדריך, קישורי ״מוזכר יחד עם״). ר' catIconHtml ב-core.js: הגודל מגיע
+   inline לפי הקשר, וכאן רק היישור לשורה. .cat-icon-emoji הוא נתיב הנפילה
+   לקטגוריה בלי קובץ תמונה (למשל דף HTML מותאם) ולכשל טעינה. */
+.cat-icon-img {
+  display: inline-block;
+  vertical-align: -.18em;
+  object-fit: contain;
+}
+:root[data-theme="dark"] .cat-icon-img { filter: drop-shadow(0 0 1px var(--color-glow)); }
+
 #copyrightFooter {
   text-align: center;
   margin-top: 24px;
@@ -861,6 +872,12 @@ html, body {
   margin-bottom: 6px; font-weight: 600; background: var(--color-primary-subtle); color: var(--color-primary);
 }
 #entryModalInner .latin, .result-row-detail .latin { font-style: italic; color: var(--color-on-surface-dim); font-size: .83em; }
+/* סבב 4.9 — הזיהוי המודרני הוא העיקר בכרטיס ולכן עלה לראש בלוק השיטות
+   (entry-detail.js). ההדגשה כאן קלה בלבד: פס צד, לא צבע רקע צועק. */
+#entryModalInner .modern-id, .result-row-detail .modern-id {
+  border-inline-start: 3px solid var(--color-primary);
+  padding-inline-start: 8px;
+}
 #entryModalInner .method-block, .result-row-detail .method-block {
   border: 1px solid var(--color-outline-faint); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; background: var(--color-surface-3);
 }
@@ -880,6 +897,15 @@ html, body {
 .panel-box .src-item.clickable { cursor: pointer; }
 .panel-box .src-item.clickable:hover { border-color: var(--color-primary); background: var(--color-primary-subtle); }
 .panel-box .open-hint { font-size: calc(.78 * var(--fs)); color: var(--color-primary); font-weight: 400; }
+
+/* כפתור עריכת מאורע ב"ערך היום" (home.js, dateEventRow) - צף בתוך שורת .src-source
+   שעלולה להיות לחיצה כשלעצמה (פתיחה בספרייה); float במקום flex כדי לא לשבור את
+   הרוחב המלא הקיים של .src-source בשאר השימושים (entry-detail.js וכו'). */
+.date-ev-edit-btn {
+  float: left; border: none; background: none; cursor: pointer;
+  font-size: .85em; padding: 0 2px; line-height: 1; opacity: .6;
+}
+.date-ev-edit-btn:hover { opacity: 1; }
 /* יושב בתוך .verse-ref שכבר מוקטן - גודל מוחלט כדי שלא יצטבר */
 #entryModalInner .open-hint, .result-row-detail .open-hint { font-size: calc(.78 * var(--fs)); color: var(--color-primary); font-weight: 400; }
 #entryModalInner .verse-text, .result-row-detail .verse-text { font-size: 1em; line-height: 1.85; }

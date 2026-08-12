@@ -22,11 +22,45 @@ const CATEGORIES = [
   { id: 'animal', label: 'בע״ח', icon: '🐾', loaderPath: 'guides/animal/data/_loader.html' },
   { id: 'flora', label: 'צומח', icon: '🌿', loaderPath: 'guides/flora/data/_loader.html' },
   { id: 'domem', label: 'דומם', icon: '💎', loaderPath: 'guides/domem/data/_loader.html' },
+  { id: 'amoraim', label: 'אנשים מהתלמוד', icon: '📖', loaderPath: 'guides/amoraim/data/_loader.html' },
   { id: 'beithamikdash', label: 'בית המקדש', icon: '🏛️', loaderPath: 'guides/beithamikdash/data/_loader.html' },
   { id: 'mumim', label: 'מומים', icon: '🩺', loaderPath: 'guides/mumim/data/_loader.html' },
   { id: 'chullin', label: 'חולין', icon: '🔪', loaderPath: 'guides/chullin/data/_loader.html' },
   { id: 'sukkah', label: 'סוכה ולולב', icon: '🌴', loaderPath: 'guides/sukkah/data/_loader.html' },
 ];
+
+// סבב 4.8 — האחדת איקונים. עד כה `icon/cats/*.png` הופיעו רק בכרטיסי השער
+// (index.html), וכל שאר מקומות התצוגה נשארו עם האמוג׳י שב-CATEGORIES.icon.
+// המפה כאן היא מקור האמת היחיד לקובץ התמונה של כל קטגוריה; שלושת מדריכי
+// המסכתות (מומים/חולין/סוכה) שואבים מ-icon/masechtot/ כי אין להם קובץ ב-cats/.
+// קטגוריה בלי ערך כאן (למשל 'custom' של דפי HTML מותאמים) נופלת לאמוג׳י.
+const CAT_ICON_IMG = {
+  people: 'icon/cats/people.png',
+  places: 'icon/cats/places.png',
+  animal: 'icon/cats/animal.png',
+  flora: 'icon/cats/flora.png',
+  domem: 'icon/cats/domem.png',
+  amoraim: 'icon/cats/amoraim.png',
+  beithamikdash: 'icon/cats/beithamikdash.png',
+  mumim: 'icon/masechtot/bechorot.png',
+  chullin: 'icon/masechtot/chullin.png',
+  sukkah: 'icon/masechtot/sukkah.png',
+};
+
+// HTML של איקון קטגוריה. `onerror` מחזיר לאמוג׳י בדיוק כמו בכרטיסי השער — קובץ
+// חסר לא משאיר ריבוע שבור. size בפיקסלים, ומוכפל ב-ui-scale כדי לכבד את סליידר
+// גודל הטקסט. משמש רק בהקשרי DOM: הפופאפ של אוצריא (ui.showConfirm) הוא טקסט
+// בלבד ואינו יכול להציג תמונות — שם האמוג׳י נשאר.
+function catIconHtml(catId, size){
+  const cat = CATEGORIES.find(c => c.id === catId);
+  const emoji = (cat && cat.icon) || '';
+  const src = CAT_ICON_IMG[catId];
+  if (!src) return '<span class="cat-icon-emoji">' + emoji + '</span>';
+  const px = 'calc(' + (size || 20) + 'px * var(--ui-scale))';
+  return '<img class="cat-icon-img" src="' + src + '" alt="" aria-hidden="true"'
+    + ' style="width:' + px + ';height:' + px + ';"'
+    + ' onerror="this.outerHTML=\'&lt;span class=&quot;cat-icon-emoji&quot;&gt;' + emoji + '&lt;/span&gt;\'">';
+}
 
 const dataCache = {}; // id -> [{name, cat, aliases}]
 const imagesCache = {}; // id -> { key: "data:image/...;base64,..." }

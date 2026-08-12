@@ -218,7 +218,8 @@ const FIELD_LABELS = {
   burialPlace:'מקום קבורה', age:'שנות חיים', note:'הערה',
   explanation:'הסבר', identification:'זיהוי מודרני', region:'נחלה',
   gender:'מין', era:'תקופה', modern:'זיהוי מודרני', latin:'שם מדעי (לטיני)',
-  wiki:'ערך ויקיפדיה', confidence:'מידת ודאות', mapQuery:'חיפוש במפה'
+  wiki:'ערך ויקיפדיה', confidence:'מידת ודאות', mapQuery:'חיפוש במפה',
+  role:'תקופה', dor:'דור', place:'מקום פעילות'
 };
 const ARRAY_FIELDS = new Set(['aliases','spouses','children','siblings','roles']);
 const LONG_FIELDS = new Set(['explanation','identification','note','modern']);
@@ -231,10 +232,20 @@ const GUIDE_FIELDS = {
   domem:  ['tribe','explanation','identification','note'],
   beithamikdash: ['explanation','identification','note'],
   mumim:  ['explanation','modern','note'],
-  sukkah: ['explanation','note']
+  sukkah: ['explanation','note'],
+  // אנשים מהתלמוד: אין שדות זיהוי/משפחה — רק תקופה, דור ומקום פעילות.
+  // התיאור הביוגרפי יושב ב-methods[0].explanation כמו בשאר המדריכים.
+  amoraim: ['role','dor','place','explanation','note']
 };
 // שדות שיושבים בתוך methods[0] ולא ישירות על הערך (חי/צומח/מקומות/מקדש)
 const METHOD_FIELDS = new Set(['explanation','latin','wiki','confidence','modern','mapQuery']);
+
+// סבב 4.9 — תת-הקבוצה של METHOD_FIELDS שבלוק ה-methods שלמטה מרנדר בעצמו.
+// בלעדיה כל אחד מהם הוצג **פעמיים**: פעם דרך לולאת base.forEach (ש-readField
+// שולפת עבורה מ-methods[0]) ופעם דרך הבלוק הייעודי. פוגע בכל מדריך שמשתמש
+// ב-methods — בע״ח, צומח, מקומות ומומים. `wiki`/`mapQuery` אינם כאן כי הבלוק
+// אינו מרנדר אותם, ולכן הם חייבים להישאר בלולאה הרגילה.
+const METHOD_BLOCK_FIELDS = new Set(['explanation','latin','confidence','modern']);
 
 function guideFieldsFor(catId, entry){
   const base = GUIDE_FIELDS[catId] || ['explanation','identification','note'];
@@ -338,12 +349,21 @@ function renderEntryDetailHTML(entry, catIdOverride){
     }
   }
 
+  // סבב 4.9: האם בלוק ה-methods שלמטה ירוץ בכלל, ואם כן — אילו שדות הוא כבר
+  // מציג. שדה שיוצג שם נדלג עליו כאן, אחרת הוא מופיע פעמיים באותו כרטיס.
+  const methodsShown = !!(entry.methods && entry.methods.length);
+  const renderedInMethodsBlock = (k) => methodsShown && METHOD_BLOCK_FIELDS.has(k)
+    && entry.methods.some(m => m && m[k] != null && m[k] !== '');
+
   base.forEach(k => {
     // אצל ערך הבחנה השניים האלה מוצגים למעלה בצורה טובה יותר
     if (disambig && (k === 'note' || k === 'roles')) return;
     const label = FIELD_LABELS[k] || k;
     const v = readField(entry, k);
     if (isEmptyVal(v)){ if (!disambig) missing.push(label); return; }
+    // הערך קיים ויוצג בבלוק השיטות — לא כאן. (הבדיקה אחרי isEmptyVal בכוונה:
+    // שדה ריק לגמרי עדיין צריך להיספר ב-missing כרגיל.)
+    if (renderedInMethodsBlock(k)) return;
     if (personEntry && PERSON_LINK_FIELDS.has(k)){
       const linked = personLinkedValue(v, entry);
       if (linked){ html += `<div class="field-label">${esc(label)}</div><p>${linked}</p>`; return; }
@@ -372,13 +392,24 @@ function renderEntryDetailHTML(entry, catIdOverride){
   });
 
   if (entry.methods && entry.methods.length){
-    html += `<div class="field-label">${entry.methods.length>1?'שיטות זיהוי / דעות':'הסבר'}</div>`;
+    // הכותרת לפי מה שהבלוק באמת מכיל. הייתה קבועה "הסבר", ולכן ערך שכל ה-method
+    // שלו הוא זיהוי מודרני (כל מומים, למשל) קיבל כותרת "הסבר" שנייה מתחת להסבר
+    // האמיתי שכבר הוצג למעלה — שתי כותרות זהות עם תוכן שונה. במקרה הזה הכותרת
+    // מיותרת לגמרי: השורה עצמה כבר פותחת ב"זיהוי מודרני:".
+    const hasExplanatory = entry.methods.some(m => m && (m.explanation || m.latin || m.confidence));
+    if (entry.methods.length > 1){
+      html += `<div class="field-label">שיטות זיהוי / דעות</div>`;
+    } else if (hasExplanatory){
+      html += `<div class="field-label">הסבר</div>`;
+    }
     entry.methods.forEach(m => {
       html += `<div class="method-block">`;
       if (m.confidence) html += `<span class="conf-tag">${esc(m.confidence)}</span>`;
+      // הזיהוי המודרני הוא העיקר בכרטיס — הוא התשובה לשאלה "מה זה בעצם". לכן
+      // הוא ראשון בבלוק, לפני השם הלטיני וההסבר, ולא אחרון כפי שהיה עד 4.9.
+      if (m.modern) html += `<p class="modern-id"><strong>זיהוי מודרני:</strong> ${esc(m.modern)}</p>`;
       if (m.latin) html += `<p class="latin">${esc(m.latin)}</p>`;
       if (m.explanation) html += `<p>${esc(m.explanation)}</p>`;
-      if (m.modern) html += `<p><strong>זיהוי מודרני:</strong> ${esc(m.modern)}</p>`;
       if (m.geo && m.geo.length >= 2){
         html += `<div class="offline-map" data-geo="${m.geo[0]},${m.geo[1]},${m.geo[2]||7}" data-cat="${esc(entry.cat||'')}" ></div>`;
         const mapsUrl = `https://www.google.com/maps?q=${m.geo[0]},${m.geo[1]}`;
@@ -411,11 +442,10 @@ function renderEntryDetailHTML(entry, catIdOverride){
     const shown = co.slice(0, CO_MAX);
     html += `<div class="field-label">מוזכר יחד עם <span class="co-hint">(אותו פסוק)</span></div><p class="co-list">` +
       shown.map(c => {
-        const cat = CATEGORIES.find(x => x.id === c.catId);
         const title = c.shared.slice(0, 4).map(coMentionKeyLabel).join(' · ') +
           (c.shared.length > 4 ? ' ועוד ' + (c.shared.length - 4) : '');
         return `<span class="co-link" data-cm="${esc(coMentionIdOf(c.entry))}" title="${esc(title)}">`
-          + (cat ? cat.icon + ' ' : '') + esc(c.entry.name) + `</span>`;
+          + catIconHtml(c.catId, 15) + ' ' + esc(c.entry.name) + `</span>`;
       }).join(' · ') +
       (co.length > CO_MAX ? ` <span class="co-hint">ועוד ${co.length - CO_MAX}</span>` : '') +
       `</p>`;
@@ -444,9 +474,13 @@ function renderEntryDetailHTML(entry, catIdOverride){
     html += `</div>`;
   }
   if (!disambig){
-    if (!verseList.length) missing.push('מקורות בתנ״ך');
+    // חכמי התלמוד אינם דמויות מקראיות — פסוק או "מקור נוסף" אינם חסרים
+    // אצלם אלא פשוט לא רלוונטיים, ואין טעם להציע להשלים אותם.
+    if (catId !== 'amoraim'){
+      if (!verseList.length) missing.push('מקורות בתנ״ך');
+      if (!(entry.academic && entry.academic.length)) missing.push('מקורות נוספים');
+    }
     if (!(entry.midrash && entry.midrash.length)) missing.push('מקורות חז״ל');
-    if (!(entry.academic && entry.academic.length)) missing.push('מקורות נוספים');
   }
 
   // מה חסר בכרטיס - כדי שיידעו איזה מידע עוד אפשר להשלים (ולהציע אותו דרך ✏️).

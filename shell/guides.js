@@ -67,7 +67,11 @@ function fetchWikiThumbnail(title){
 }
 
 function entryCardHTML(entry, idx){
-  const sub = entry.tribe || entry.region || (entry.methods && entry.methods[0] && entry.methods[0].confidence) || '';
+  // "אנשים מהתלמוד" — כותרת המשנה היא תקופה+דור ("תנא · דור ד׳"), שאין לו
+  // מקבילה בשדות של שאר המדריכים.
+  const roleDor = [entry.role, entry.dor].filter(Boolean).join(' · ');
+  const sub = entry.tribe || entry.region || roleDor
+    || (entry.methods && entry.methods[0] && entry.methods[0].confidence) || '';
   const desc = entry.explanation || (entry.methods && entry.methods[0] && entry.methods[0].explanation) || entry.note || '';
   const img = currentGuideCat ? lookupEntryImage(entry, currentGuideCat.id) : null;
   const wikiTitle = !img && entry.methods && entry.methods[0] && entry.methods[0].wiki;
@@ -362,7 +366,7 @@ async function openGuide(catId, term){
   frameWrap.classList.remove('open');
   resultsOverlay.classList.remove('open');
   guideView.classList.add('open');
-  guideViewTitle.textContent = cat.icon + ' ' + cat.label;
+  guideViewTitle.innerHTML = catIconHtml(cat.id, 26) + ' ' + esc(cat.label);
   guideSearchBox.value = '';
   activeGuideChip = 'all';
   activeGuideEra = 'all';

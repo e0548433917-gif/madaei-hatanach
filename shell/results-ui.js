@@ -21,7 +21,7 @@ function renderResultsChips(matches, activeCat, onSelect){
   if (counts.size < 2){ resultsChips.innerHTML = ''; return; } // קטגוריה אחת בלבד - אין מה לסנן
   let html = `<button type="button" class="chip${activeCat==='all'?' active':''}" data-cat="all">הכל (${matches.length})</button>`;
   counts.forEach((v, catId) => {
-    html += `<button type="button" class="chip${activeCat===catId?' active':''}" data-cat="${esc(catId)}">${v.icon} ${esc(v.label)} (${v.n})</button>`;
+    html += `<button type="button" class="chip${activeCat===catId?' active':''}" data-cat="${esc(catId)}">${catIconHtml(catId, 16)} ${esc(v.label)} (${v.n})</button>`;
   });
   resultsChips.innerHTML = html;
   resultsChips.querySelectorAll('.chip').forEach(btn => {
@@ -77,7 +77,7 @@ function renderResultsListRows(matches, selectedText){
       row.innerHTML = `
         <div class="result-row-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div class="info">
-            <div class="name">${viaPrefix}${m.catIcon} ${esc(m.name)}</div>
+            <div class="name">${viaPrefix}${catIconHtml(m.catId, 20)} ${esc(m.name)}</div>
             <div class="cat">${m.catLabel}${modern ? ' · ' + esc(modern) : ''}</div>
           </div>
           <button type="button" class="expand-btn">${isCustom ? 'פתיחה' : 'הרחבה ⌄'}</button>
