@@ -11,6 +11,7 @@ const GUIDES = [
   { id: 'animal',        label: 'בעלי חיים',  file: 'guides/animal/data/animal-data.js' },
   { id: 'flora',         label: 'צומח',       file: 'guides/flora/data/flora-data.js' },
   { id: 'domem',         label: 'דומם',       file: 'guides/domem/data/domem-data.js' },
+  { id: 'amoraim',       label: 'אנשים מהתלמוד', file: 'guides/amoraim/data/amoraim-data.js' },
   { id: 'beithamikdash', label: 'בית המקדש',  file: 'guides/beithamikdash/data/beithamikdash-data.js' },
 ];
 
@@ -23,6 +24,9 @@ const FIELD_RULES = {
   animal:        { required: ['name', 'cat', 'k', 'methods'],     recommended: ['verses', 'midrash'] },
   flora:         { required: ['name', 'cat', 'methods', 'verses'], recommended: [] },
   domem:         { required: ['name', 'cat', 'explanation', 'identification', 'makorot'], recommended: [] },
+  // אנשים מהתלמוד: מראי המקום יושבים ב-midrash (ולא ב-verses), כי הם
+  // תלמודיים ונפרסים ב-parseMidrashRef. אין להם פסוקי תנ״ך כלל.
+  amoraim:       { required: ['name', 'cat', 'midrash'], recommended: ['role', 'dor', 'methods'] },
   beithamikdash: { required: ['name', 'cat', 'methods'],          recommended: ['verses'] },
 };
 

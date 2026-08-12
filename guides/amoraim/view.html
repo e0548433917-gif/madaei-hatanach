@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אנשים מהתלמוד</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#EAEEF6; --parchment-deep:#DDE3F0; --card:#F7F9FD;
+    --ink:#20263A; --ink-soft:#565F7A; --forest:#38508E; --forest-deep:#28396A;
+    --rust:#B4622F; --rust-deep:#8C4A22; --gold:#C6952E; --gold-light:#D9AE58;
+    --teal:#3E7A8C; --line:#C7D0E4; --shadow:0 10px 30px rgba(32,38,58,.22);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.25), transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(0,0,0,0.05), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, transparent 1px, transparent 3px),
+      var(--parchment);
+    color:var(--ink); font-family:'Heebo',sans-serif; line-height:1.6;
+  }
+  h1,h2,h3,.display{font-family:'Frank Ruhl Libre',serif;}
+
+  .hero{position:relative; padding:56px 24px 34px; text-align:center; border-bottom:3px double var(--gold);
+    background:linear-gradient(180deg, rgba(169,129,47,0.08), transparent 70%); overflow:hidden;}
+  .eyebrow{letter-spacing:.35em; font-size:12px; color:var(--gold); font-weight:700; margin-bottom:14px;}
+  .hero h1{font-size:clamp(28px,5vw,48px); font-weight:900; margin:0 0 10px; color:var(--ink);}
+  .hero p.sub{max-width:680px; margin:0 auto; color:var(--ink-soft); font-size:15px;}
+  .badge-note{display:inline-block; margin-top:14px; font-size:12.5px; background:var(--card); border:1px solid var(--line);
+    border-radius:20px; padding:6px 14px; color:var(--ink-soft);}
+  .lightbulb-btn{position:absolute; top:16px; left:16px; z-index:5; background:var(--card); border:1px solid var(--line);
+    border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.1);}
+  .lightbulb-btn:hover{background:var(--gold-light); color:#fff;}
+  .lookup-status{display:none; font-size:12px; margin-top:8px; padding:5px 12px; border-radius:14px;}
+  .lookup-status.ok{display:inline-block; background:rgba(63,91,68,.12); color:var(--forest-deep);}
+  .lookup-status.err{display:inline-block; background:rgba(156,74,46,.12); color:var(--rust-deep);}
+
+  .controls{position:sticky; top:0; z-index:50; background:rgba(237,227,200,0.96); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line); padding:14px 20px;}
+  .controls-inner{max-width:1180px;margin:0 auto; display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  #search{flex:1; min-width:180px; padding:10px 16px; border-radius:20px; border:1px solid var(--line);
+    background:#fff; font-family:'Heebo',sans-serif; font-size:14px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; max-width:1180px; margin:10px auto 0;}
+  .chip{border:1px solid var(--line); background:var(--card); border-radius:16px; padding:6px 14px;
+    font-size:12.5px; cursor:pointer; color:var(--ink-soft);}
+  .chip.active{background:var(--forest); color:#fff; border-color:var(--forest);}
+  .count-tag{opacity:.7; font-size:11px;}
+
+  #main{max-width:1180px; margin:0 auto; padding:24px 20px 80px;}
+  .category-section.hidden{display:none;}
+  .cat-head{display:flex; align-items:center; gap:12px; border-bottom:2px solid var(--gold); padding-bottom:8px; margin-top:34px;}
+  .cat-num{font-family:'Frank Ruhl Libre',serif; font-size:17px; color:#fff; background:var(--forest); font-weight:900;
+    width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .cat-head h2{margin:0; font-size:20px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-top:14px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; overflow:hidden; cursor:pointer;
+    transition:transform .15s, box-shadow .15s;}
+  .card:hover{transform:translateY(-3px); box-shadow:var(--shadow);}
+  .card.hidden{display:none;}
+  .card-avatar{width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,var(--forest),var(--teal));
+    color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Frank Ruhl Libre',serif;
+    font-size:18px; font-weight:900; margin:14px 14px 0; flex:0 0 auto;}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .card-roles{display:flex; flex-wrap:wrap; gap:5px; padding:12px 14px 0; flex:1;}
+  .role-tag{font-size:10.5px; background:var(--forest); color:#fff; border-radius:20px; padding:2px 10px;}
+  .card-body{padding:8px 14px 16px;}
+  .card-name{margin:4px 0 4px; font-size:17px;}
+  .card-verse{font-size:11.5px; color:var(--gold); font-weight:600;}
+  .card-desc{font-size:12.5px; color:var(--ink-soft); margin:6px 0 0;}
+  .empty-msg{text-align:center; color:var(--ink-soft); margin-top:40px;}
+  .empty-msg.hidden{display:none;}
+
+  .overlay{position:fixed; inset:0; background:rgba(30,24,15,.55); display:none; align-items:flex-start; justify-content:center;
+    z-index:100; overflow-y:auto; padding:30px 16px;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--parchment-deep); border-radius:26px; max-width:760px; width:100%; box-shadow:var(--shadow); position:relative;}
+  .modal-close{position:absolute; top:12px; left:12px; background:var(--card); border:1px solid var(--line); border-radius:50%;
+    width:32px; height:32px; cursor:pointer; font-size:16px;}
+  .modal-actions{position:absolute; top:12px; right:52px; display:flex; gap:8px;}
+  .icon-btn{background:var(--card); border:1px solid var(--line); border-radius:50%; width:32px; height:32px;
+    cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;}
+  .icon-btn:hover{background:var(--gold-light); color:#fff;}
+  .modal-head{padding:24px 84px 10px 26px;}
+  .modal-head h2{margin:0 0 4px; font-size:24px;}
+  .cat-line{font-size:12.5px; color:var(--ink-soft);}
+  .modal-body{padding:10px 26px 26px;}
+  .info-table{width:100%; border-collapse:collapse; margin:14px 0;}
+  .info-table tr{border-bottom:1px solid var(--line);}
+  .info-table td{padding:8px 6px; font-size:13.5px; vertical-align:top;}
+  .info-table td.k{color:var(--gold); font-weight:700; white-space:nowrap; width:110px;}
+  .info-table td.v{color:var(--ink);}
+  .role-tag.big{font-size:12px; padding:3px 11px;}
+  h3.section-h{font-size:14px; color:var(--forest-deep); border-bottom:1px solid var(--line); padding-bottom:5px; margin:22px 0 10px;}
+  .verse-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:10px;}
+  .verse-card.clickable{cursor:pointer;}
+  .verse-card.clickable:hover{border-color:var(--gold);}
+  .verse-ref{font-weight:700; font-size:13px; color:var(--rust-deep); margin-bottom:4px;}
+  .open-hint{font-size:11px; color:var(--gold); font-weight:400;}
+  .verse-text{font-size:16px; line-height:1.9;}
+  .verse-text.empty{color:var(--ink-soft); font-style:italic; font-size:13px;}
+  .no-src{font-size:12.5px; color:var(--ink-soft); font-style:italic;}
+  .unknown{color:var(--ink-soft); font-style:italic; opacity:.7;}
+  .src-item{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:8px;}
+  .src-item.clickable{cursor:pointer;}
+  .src-source{font-weight:700; font-size:12.5px; color:var(--rust-deep);}
+  .src-note{font-size:12.5px; margin-top:3px;}
+  .src-link{font-size:12px; color:var(--teal); display:inline-block; margin-top:5px;}
+  .placeholder-icon{width:100%; aspect-ratio:16/10; display:flex; align-items:center; justify-content:center; background:var(--parchment-deep);}
+  .card-media{position:relative;}
+  .multi-list{display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;}
+  .multi-item{flex:0 0 150px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px; cursor:pointer; text-align:center;}
+  .multi-item.active{border-color:var(--gold); background:var(--gold-light); color:#fff;}
+  .multi-item-name{font-size:12.5px; font-weight:700; margin-top:4px;}
+  .multi-item-desc{font-size:10.5px; margin-top:2px;}
+  .nf-form input, .nf-form textarea{width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--line); font-family:inherit; margin-bottom:10px;}
+  .field-label{font-size:12px; color:var(--ink-soft); margin-bottom:4px;}
+  .nf-actions{display:flex; gap:10px;}
+  .nf-btn{background:var(--forest); color:#fff; border:none; border-radius:10px; padding:9px 16px; cursor:pointer; font-size:13px;}
+  .nf-btn.secondary{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .hidden{display:none;}
+  .person-link{color:var(--forest); cursor:pointer; text-decoration:underline; text-decoration-style:dotted; text-underline-offset:2px;}
+  .person-link:hover{color:var(--rust);}
+  .filter-row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; max-width:1180px; margin:8px auto 0;}
+  .filter-label{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
+  .alpha-bar{display:flex; flex-wrap:wrap; gap:5px;}
+  .alpha-btn{width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:var(--card);
+    color:var(--ink-soft); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .alpha-btn.active{background:var(--rust); color:#fff; border-color:var(--rust);}
+  .edit-field{margin-bottom:10px;}
+  @media print{
+    body *{visibility:hidden;}
+    .overlay{position:static !important; background:none !important; padding:0 !important; display:block !important;}
+    .modal, .modal *{visibility:visible;}
+    .modal{position:absolute; top:0; right:0; width:100%; max-width:100%; box-shadow:none; border:none; box-sizing:border-box;}
+    .modal-close, .modal-actions, .nf-actions, .open-hint{display:none !important;}
+  }
+</style>
+</head>
+<body>
+<div style="position:fixed;top:14px;left:14px;z-index:9999;"><button onclick="if(window.parent!==window){window.parent.postMessage({__madaeiHatanachBack:true},'*');}else{window.location.href='../../index.html';}" style="border:none;background:#2a2016;color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;">→ חזרה לעינים למקרא</button></div>
+<div class="hero">
+  <button class="lightbulb-btn" id="lightbulb-btn">💡 להארות</button>
+  <div class="eyebrow">מדריך תלמודי</div>
+  <h1>אנשים מהתלמוד</h1>
+  <p class="sub" id="heroSub">תנאים ואמוראים המוזכרים במסכת בכורות — תקופה, דור, מקום, וכל מראי המקום שבהם הם נזכרים במשנה ובגמרא.</p>
+  <div class="badge-note" id="badgeNote"></div>
+  <div><span class="lookup-status" id="lookupStatus"></span></div>
+</div>
+<div class="controls">
+  <div class="controls-inner">
+    <input type="text" id="search" placeholder="חיפוש שם חכם, תקופה, דור, מקום...">
+    <button id="addNewBtn" type="button" style="border:1px solid var(--line,#d8cfb8);background:var(--card,#fff);color:var(--ink-soft,#5B4E39);padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">＋ הוספת ערך חדש</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="filter-row"><span class="filter-label">תקופה:</span></div>
+  <div class="chips" id="eraChips"></div>
+  <div class="filter-row"><span class="filter-label">א-ב:</span><div class="alpha-bar" id="alphaBar"></div></div>
+</div>
+<div id="main"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalInner"></div>
+  </div>
+</div>
+
+<script>
+const REPORT_EMAIL = 'E0548433917@outlook.com';
+
+// CATS מגיע מקובץ הדאטה עצמו (amoraim-data.js), לא מוגדר כאן — כך
+// שהקטגוריות והרשומות לעולם לא יוצאות מסנכרון.
+</script>
+<script src="data/amoraim-data.js"></script>
+<script>
+
+let activeCat = 'all';
+
+// תגיות הכרטיס: תפקיד (תנא/אמורא), דור, ו"מוזכר במשנה" כשרלוונטי.
+function tagsOf(item){
+  const t = [];
+  if(item.role) t.push(item.role);
+  if(item.dor) t.push(item.dor);
+  if(item.inMishnah) t.push('במשנה');
+  return t;
+}
+function roleTags(item, big){
+  return tagsOf(item).map(r=>`<span class="role-tag${big?' big':''}">${r}</span>`).join('');
+}
+
+function summaryLine(item){
+  const parts = [];
+  if(item.place) parts.push(item.place);
+  const n = (item.midrash||[]).length;
+  if(n) parts.push(n + ' מראי מקום בבכורות');
+  return parts.join(' · ');
+}
+
+function catEra(catId){
+  const c = CATS.find(x=>x.id===catId);
+  return (c && c.era) || '';
+}
+function firstLetter(name){
+  const n = normalizeHeb(name||'');
+  return n ? n[0] : '';
+}
+
+function cardHTML(item, idx){
+  const firstSrc = (item.midrash && item.midrash[0]) ? item.midrash[0].ref : '';
+  const searchBlob = (item.name+' '+firstSrc+' '+(item.aliases||[]).join(' ')+' '+(item.role||'')+' '+(item.dor||'')+' '+(item.place||'')).toLowerCase();
+  return `
+  <div class="card" data-cat="${item.cat}" data-era="${catEra(item.cat)}" data-letter="${firstLetter(item.name)}" data-idx="${idx}" data-search="${searchBlob}">
+    <div class="card-top">
+      <div class="card-avatar">${(item.name||'?')[0]}</div>
+      <div class="card-roles">${roleTags(item)}</div>
+    </div>
+    <div class="card-body">
+      <h3 class="card-name">${item.name}</h3>
+      <span class="card-verse">${firstSrc}${(item.midrash||[]).length>1 ? ' ועוד' : ''}</span>
+      <p class="card-desc">${summaryLine(item)}</p>
+    </div>
+  </div>`;
+}
+
+let activeEra = 'all';
+let activeLetter = 'all';
+let searchQ = '';
+
+function render(){
+  const srcCount = DATA.reduce((s,d)=>s+(d.midrash||[]).length, 0);
+  document.getElementById('badgeNote').textContent =
+    '✓ ' + DATA.length + ' חכמים · ' + srcCount + ' מראי מקום ממסכת בכורות (משנה ובבלי) — עבודה מתמשכת, מסכתות נוספות יתווספו.';
+  const main = document.getElementById('main');
+  main.innerHTML = CATS.map(cat=>{
+    const items = DATA.map((d,i)=>({...d, idx:i})).filter(d=>d.cat===cat.id);
+    if(!items.length) return '';
+    return `
+    <section class="category-section" id="${cat.id}">
+      <div class="cat-head">
+        <span class="cat-num">${cat.num}</span>
+        <h2>${cat.label}</h2>
+        <span class="count-tag">(${items.length})</span>
+      </div>
+      <p style="color:var(--ink-soft);font-size:13.5px;max-width:760px;margin:8px 0 20px;">${cat.blurb}</p>
+      <div class="grid">${items.map(it=>cardHTML(it, it.idx)).join('')}</div>
+    </section>`;
+  }).join('') + `<p class="empty-msg hidden" id="emptyMsg">לא נמצאו תוצאות התואמות את הסינון.</p>`;
+
+  const chipsWrap = document.getElementById('chips');
+  chipsWrap.innerHTML = `<button class="chip active" data-cat="all">הכל <span class="count-tag">(${DATA.length})</span></button>` +
+    CATS.filter(c=>DATA.some(d=>d.cat===c.id)).map(c=>`<button class="chip" data-cat="${c.id}">${c.label}</button>`).join('');
+
+  const eras = [];
+  CATS.forEach(c=>{ if(c.era && DATA.some(d=>d.cat===c.id) && !eras.includes(c.era)) eras.push(c.era); });
+  const eraWrap = document.getElementById('eraChips');
+  eraWrap.innerHTML = `<button class="chip active" data-era="all">הכל</button>` +
+    eras.map(e=>`<button class="chip" data-era="${e}">${e}</button>`).join('');
+
+  const letters = [];
+  document.querySelectorAll('#main .card').forEach(c=>{ const l=c.dataset.letter; if(l && !letters.includes(l)) letters.push(l); });
+  const ALEPH_BET = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י','כ','ל','מ','נ','ס','ע','פ','צ','ק','ר','ש','ת'];
+  const alphaWrap = document.getElementById('alphaBar');
+  alphaWrap.innerHTML = `<button class="alpha-btn active" data-letter="all">*</button>` +
+    ALEPH_BET.filter(l=>letters.includes(l)).map(l=>`<button class="alpha-btn" data-letter="${l}">${l}</button>`).join('');
+
+  attachEvents();
+  applyFilters();
+}
+
+function cardMatches(card){
+  if(activeCat!=='all' && card.dataset.cat!==activeCat) return false;
+  if(activeEra!=='all' && card.dataset.era!==activeEra) return false;
+  if(activeLetter!=='all' && card.dataset.letter!==activeLetter) return false;
+  if(searchQ && !card.dataset.search.includes(searchQ)) return false;
+  return true;
+}
+
+function applyFilters(){
+  let anyVisible = false;
+  document.querySelectorAll('.category-section').forEach(sec=>{
+    let has = false;
+    sec.querySelectorAll('.card').forEach(card=>{
+      const match = cardMatches(card);
+      card.classList.toggle('hidden', !match);
+      if(match) has = true;
+    });
+    sec.classList.toggle('hidden', !has);
+    if(has) anyVisible = true;
+  });
+  document.getElementById('emptyMsg').classList.toggle('hidden', anyVisible);
+}
+
+function attachEvents(){
+  document.querySelectorAll('#chips .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      activeCat = chip.dataset.cat;
+      applyFilters();
+    });
+  });
+  document.querySelectorAll('#eraChips .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#eraChips .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      activeEra = chip.dataset.era;
+      applyFilters();
+    });
+  });
+  document.querySelectorAll('#alphaBar .alpha-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#alphaBar .alpha-btn').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active');
+      activeLetter = btn.dataset.letter;
+      applyFilters();
+    });
+  });
+  document.getElementById('search').addEventListener('input', e=>{
+    searchQ = e.target.value.trim().toLowerCase();
+    applyFilters();
+  });
+  document.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('click', ()=> openModal(DATA[card.dataset.idx]));
+  });
+}
+
+const overlay = document.getElementById('overlay');
+const modalInner = document.getElementById('modalInner');
+
+function infoRow(k,v){
+  const val = v ? v : '<span class="unknown">לא צוין בכתוב</span>';
+  return `<tr><td class="k">${k}</td><td class="v">${val}</td></tr>`;
+}
+function listOrText(arr){
+  if(!arr) return '';
+  if(Array.isArray(arr)) return arr.join(', ');
+  return arr;
+}
+
+function personIdxForName(raw){
+  if(!raw) return null;
+  const clean = String(raw).trim();
+  let norm = normalizeHeb(clean);
+  if(PEOPLE_LOOKUP.has(norm)) return PEOPLE_LOOKUP.get(norm);
+  const core = clean.split(/[(,]/)[0].trim();
+  norm = normalizeHeb(core);
+  if(PEOPLE_LOOKUP.has(norm)) return PEOPLE_LOOKUP.get(norm);
+  const loose = looseForm(norm);
+  if(loose.length>=2 && LOOSE_LOOKUP.has(loose)) return LOOSE_LOOKUP.get(loose);
+  return null;
+}
+function personLinkHTML(raw, selfIdx){
+  if(!raw) return '';
+  const idx = personIdxForName(raw);
+  if(idx===null || idx===selfIdx) return raw;
+  return `<span class="person-link" data-nav-idx="${idx}">${raw}</span>`;
+}
+function personListHTML(arr, selfIdx){
+  if(!arr) return '';
+  const list = Array.isArray(arr) ? arr : [arr];
+  return list.map(n=>personLinkHTML(n, selfIdx)).join(', ');
+}
+function parentsHTML(item, selfIdx){
+  return [personLinkHTML(item.father, selfIdx), personLinkHTML(item.mother, selfIdx)].filter(Boolean).join(' · ');
+}
+
+function itemDetailHTML(item){
+  const srcs = item.midrash || [];
+  const mishnah = srcs.filter(s=>s.ref.indexOf('משנה') === 0);
+  const bavli   = srcs.filter(s=>s.ref.indexOf('משנה') !== 0);
+
+  const srcBlock = (list) => list.map(s=>{
+    const parsed = parseMidrashRef(s.ref);
+    const openAttr = parsed ? ` data-open-ref='${JSON.stringify(parsed).replace(/'/g,'&#39;')}'` : '';
+    return `
+    <div class="verse-card${parsed ? ' clickable' : ''}"${openAttr}>
+      <div class="verse-ref">${s.ref}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>
+      <div class="verse-text">${s.text}</div>
+    </div>`;}).join('');
+
+  const bio = (item.methods && item.methods[0] && item.methods[0].explanation) || '';
+  const bioHTML = bio
+    ? `<div class="src-item"><div class="src-note">${bio}</div></div>`
+    : `<p class="no-src">תיאור ביוגרפי טרם נאסף לערך זה.</p>`;
+
+  return `
+  <div class="modal-head">
+    <div class="modal-actions">
+      <button class="icon-btn" id="printBtn" title="הדפסת כרטיס">🖨️</button>
+      <button class="icon-btn" id="editBtn" title="הצעת עריכה">✏️</button>
+    </div>
+    <div>
+      <h2>${item.name}</h2>
+      <div class="cat-line">${tagsOf(item).join(' · ')}</div>
+    </div>
+    <div style="margin-top:8px;">${roleTags(item, true)}</div>
+  </div>
+  <div class="modal-body">
+    <table class="info-table">
+      ${infoRow('תקופה', item.role)}
+      ${infoRow('דור', item.dor)}
+      ${infoRow('מקום', item.place)}
+      ${infoRow('כינויים בגמרא', (item.aliases&&item.aliases.length) ? item.aliases.join(', ') : '')}
+      ${infoRow('אזכורים בבכורות', item.mentions ? item.mentions + ' אזכורים ב-' + srcs.length + ' מראי מקום' : '')}
+    </table>
+    <h3 class="section-h">תולדות חייו</h3>
+    ${bioHTML}
+    ${mishnah.length ? `<h3 class="section-h">במשנת בכורות (${mishnah.length})</h3>${srcBlock(mishnah)}` : ''}
+    ${bavli.length ? `<h3 class="section-h">בגמרא — בבלי בכורות (${bavli.length})</h3>${srcBlock(bavli)}` : ''}
+    ${srcs.length ? '' : `<p class="no-src">טרם נאספו מראי מקום לערך זה.</p>`}
+  </div>`;
+}
+
+function wireItemDetail(item){
+  // event delegation on document handles verse-card clicks; nothing extra needed here
+}
+
+function openModal(item){
+  modalInner.innerHTML = itemDetailHTML(item);
+  overlay.classList.add('open');
+  const pb = document.getElementById('printBtn');
+  if(pb) pb.addEventListener('click', ()=> window.print());
+  const eb = document.getElementById('editBtn');
+  if(eb) eb.addEventListener('click', ()=> openEditForm(item));
+}
+function closeModal(){ overlay.classList.remove('open'); }
+document.getElementById('modalClose').addEventListener('click', closeModal);
+overlay.addEventListener('click', e=>{ if(e.target === overlay) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+document.addEventListener('click', e=>{
+  if (e.target.closest('[data-external-link]')) return;
+  const nav = e.target.closest('[data-nav-idx]');
+  if (nav){
+    const idx = parseInt(nav.getAttribute('data-nav-idx'), 10);
+    if (!isNaN(idx) && DATA[idx]) openModal(DATA[idx]);
+    return;
+  }
+  const el = e.target.closest('[data-open-ref]');
+  if (el){
+    try {
+      const parsed = JSON.parse(el.getAttribute('data-open-ref').replace(/&#39;/g, "'"));
+      if (parsed && parsed.bookId) openInLibrary(parsed.bookId, parsed.ref);
+    } catch(_){}
+  }
+}, true);
+
+const OVERRIDES_KEY = 'amoraimguide_overrides_v1';
+function loadOverrides(){
+  try { return JSON.parse(localStorage.getItem(OVERRIDES_KEY) || '{}'); } catch(_){ return {}; }
+}
+function saveOverride(name, fields){
+  const all = loadOverrides();
+  all[name] = Object.assign(all[name] || {}, fields);
+  localStorage.setItem(OVERRIDES_KEY, JSON.stringify(all));
+}
+function applyOverrides(){
+  const all = loadOverrides();
+  DATA.forEach(item=>{
+    if(all[item.name]) Object.assign(item, all[item.name]);
+  });
+}
+
+const EDIT_FIELDS = [
+  ['role','תקופה (תנא/אמורא)'], ['dor','דור'], ['place','מקום'],
+  ['aliases','כינויים בגמרא (מופרד בפסיקים)']
+];
+const ARRAY_FIELDS = new Set(['aliases']);
+
+function editField(key, label, val){
+  const isLong = key==='place';
+  const v = String(val==null ? '' : val).replace(/"/g,'&quot;');
+  return `<div class="edit-field"><div class="field-label">${label}</div>` +
+    (isLong ? `<textarea id="ef_${key}">${val||''}</textarea>` : `<input type="text" id="ef_${key}" value="${v}">`) +
+    `</div>`;
+}
+
+function openEditForm(item){
+  modalInner.innerHTML = `
+  <div class="modal-head">
+    <div><h2>עריכת כרטיס: ${item.name}</h2>
+    <div class="cat-line">השינויים נשמרים במכשיר זה בלבד, אלא אם תישלח הצעה למפתח</div></div>
+  </div>
+  <div class="modal-body nf-form">
+    ${EDIT_FIELDS.map(([k,l])=>editField(k,l, ARRAY_FIELDS.has(k) ? listOrText(item[k]) : item[k])).join('')}
+    <div class="nf-actions">
+      <button class="nf-btn" id="editSave">💾 שמירה במכשיר</button>
+      <button class="nf-btn" id="editSend">📧 שליחה למפתח</button>
+      <button class="nf-btn secondary" id="editCancel">ביטול</button>
+    </div>
+  </div>`;
+  overlay.classList.add('open');
+
+  function collect(){
+    const out = {};
+    EDIT_FIELDS.forEach(([k])=>{
+      const raw = document.getElementById('ef_'+k).value.trim();
+      out[k] = ARRAY_FIELDS.has(k) ? raw.split(',').map(s=>s.trim()).filter(Boolean) : raw;
+    });
+    return out;
+  }
+  function diffText(fields){
+    return EDIT_FIELDS.map(([k,l])=>{
+      const before = ARRAY_FIELDS.has(k) ? listOrText(item[k]) : (item[k]||'');
+      const after = ARRAY_FIELDS.has(k) ? listOrText(fields[k]) : fields[k];
+      if((before||'') === (after||'')) return null;
+      return `${l}:\n  לפני: ${before || '—'}\n  אחרי: ${after || '—'}`;
+    }).filter(Boolean).join('\n\n');
+  }
+
+  document.getElementById('editSave').addEventListener('click', ()=>{
+    const fields = collect();
+    Object.assign(item, fields);
+    saveOverride(item.name, fields);
+    render();
+    openModal(item);
+  });
+  document.getElementById('editSend').addEventListener('click', async ()=>{
+    const fields = collect();
+    const diff = diffText(fields) || '(לא זוהה שינוי בשדות, אך ייתכן שהתבקש רק לצרף הערה)';
+    Object.assign(item, fields);
+    saveOverride(item.name, fields);
+    render();
+    if (hasOtzaria()){
+      try {
+        await Otzaria.call('feedback.sendEmail', {
+          to: REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - מדריך אנשים מהתלמוד',
+          body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true
+        });
+        await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
+      } catch(e){
+        await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
+      }
+    }
+    openModal(item);
+  });
+  document.getElementById('editCancel').addEventListener('click', ()=> openModal(item));
+}
+
+function normalizeHeb(s){
+  return (s || '')
+    .replace(/[֑-ׇ]/g, '')
+    .replace(/[^א-ת]/g, '');
+}
+
+const PREFIXES = ['ה','ו','ב','כ','ל','מ','ש'];
+const SUFFIXES = ['ים','ות'];
+const NIQQUD_RE = /[֑-ׇ]/g;
+
+function tokenizeHeb(text){
+  return (text || '').replace(NIQQUD_RE, '').replace(/־/g,' ').match(/[א-ת]+/g) || [];
+}
+function looseForm(w){ return (w || '').replace(/[וי]/g, ''); }
+
+const PEOPLE_LOOKUP = new Map();
+const LOOSE_LOOKUP = new Map();
+
+function registerKey(phrase, idx){
+  const norm = normalizeHeb(phrase);
+  if (!norm || norm.length < 2) return;
+  if (!PEOPLE_LOOKUP.has(norm)) PEOPLE_LOOKUP.set(norm, idx);
+  const loose = looseForm(norm);
+  if (loose.length >= 2 && !LOOSE_LOOKUP.has(loose)) LOOSE_LOOKUP.set(loose, idx);
+}
+// בשונה ממדריך אישי התנ״ך — כאן *לא* רושמים מילים בודדות מתוך שם מלא.
+// שמות חכמים חולקים מילים נפוצות ("יהודה", "שמעון", "חייא"), ורישום מילה
+// בודדת היה גורם לזיהוי ודאי-אך-שגוי של חכם אחר. מוטב שהזיהוי לא יתפוס
+// מאשר שיתפוס את האדם הלא נכון.
+function registerPhrase(phrase, idx){
+  if (!phrase) return;
+  registerKey(phrase, idx);
+}
+
+DATA.forEach((item, idx) => {
+  registerPhrase(item.name, idx);
+  (item.aliases || []).forEach(a => registerPhrase(a, idx));
+});
+
+function candidateForms(word){
+  const w = normalizeHeb(word);
+  if (!w) return [];
+  const prefixVariants = [w];
+  let cur = w;
+  for (let i = 0; i < 2 && cur.length > 2; i++){
+    if (!PREFIXES.includes(cur[0])) break;
+    cur = cur.slice(1);
+    prefixVariants.push(cur);
+  }
+  const all = new Set();
+  prefixVariants.forEach(p => {
+    all.add(p);
+    SUFFIXES.forEach(suf => {
+      if (p.endsWith(suf) && p.length > suf.length + 1) all.add(p.slice(0, -suf.length));
+    });
+  });
+  return Array.from(all).filter(c => c.length >= 2);
+}
+
+function findPeopleIdx(word){
+  const cands = candidateForms(word);
+  for (const c of cands){ if (PEOPLE_LOOKUP.has(c)) return PEOPLE_LOOKUP.get(c); }
+  for (const c of cands){
+    const lc = looseForm(c);
+    if (lc.length >= 2 && LOOSE_LOOKUP.has(lc)) return LOOSE_LOOKUP.get(lc);
+  }
+  return null;
+}
+
+// שמות חכמים הם צירופים ("רבי יהודה בר אלעאי"), ומילה בודדת אינה רשומה
+// במפתח בכוונה. לכן סורקים חלונות של עד MAX_NAME_WORDS מילים, מהארוך
+// לקצר, וברגע שצירוף נתפס — מדלגים מעליו כדי לא לזהות גם תת-צירוף שלו
+// כאדם אחר (למשל "רב יהודה" מתוך "רב יהודה בר יחזקאל").
+const MAX_NAME_WORDS = 7;
+
+function lookupPhrase(words){
+  if (!words.length) return null;
+  // המילה הראשונה עשויה לשאת אות שימוש ("לרבא", "כרבי יוחנן", "ודרב") —
+  // מנסים גם את הצורות המקוצרות שלה, כמו ב-candidateForms.
+  const heads = candidateForms(words[0]);
+  if (heads.indexOf(normalizeHeb(words[0])) === -1) heads.unshift(normalizeHeb(words[0]));
+  const rest = words.slice(1).map(normalizeHeb).join('');
+  for (const head of heads){
+    const norm = head + rest;
+    if (norm.length < 2) continue;
+    if (PEOPLE_LOOKUP.has(norm)) return PEOPLE_LOOKUP.get(norm);
+  }
+  for (const head of heads){
+    const loose = looseForm(head + rest);
+    if (loose.length >= 2 && LOOSE_LOOKUP.has(loose)) return LOOSE_LOOKUP.get(loose);
+  }
+  return null;
+}
+
+function findAllPeopleIdxsInSelection(text){
+  const words = tokenizeHeb(text);
+  const seen = new Set();
+  const result = [];
+  let i = 0;
+  while (i < words.length){
+    let hit = null;
+    for (let len = Math.min(MAX_NAME_WORDS, words.length - i); len >= 1; len--){
+      const slice = words.slice(i, i + len);
+      const idx = lookupPhrase(slice);
+      if (idx !== null){ hit = { idx, len, word: slice.join(' ') }; break; }
+    }
+    if (hit){
+      if (!seen.has(hit.idx)){ seen.add(hit.idx); result.push({ idx: hit.idx, word: hit.word }); }
+      i += hit.len;
+    } else {
+      i++;
+    }
+  }
+  return result;
+}
+
+function identifyBlurb(item){
+  const parts = [];
+  const tags = tagsOf(item);
+  if(tags.length) parts.push(tags.join(', '));
+  const sum = summaryLine(item);
+  if(sum) parts.push(sum);
+  return parts.length ? parts.join(' · ') : 'אין פרטים נוספים';
+}
+
+function selectionQuoteHTML(text){
+  const words = tokenizeHeb(text);
+  if(words.length <= 1) return '';
+  const trimmed = text.length > 300 ? text.slice(0,300) + '…' : text;
+  return `<div class="verse-card"><div class="verse-ref">הקטע שנבחר</div><div class="verse-text">${trimmed}</div></div>`;
+}
+
+function openMultiModal(matches, selectedText){
+  const items = matches.map(m=>DATA[m.idx]);
+  modalInner.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <h2>נמצאו ${items.length} חכמים בקטע שנבחר</h2>
+        <div class="cat-line">לחצו על שם לצפייה בכרטיס המלא</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      ${selectionQuoteHTML(selectedText||'')}
+      <div class="multi-list" id="multiList">
+        ${matches.map(m=>`
+        <div class="multi-item" data-idx="${m.idx}">
+          <div class="multi-item-name">${DATA[m.idx].name}</div>
+          <div class="multi-item-desc">${identifyBlurb(DATA[m.idx])}</div>
+          <div class="multi-item-desc">זוהה מהמילה: ${m.word}</div>
+        </div>`).join('')}
+      </div>
+      <div id="multiDetail"></div>
+    </div>`;
+  const selectMultiItem = (idx) => {
+    modalInner.querySelectorAll('.multi-item').forEach(x=>x.classList.toggle('active', x.dataset.idx == idx));
+    const item = DATA[idx];
+    document.getElementById('multiDetail').innerHTML = itemDetailHTML(item);
+  };
+  modalInner.querySelectorAll('.multi-item').forEach(el=>{
+    el.addEventListener('click', ()=> selectMultiItem(el.dataset.idx));
+  });
+  selectMultiItem(matches[0].idx);
+  overlay.classList.add('open');
+}
+
+function openNotFoundModal(searchedText){
+  const safeText = (searchedText||'').replace(/"/g,'&quot;');
+  modalInner.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <h2>"${searchedText}" אינו קיים עדיין במדריך</h2>
+        <div class="cat-line">אפשר להציע להוסיף אותו בגרסה הבאה</div>
+      </div>
+    </div>
+    <div class="modal-body nf-form">
+      <p class="no-src">מלאו את הפרטים הבאים ושלחו אותם למפתח (${REPORT_EMAIL}), או הורידו קובץ טקסט לשליחה ממחשב אחר.</p>
+      <div class="field-label">שם החכם</div>
+      <input type="text" id="nfName" value="${safeText}">
+      <div class="field-label">מה המקור בספרייה (פסוק)</div>
+      <textarea id="nfSource" placeholder="לדוגמה: בבלי, בכורות לז ע״א"></textarea>
+      <div class="field-label">הערות נוספות</div>
+      <textarea id="nfNotes" placeholder="פרטי משפחה/תפקיד ידועים וכו׳"></textarea>
+      <div class="nf-actions">
+        <button class="nf-btn" id="nfSave">💾 שמירה במכשיר</button>
+        <button class="nf-btn" id="nfSend">📧 שליחה במייל</button>
+        <button class="nf-btn secondary" id="nfDownload">💾 הורדה כקובץ טקסט</button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+
+  function buildReport(){
+    const name = document.getElementById('nfName').value.trim();
+    const source = document.getElementById('nfSource').value.trim();
+    const notes = document.getElementById('nfNotes').value.trim();
+    return `הצעת תוספת למדריך אנשים מהתלמוד\nלשליחה אל: ${REPORT_EMAIL}\n\nההוספה המוצעת: ${name}\nהמקור בספרייה: ${source || '—'}\nהערות נוספות: ${notes || '—'}\n`;
+  }
+
+  document.getElementById('nfSave').addEventListener('click', ()=>{
+    const name = document.getElementById('nfName').value.trim();
+    if (!name){ window.alert('יש למלא שם'); return; }
+    try {
+      const key = 'amoraim_nf_drafts_v1';
+      const drafts = JSON.parse(localStorage.getItem(key) || '[]');
+      drafts.push({
+        name, source: document.getElementById('nfSource').value.trim(),
+        notes: document.getElementById('nfNotes').value.trim(), savedAt: new Date().toISOString()
+      });
+      localStorage.setItem(key, JSON.stringify(drafts));
+      window.alert('הטיוטה נשמרה במכשיר זה. ניתן לשלוח אותה למפתח בכל שלב.');
+    } catch(e){ window.alert('שמירת הטיוטה נכשלה.'); }
+  });
+  document.getElementById('nfSend').addEventListener('click', async ()=>{
+    if (!hasOtzaria()) return;
+    try {
+      await Otzaria.call('feedback.sendEmail', { to: REPORT_EMAIL, subject: 'הצעת תוספת - מדריך אנשים מהתלמוד', body: buildReport(), includeSystemInfo: true });
+      await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
+    } catch(e){
+      await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
+    }
+  });
+  document.getElementById('nfDownload').addEventListener('click', ()=>{
+    const blob = new Blob([buildReport()], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'הצעת-תוספת-אנשים-מהתלמוד.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  });
+}
+
+function showLookupStatus(msg, ok){
+  const el = document.getElementById('lookupStatus');
+  el.textContent = msg;
+  el.className = 'lookup-status ' + (ok ? 'ok' : 'err');
+  el.style.display = 'inline-block';
+}
+
+const MENU_ITEM_ID = 'chadbedera-amoraim-lookup';
+
+function hasOtzaria(){ return !!(window.Otzaria && typeof Otzaria.call === 'function'); }
+
+async function confirmOpenExternal(url){
+  let hostname = url;
+  try { hostname = new URL(url).hostname || url; } catch(_){}
+  if (!hasOtzaria()) return;
+  const c = await Otzaria.call('ui.showConfirm', {
+    title: 'קישור לאתר חיצוני',
+    content: 'הקישור הזה מוביל אל האתר "' + hostname + '" — מחוץ לתוסף. האם לפתוח אותו בדפדפן המערכת?'
+  }).catch(() => null);
+  if (!c || !c.success || !c.data || c.data.confirmed !== true) return;
+  const r = await Otzaria.call('app.openUrl', { url: url }).catch(() => null);
+  if (!r || !r.success){
+    await Otzaria.call('notifications.showInApp', { message: 'פתיחת הקישור נכשלה (ייתכן שגרסת אוצריא אינה תומכת עדיין).', type: 'error' }).catch(()=>{});
+  }
+}
+
+document.addEventListener('click', (ev) => {
+  let target = ev.target;
+  while (target && target.tagName !== 'A') target = target.parentNode;
+  if (!target) return;
+  if (target.hasAttribute('data-external-link')){
+    ev.preventDefault();
+    const url = target.getAttribute('data-external-link');
+    if (url) confirmOpenExternal(url);
+  }
+}, true);
+
+// מראי המקום כאן הם תלמודיים ("משנה, בכורות ו, א" / "בבלי, בכורות לז ע״א")
+// ולא פסוקי תנ״ך — לכן משתמשים באותה לוגיקה שב-shell/refs.js. השורות
+// האלה חייבות להישאר תואמות ל-parseMidrashRef שם; tools/validate.js
+// (בדיקה 5) מריץ את הפרסר האמיתי מול הדאטה ויתריע אם משהו יישבר.
+function parseMidrashRef(source){
+  if (!source) return null;
+  const s = String(source).split(';')[0].replace(/\s*\([^)]*\)\s*$/, '').replace(/״/g, '"').trim();
+  let m;
+  // בבלי: "בבלי, בכורות לז ע״א"
+  m = s.match(/^(?:משנה ו?גמרא|בבלי),?\s+([א-ת" ]+?)\s+([א-ת]{1,3})\s*(?:ע"[אב]|[.:])?$/);
+  if (m) return { bookId: m[1].trim(), ref: 'דף ' + m[2] };
+  // משנה / תוספתא: "משנה, בכורות ו, א"
+  m = s.match(/^(משנה|תוספתא),?\s+([א-ת" ]+?)\s+([א-ת]{1,3})\s*,\s*[א-ת–-]{1,7}$/);
+  if (m) return { bookId: m[1] + ' ' + m[2].trim(), ref: 'פרק ' + m[3] };
+  return null;
+}
+
+async function openInLibrary(bookId, ref){
+  if (!hasOtzaria()) return;
+  try {
+    const r = await Otzaria.call('reader.openBookAtRef', { bookId, ref, index: 0 });
+    if (!r || !r.success) await Otzaria.call('notifications.showInApp', { message: 'לא ניתן היה לפתוח את המקור בספרייה', type: 'info' }).catch(()=>{});
+  } catch(e){
+    await Otzaria.call('notifications.showInApp', { message: 'פתיחת המקור בספרייה נכשלה', type: 'error' }).catch(()=>{});
+  }
+}
+
+async function registerContextMenuItem(){
+  try {
+    await Otzaria.call('reader.addContextMenuItem', {
+      id: MENU_ITEM_ID,
+      label: 'זהה חכם במדריך אנשים מהתלמוד',
+      icon: 'person_24_regular'
+    });
+    showLookupStatus('✅ זיהוי חכמים בלחיצה ימנית פעיל (יש להפעיל "הרצה ברקע" בהגדרות התוסף כדי שיישאר זמין תמיד)', true);
+  } catch(e){
+    showLookupStatus('⚠️ רישום פריט הזיהוי נכשל: ' + ((e && e.message) || String(e)), false);
+  }
+}
+
+async function goToPluginOnConfirm(title, content, fallbackMessage){
+  if (!hasOtzaria()) return;
+  try {
+    const res = await Otzaria.call('ui.showConfirm', { title, content });
+    if (res && res.success && res.data && res.data.confirmed === true){
+      const futureApiMethod = ['plugin','openSelf'].join('.');
+      await Otzaria.call(futureApiMethod, {}).catch(()=>{});
+    }
+  } catch(e){
+    await Otzaria.call('notifications.showInApp', { message: fallbackMessage, type: 'success' }).catch(()=>{});
+  }
+}
+
+async function handleContextMenuClick(data){
+  if (!data || data.itemId !== MENU_ITEM_ID) return;
+  const text = (data.selectedText || '').trim();
+  if (!text){
+    if (hasOtzaria()) await Otzaria.call('notifications.showInApp', { message: 'יש לסמן תחילה שם אדם בטקסט', type: 'info' }).catch(()=>{});
+    return;
+  }
+  const matches = findAllPeopleIdxsInSelection(text);
+  if (matches.length > 1){
+    openMultiModal(matches, text);
+    if (hasOtzaria()){
+      const quoteLine = tokenizeHeb(text).length > 1 ? ('הקטע שנבחר: "' + (text.length>200?text.slice(0,200)+'…':text) + '"\n\n') : '';
+      const lines = matches.map(m=>'• ' + DATA[m.idx].name + ' (זוהה מהמילה: ' + m.word + ') — ' + identifyBlurb(DATA[m.idx])).join('\n');
+      await goToPluginOnConfirm(
+        '👤 נמצאו ' + matches.length + ' חכמים',
+        quoteLine + 'נמצאו במדריך כמה חכמים בקטע שסימנתם:\n\n' + lines + '\n\nהרשימה המלאה כבר פתוחה ברקע. לחיצה על אישור תעביר אותך ללשונית "אנשים מהתלמוד".',
+        '👤 נמצאו ' + matches.length + ' חכמים — פתוח בלשונית "אנשים מהתלמוד".'
+      );
+    }
+    return;
+  }
+  if (matches.length === 1){
+    const item = DATA[matches[0].idx];
+    openModal(item);
+    if (hasOtzaria()){
+      const firstSrc = (item.midrash && item.midrash[0]) ? item.midrash[0].ref : '';
+      const quoteLine = tokenizeHeb(text).length > 1 ? ('הקטע שנבחר: "' + (text.length>200?text.slice(0,200)+'…':text) + '"\n\n') : '';
+      const content = quoteLine + identifyBlurb(item) + (firstSrc ? '\n\nלפי: ' + firstSrc : '')
+        + '\n\nהכרטיס המלא כבר פתוח ברקע. לחיצה על אישור תעביר אותך ללשונית "אנשים מהתלמוד".';
+      await goToPluginOnConfirm('👤 ' + item.name, content, '👤 זוהה: ' + item.name);
+    }
+  } else {
+    openNotFoundModal(text);
+    if (hasOtzaria()){
+      await goToPluginOnConfirm(
+        '❓ לא נמצא: ' + text,
+        'לא נמצא ערך במדריך עבור "' + text + '".\n\nטופס להצעת תוספת כבר פתוח ברקע. לחיצה על אישור תעביר אותך ללשונית "אנשים מהתלמוד".',
+        '❓ לא זוהה ערך עבור "' + text + '" — טופס הצעת תוספת פתוח בלשונית "אנשים מהתלמוד".'
+      );
+    }
+  }
+}
+
+document.getElementById('lightbulb-btn').addEventListener('click', async () => {
+  if (!hasOtzaria()) return;
+  const msg = window.prompt('מה תרצה לשתף לגבי התוסף? (הודעה תישלח למפתח)');
+  if (!msg || !msg.trim()) return;
+  try {
+    await Otzaria.call('feedback.sendEmail', { to: REPORT_EMAIL, subject: 'משוב על תוסף אנשים מהתלמוד', body: msg.trim(), includeSystemInfo: true });
+    await Otzaria.call('notifications.showInApp', { message: 'המשוב נשלח, תודה!', type: 'success' }).catch(()=>{});
+  } catch(e){
+    await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת המשוב', type: 'error' }).catch(()=>{});
+  }
+});
+
+function waitForOtzaria(elapsed){
+  if (window.Otzaria && typeof Otzaria.on === 'function'){
+    // פריט התפריט האחיד נרשם ע"י מעטפת "מדעי התנ״ך" (index.html), לא כאן.
+    Otzaria.on('reader.context_menu_item_clicked', handleContextMenuClick);
+    return;
+  }
+  setTimeout(() => waitForOtzaria(elapsed + 200), 200);
+}
+waitForOtzaria(0);
+
+document.getElementById('addNewBtn').addEventListener('click', ()=> openNotFoundModal(''));
+
+applyOverrides();
+render();
+
+(function(){
+  try {
+    const focus = new URLSearchParams(location.search).get('focus');
+    if (focus) handleContextMenuClick({ itemId: MENU_ITEM_ID, selectedText: focus });
+  } catch(e){}
+})();
+</script>
+</body>
+</html>

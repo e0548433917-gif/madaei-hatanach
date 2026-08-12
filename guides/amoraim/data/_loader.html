@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"></head>
+<body>
+<script src="amoraim-data.js"></script>
+<script>
+try {
+  parent.postMessage({ __madaeiHatanachLoader: true, cat: 'amoraim', ok: true, data: (typeof DATA !== 'undefined') ? DATA : [], cats: (typeof CATS !== 'undefined') ? CATS : [] }, '*');
+} catch(e) {
+  parent.postMessage({ __madaeiHatanachLoader: true, cat: 'amoraim', ok: false, error: String(e) }, '*');
+}
+</script>
+</body></html>
