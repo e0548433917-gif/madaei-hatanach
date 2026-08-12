@@ -14,7 +14,6 @@
     "reader.context_menu",
     "reader.open",
     "app.run_on_startup",
-    "app.startup_contributions",
     "notifications.send",
     "ui.feedback",
     "app.open_url",
