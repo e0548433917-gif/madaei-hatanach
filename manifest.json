@@ -1,7 +1,7 @@
 {
   "id": "com.chadbedera.madaeihatanach",
   "name": "עינים למקרא",
-  "version": "2.16.1",
+  "version": "2.17.0",
   "description": "מדריך מאוחד לתנ״ך: אישים, מקומות, בעלי חיים, צומח, דומם ובית המקדש — זיהוי אחיד בלחיצה ימנית, תמונות ומפה ללא אינטרנט.",
   "author": "חד בדרא",
   "schemaVersion": 1,
@@ -61,7 +61,9 @@
           "type": "item",
           "title": "זיהוי בעינים למקרא",
           "icon": "search_24_regular",
-          "contexts": ["reader-text"]
+          "contexts": [
+            "reader-text"
+          ]
         }
       ],
       "keepAlive": false
