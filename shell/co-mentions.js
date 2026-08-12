@@ -3,23 +3,8 @@
 // אין כאן DOM — רק אינדקס. הרינדור עצמו ב-entry-detail.js.
 // אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
 
-// גימטריה: הפרקים והפסוקים במאגרים כתובים באותיות (״כה, יג-טו״), וכדי לפרוש טווח
-// צריך מספרים. אין כאן צורך בגימטריה ״חכמה״ (ט״ו/ט״ז) — פשוט סכום האותיות.
-const GEMATRIA_VALUES = {
-  'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,
-  'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,
-  'ק':100,'ר':200,'ש':300,'ת':400
-};
-function gematriaValue(s){
-  const letters = String(s || '').replace(/[^א-ת]/g, '');
-  if (!letters) return 0;
-  let n = 0;
-  for (const ch of letters){
-    if (GEMATRIA_VALUES[ch] == null) return 0;
-    n += GEMATRIA_VALUES[ch];
-  }
-  return n;
-}
+// GEMATRIA_VALUES / gematriaValue עברו ל-shell/core.js ב-2.17.3, מאותה סיבה כמו
+// numToHeb: guides/_shared/dates.js תלוי בהם, וגם background.html טוען אותו לבד.
 
 // כתיבים חלופיים של שמות ספרים שאינם ברשימה של refs.js
 const BOOK_ALIASES = { 'תהילים': 'תהלים', 'קוהלת': 'קהלת', 'עמוס': 'עמוס' };
@@ -122,21 +107,8 @@ function buildCoMentionIndex(){
   coMentionKeysOf = keys;
 }
 
-// חזרה למספר עברי לתצוגה (הכיוון ההפוך לגימטריה) — כולל ט״ו/ט״ז, שלא נכתבים
-// י״ה/י״ו מטעמי קדושה. משמש רק לחלונית ההסבר שעל הקישור.
-const HEB_NUM_PARTS = [[400,'ת'],[300,'ש'],[200,'ר'],[100,'ק'],[90,'צ'],[80,'פ'],[70,'ע'],[60,'ס'],[50,'נ'],[40,'מ'],[30,'ל'],[20,'כ'],[10,'י'],[9,'ט'],[8,'ח'],[7,'ז'],[6,'ו'],[5,'ה'],[4,'ד'],[3,'ג'],[2,'ב'],[1,'א']];
-function numToHeb(n){
-  let v = parseInt(n, 10) || 0, out = '';
-  while (v > 0){
-    if (v === 15){ out += 'טו'; break; }
-    if (v === 16){ out += 'טז'; break; }
-    const p = HEB_NUM_PARTS.find(x => x[0] <= v);
-    if (!p) break;
-    out += p[1];
-    v -= p[0];
-  }
-  return out;
-}
+// numToHeb / HEB_NUM_PARTS עברו ל-shell/core.js ב-2.17.3: guides/_shared/dates.js
+// (todayHebrew) תלוי בהם, וגם background.html טוען אותו בלי הקובץ הזה.
 
 function coMentionKeyLabel(key){
   const parts = String(key).split('|');

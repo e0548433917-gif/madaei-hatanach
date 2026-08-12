@@ -352,9 +352,23 @@ function renderDailyEventBody(){
     html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
       + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
   });
-  html += '<p class="mini-note" style="margin-top:14px;">מקור עיקרי: תוסף ״ביוגרפיות״ מאת Yair Daniel; חלק מהרשומות ממקורות נוספים (ר׳ מקור בכל רשומה).</p>';
+  html += '<p class="mini-note" style="margin-top:14px;">'
+    + 'הרשימה התחילה על בסיס תוסף ״ביוגרפיות״ מאת Yair Daniel, ונוספה עליה '
+    + '<b>מסכת בכורות</b> לטובת לומדי הדף היומי. חלק מהרשומות ממקורות נוספים '
+    + '(ר׳ מקור בכל רשומה).<br>'
+    + 'אי״ה בסבב התוכן ייכנסו כל התאריכים שבתנ״ך, במשנה ובתלמוד. '
+    + 'מצאתם תאריך שאינו כאן? <a href="#" id="dailyEventReportLink">שלחו לנו דיווח</a> — ונוסיף אותו.'
+    + '</p>';
   dailyEventBody.innerHTML = html;
   wireDateEventLinks(dailyEventBody);
+  // "שלחו לנו דיווח" — לשונית הדיווחים באזור האישי, אותו דפוס כמו הבאנר
+  // ב-talmud.js. הפאנל נסגר קודם, אחרת הוא נשאר פתוח מעל האזור האישי.
+  const reportLink = dailyEventBody.querySelector('#dailyEventReportLink');
+  if (reportLink) reportLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    dailyEventOverlay.classList.remove('open');
+    openPersonalArea('drafts');
+  });
 }
 if (dailyEventLabel){
   const t = todayHebrew();

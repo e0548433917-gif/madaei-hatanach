@@ -81,6 +81,10 @@ function applyPrefs(){
     set('--color-surface',      normHex(cs.surface));
     set('--color-on-surface',   normHex(cs.onSurface));
     set('--color-surface-container-highest', normHex(cs.surfaceContainerHighest || cs.surface));
+    // הגוון המדויק של הסרגל העליון ב-AppTopBar של אוצריא. DESIGN_GUIDE דורש אותו
+    // במפורש לסרגל של התוסף — "המשתמש עובר מטאב של ספר לטאב של תוסף ורואה את אותו
+    // פס באותו צבע". זה *לא* surfaceContainerHighest, שהוא גוון אחד מעל.
+    set('--color-surface-container-high', normHex(cs.surfaceContainerHigh || cs.surfaceContainerHighest || cs.surface));
     set('--color-error',        normHex(cs.error || cs.secondary || cs.primary));
     set('--color-on-error',     normHex(cs.onError || cs.onPrimary));
     set('--color-outline',      hexToRgba(cs.outline, .55));

@@ -14,16 +14,8 @@ function fieldBlock(label, value){
   return `<div class="field-label">${esc(label)}</div><p>${esc(text)}</p>`;
 }
 
-// זיהוי מודרני בקצרה - לשורת הפופאפ ולרשימת התוצאות, לפי איזה שדה קיים בערך:
-// identification (דומם), methods[0].modern (מקומות), methods[0].latin (חי/צומח).
-function shortModernId(entry){
-  if (!entry) return '';
-  const m0 = entry.methods && entry.methods[0];
-  let s = entry.identification || (m0 && (m0.modern || m0.latin)) || '';
-  s = String(s).replace(/\s+/g, ' ').trim();
-  if (s.length > 70) s = s.slice(0, 67) + '...';
-  return s;
-}
+// shortModernId עבר ל-shell/core.js ב-2.17.2: גם עמוד הרקע (background.html) בונה
+// את שורות פופאפ הזיהוי, והוא לא טוען את הקובץ הזה.
 
 // ---- קישורים בין אישים (אב/אם/בני זוג/ילדים/אחים לחיצים, כמו במדריך המקורי) ----
 const PERSON_LINK_FIELDS = new Set(['father','mother','spouses','children','siblings']);

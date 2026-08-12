@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>עינים למקרא — רקע</title>
+</head>
+<body>
+<!--
+  עמוד הרקע (contributes.background.entrypoint) — מפרט 4.0 / ROADMAP 4.10.
+
+  אוצריא מעירה מנוע רקע כשלוחצים על פריט תפריט ההקשר המוצהר, וכן ב-app.startup.
+  עד 2.17.2 היא טענה בשבילו את index.html המלא: Leaflet, geo-basemap.js (480KB),
+  כל ה-CSS ושתים-עשרה מודולי ה-UI — כדי להריץ identify() ולפרסם מאורע ליומן.
+  אף אחד לא רואה את הדף הזה. כאן נטען רק מה שבאמת דרוש.
+
+  ⚠️ אין כאן DOM של תצוגה. כל פונקציה שנוגעת באלמנטים (showResults,
+  openGenericProposeForm, renderCustomPageCards...) אינה קיימת — ולכן background.js
+  לא קורא לאף אחת מהן. אם מוסיפים כאן קובץ, לוודא שהוא לא נוגע ב-document מעבר
+  ל-iframe הנסתר של טעינת הדאטה.
+
+  ⚠️ אסור להחריג את הקובץ הזה ב-.otzignore — האריזה תיכשל.
+-->
+
+<!-- הליבה בלבד: קבועים ומטמונים · אחסון וטעינת מדריכים · מנוע הזיהוי -->
+<script src="shell/core.js"></script>
+<script src="shell/data.js"></script>
+<script src="shell/identify.js"></script>
+
+<!-- ״ערך היום״ (ROADMAP 4.12): eventsForToday/todayHebrew, חשבון תאריך עברי טהור
+     בלי שום תלות ב-DOM -->
+<script src="guides/_shared/dates.js"></script>
+
+<script src="shell/background.js"></script>
+</body>
+</html>

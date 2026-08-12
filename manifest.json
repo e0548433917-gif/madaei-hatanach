@@ -1,7 +1,7 @@
 {
   "id": "com.chadbedera.madaeihatanach",
   "name": "עינים למקרא",
-  "version": "2.17.1",
+  "version": "2.17.2",
   "description": "מדריך מאוחד לתנ״ך: אישים, מקומות, בעלי חיים, צומח, דומם ובית המקדש — זיהוי אחיד בלחיצה ימנית, תמונות ומפה ללא אינטרנט.",
   "author": "חד בדרא",
   "schemaVersion": 1,
@@ -13,6 +13,7 @@
   "permissions": [
     "reader.context_menu",
     "reader.open",
+    "published_data.write",
     "app.run_on_startup",
     "notifications.send",
     "ui.feedback",
@@ -65,7 +66,26 @@
           ]
         }
       ],
+      "toolbarItems": [
+        {
+          "id": "madaei-hatanach-open",
+          "type": "button",
+          "title": "עינים למקרא",
+          "icon": "book_24_regular",
+          "contexts": [
+            "reader-text",
+            "reader-pdf"
+          ],
+          "openPlugin": true
+        }
+      ],
+      "activationEvents": [
+        "app.startup"
+      ],
       "keepAlive": false
+    },
+    "background": {
+      "entrypoint": "background.html"
     }
   }
 }

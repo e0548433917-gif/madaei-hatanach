@@ -22,6 +22,13 @@ async function identifyWithLiveContext(text){
 // מדליקה בלחיצה על פריט תפריט ההקשר המוצהר. נקבע ב-plugin.boot.
 let runMode = 'foreground';
 
+// האם המשתמש אישר את app.run_on_startup. זה מה שקובע מי מטפל בלחיצה על פריט
+// תפריט ההקשר, ולפי API_REFERENCE §תרומות עלייה:
+//   • יש הרשאה  → אוצריא מרימה מופע רקע ומוסרת לו את הלחיצה אחרי ה-boot.
+//   • אין הרשאה → הלחיצה נופלת לפתיחת דף התוסף, והאירוע נמסר ללשונית.
+// בלי הגדר הזה שני המופעים היו מציגים ui.showConfirm על אותה לחיצה.
+let hasBackgroundPerm = false;
+
 let modernAppCache = null;
 async function isModernApp(){
   if (modernAppCache != null) return modernAppCache;
@@ -257,7 +264,10 @@ function waitForOtzaria(elapsed){
   if (window.Otzaria && typeof Otzaria.on === 'function'){
     Otzaria.on('plugin.boot', registerUnifiedMenuItem);
     Otzaria.on('plugin.boot', (p) => { if (p && p.theme) onOtzariaTheme(p.theme); });
-    Otzaria.on('plugin.boot', (p) => { runMode = (p && p.app && p.app.runMode) || 'foreground'; });
+    Otzaria.on('plugin.boot', (p) => {
+      runMode = (p && p.app && p.app.runMode) || 'foreground';
+      hasBackgroundPerm = !!(p && p.permissions && p.permissions.indexOf('app.run_on_startup') !== -1);
+    });
     Otzaria.on('theme.changed', onOtzariaTheme);
     // גם משיכה יזומה — plugin.boot כבר עשוי היה לרוץ לפני שנרשמנו
     Otzaria.call('app.getTheme').then(res => { if (res && res.data) onOtzariaTheme(res.data); }).catch(()=>{});
@@ -265,6 +275,10 @@ function waitForOtzaria(elapsed){
     restoreBookmarksFromOtzaria();
     Otzaria.on('reader.context_menu_item_clicked', (payload) => {
       if (!payload || payload.itemId !== MENU_ITEM_ID) return;
+      // מופע רקע קיים ומטפל בזה בעצמו (shell/background.js) — הלשונית מוותרת,
+      // אחרת המשתמש רואה שני פופאפים על לחיצה אחת. ב-0.9.96/0.9.97, שבהן ייתכן
+      // שמופע הרקע הוא דווקא index.html הזה, התנאי runMode מחזיר לו את הטיפול.
+      if (hasBackgroundPerm && runMode !== 'background') return;
       // במופע רקע: מסיימים מפורשות אחרי שהלחיצה טופלה, במקום להמתין לכיבוי
       // האוטומטי אחרי שלוש דקות חוסר פעילות.
       handleIdentifyClick(payload).finally(() => {

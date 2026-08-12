@@ -1,0 +1,38 @@
+# מה לא נשלח למשתמשים.
+#
+# ⚠️ הרשימה הזו חייבת להישאר תואמת ל-$excludeDirs / $excludeFiles / $deadPatterns
+# ב-build/pack.ps1. שני מסלולי אריזה קיימים במקביל:
+#   • build/pack.ps1        — האריזה היומיומית שלנו (bump גרסה + CHANGELOG + שני תוצרים)
+#   • otzaria pack-plugin   — הכלי הרשמי, וגם ה-GitHub Action של החנות
+# בלי הקובץ הזה הכלי הרשמי אורז את *כל* התיקייה — נמדד בפועל: 251 קבצים ו-1.3GB,
+# מול 13.5MB באריזה שלנו — כי dist/ מכיל את כל הגרסאות ההיסטוריות.
+#
+# .git/ .claude/ node_modules/ וכו' מוחרגים אוטומטית ואינם צריכים להופיע כאן.
+
+# ---- חומרי פיתוח שאין להם שום הפניה מ-index.html או מ-shell/ ----
+build/
+dist/
+docs/
+tools/
+assets/
+
+# גיבוי קוד המקור של שלושת התוספים העצמאיים. מה שנטען בפועל הוא guides/.
+mishna-talmud-addons/
+
+# ---- קבצים בשורש ----
+_serve.ps1
+/README.md
+/למפתחים.md
+/פוסט-לפורום.md
+.gitignore
+.gitattributes
+
+# ---- קוד מת: המדריכים העצמאיים הישנים ----
+# מאז שהרינדור עבר להיות ילידי בתוך index.html (shell/*.js) הקבצים האלה אינם
+# נטענים כלל. הם נשארים בריפו כארכיון ולגרסה ה-standalone, אבל בחבילה הם רק
+# ~8.6MB מיותרים — והם גם היחידים שנופלים בבדיקת תאימות-העיצוב של החנות
+# (צבעי hex קשיחים, font-size ב-px) ובאזהרת feedback.sendEmail.
+guides/*/view.html
+guides/places/css/app.css
+guides/places/js/app.js
+guides/places/README.md
