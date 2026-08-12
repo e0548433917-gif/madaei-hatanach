@@ -144,7 +144,83 @@ function dayMatchesEventDay(dayNum, eventDay){
 }
 function eventsForToday(){
   const t = todayHebrew();
-  return TANAKH_DATE_EVENTS.filter(ev => monthMatchesEventMonth(t.monthName, ev.month) && dayMatchesEventDay(t.raw.day, ev.day));
+  return allDateEvents().filter(ev => monthMatchesEventMonth(t.monthName, ev.month) && dayMatchesEventDay(t.raw.day, ev.day));
+}
+
+// ---- הוספה/עריכה מקומית של מאורעות (2.19, ב"ערך היום") ----
+// אותו דגם בדיוק כמו readStoredEdits/saveEntryEdit ב-data.js (localStorage סינכרוני,
+// לא storage.get/set האסינכרוני של אוצריא) - "נשמר במכשיר זה בלבד". לרשומות מובנות
+// (TANAKH_DATE_EVENTS) יש רק עריכה+שחזור למקור (כמו openGenericEditForm, בלי מחיקה -
+// "הסתרה" בלי דרך לראות/לבטל אותה היא מלכודת UX); לתוספות של המשתמש יש גם מחיקה,
+// כי אין שם "מקור" לחזור אליו ומחיקה שם היא פעולה חד-משמעית.
+const DATE_EVENTS_EDITS_KEY = 'date_events_edits_v1';
+const DATE_EVENTS_ADDED_KEY = 'date_events_added_v1';
+
+// מפתח הזהות של רשומה מובנית הוא תוכנה המקורי (יום+חודש+טקסט), לא אינדקס במערך -
+// כך שעדכון גרסה שמוסיף/מזיז רשומות ב-TANAKH_DATE_EVENTS לא "ינתק" עריכה קיימת
+// מהרשומה שלה (אותו עיקרון בדיוק כמו origName ב-editsKey, data.js).
+function dateEventKey(ev){ return ev.day + '|' + ev.month + '|' + ev.event; }
+
+function readDateEventsEdits(){ try { return JSON.parse(localStorage.getItem(DATE_EVENTS_EDITS_KEY) || '{}'); } catch(e){ return {}; } }
+function readDateEventsAdded(){ try { return JSON.parse(localStorage.getItem(DATE_EVENTS_ADDED_KEY) || '[]'); } catch(e){ return []; } }
+
+// כל המאורעות בפועל: TANAKH_DATE_EVENTS אחרי עריכות מקומיות, ועוד מה שהמשתמש הוסיף.
+// __origKey/__addedIdx מזהים את הרשומה לצורך עריכה חוזרת (dateEventRow, home.js);
+// __edited/__custom הם רק לתצוגה (סימון "נערך/מותאם אישית").
+function allDateEvents(){
+  const edits = readDateEventsEdits();
+  const base = TANAKH_DATE_EVENTS.map(ev => {
+    const key = dateEventKey(ev);
+    const edit = edits[key];
+    return edit
+      ? { day: edit.day, month: edit.month, event: edit.event, source: edit.source || '', __origKey: key, __edited: true }
+      : { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', __origKey: key };
+  });
+  const added = readDateEventsAdded().map((ev, i) =>
+    ({ day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', __addedIdx: i, __custom: true }));
+  return base.concat(added);
+}
+
+function saveDateEventEdit(origKey, ev){
+  try {
+    const edits = readDateEventsEdits();
+    edits[origKey] = { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '' };
+    localStorage.setItem(DATE_EVENTS_EDITS_KEY, JSON.stringify(edits));
+    return true;
+  } catch(e){ return false; }
+}
+function restoreBuiltinDateEvent(origKey){
+  try {
+    const edits = readDateEventsEdits();
+    delete edits[origKey];
+    localStorage.setItem(DATE_EVENTS_EDITS_KEY, JSON.stringify(edits));
+    return true;
+  } catch(e){ return false; }
+}
+function addCustomDateEvent(ev){
+  try {
+    const added = readDateEventsAdded();
+    added.push({ day: ev.day, month: ev.month, event: ev.event, source: ev.source || '' });
+    localStorage.setItem(DATE_EVENTS_ADDED_KEY, JSON.stringify(added));
+    return true;
+  } catch(e){ return false; }
+}
+function saveCustomDateEvent(idx, ev){
+  try {
+    const added = readDateEventsAdded();
+    if (!added[idx]) return false;
+    added[idx] = { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '' };
+    localStorage.setItem(DATE_EVENTS_ADDED_KEY, JSON.stringify(added));
+    return true;
+  } catch(e){ return false; }
+}
+function deleteCustomDateEvent(idx){
+  try {
+    const added = readDateEventsAdded();
+    added.splice(idx, 1);
+    localStorage.setItem(DATE_EVENTS_ADDED_KEY, JSON.stringify(added));
+    return true;
+  } catch(e){ return false; }
 }
 
 // ---- מקור המאורע -> קישור לפתיחה בספרייה ----

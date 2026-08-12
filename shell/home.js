@@ -326,20 +326,121 @@ const dailyEventBody = document.getElementById('dailyEventBody');
 // (refs.js, "משנה, X Y, Z" / "בבלי, X Y" וכו' - מקורות חז״ל/הלכה חוץ-מקראיים,
 // כמו "משנה, בכורות ט, ה"). "תלמוד בבלי, ..." (בניגוד ל"בבלי, ...") לא נתפס ע"י
 // אף אחד מהשניים בכוונה - ר' הערת הכותב בראש dates.js.
-// הקליק עצמו מחובר אחרי ה-innerHTML, כמו verse-card.clickable ב-entry-detail.js.
+// כפתור העריכה (✏️) יושב בתוך אותה שורה לחיצה שפותחת בספרייה - stopPropagation
+// ב-wireDateEventLinks מונע פתיחה כפולה. __origKey/__addedIdx (allDateEvents,
+// dates.js) מסומנים כ-data-* כדי שהכפתור ידע איזו רשומה לפתוח לעריכה.
 function dateEventRow(ev, monthLabel){
   const parsed = parseColonVerseRef(ev.source) || parseMidrashRef(ev.source);
   const openAttr = parsed ? ` data-vbook="${esc(parsed.bookId)}" data-vref="${esc(parsed.ref)}"` : '';
+  const editAttr = ev.__origKey != null ? ` data-edit-key="${esc(ev.__origKey)}"`
+    : (ev.__addedIdx != null ? ` data-edit-idx="${ev.__addedIdx}"` : '');
+  // לא נעשה שימוש ב-edited-badge/✏️ הכללי (guides.js) כאן - הוא היה מתנגש חזותית
+  // עם כפתור העריכה הייעודי (גם הוא ✏️) שכל שורה כבר מציגה.
+  const badge = ev.__edited ? ' <span class="mini-hint">(נערך)</span>' : (ev.__custom ? ' <span class="missing-chip">מותאם אישית</span>' : '');
   return `<div class="src-item${parsed ? ' clickable' : ''}"${openAttr}>
-    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}</div>
+    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}${badge}
+      <button type="button" class="date-ev-edit-btn"${editAttr} title="עריכת מאורע">✏️</button>
+    </div>
     ${ev.source ? `<div class="src-note">${esc(ev.source)}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>` : ''}
   </div>`;
 }
 function wireDateEventLinks(container){
   container.querySelectorAll('.src-item.clickable[data-vbook]').forEach(el => {
-    el.addEventListener('click', () => openInReader(el.dataset.vbook, el.dataset.vref));
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.date-ev-edit-btn')) return;
+      openInReader(el.dataset.vbook, el.dataset.vref);
+    });
+  });
+  container.querySelectorAll('.date-ev-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.editKey, idx = btn.dataset.editIdx;
+      const ev = (idx !== undefined)
+        ? allDateEvents().find(x => x.__addedIdx === Number(idx))
+        : allDateEvents().find(x => x.__origKey === key);
+      if (ev) openDateEventForm(ev);
+    });
   });
 }
+
+// טופס הוספה/עריכה של מאורע ב"ערך היום" - אותו entryOverlay/entryModalInner
+// שמשמש את עורך הכרטיסים (edit-forms.js), כדי לא לבנות פאנל נפרד. ev=null → הוספה
+// חדשה; ev.__origKey → עריכת רשומה מובנית (עם שחזור-למקור, בלי מחיקה - הסתרת רשומה
+// מובנית בלי דרך לראות/לבטל את זה היא מלכודת UX); ev.__addedIdx → עריכת/מחיקת
+// תוספת של המשתמש עצמו. השמירה תמיד "במכשיר זה" (localStorage, dates.js) - כאן
+// אין ערוץ "שליחה למפתח" כמו בעורך הכרטיסים, כי מאורע-תאריך אינו "כרטיס" עם מדריך
+// ו-catId שהצינור הזה (sendToDev, personal.js) בנוי סביבם.
+function openDateEventForm(ev){
+  const isBuiltin = !!(ev && ev.__origKey != null);
+  const isCustom = !!(ev && ev.__custom);
+  const monthOptions = HEBREW_MONTHS_ORDER.map(m =>
+    `<option value="${esc(m)}"${ev && ev.month === m ? ' selected' : ''}>${esc(m)}</option>`).join('');
+  entryModalInner.innerHTML = `
+    <h2>${ev ? 'עריכת מאורע' : 'הוספת מאורע ל"ערך היום"'}</h2>
+    <div class="entry-sub">השינוי נשמר במכשיר זה בלבד.${isBuiltin ? ' זו רשומה מובנית בתוסף - אפשר לשחזר לגרסת המקור בכל עת.' : ''}</div>
+
+    <div class="field-label">יום <span class="mini-hint">(אותיות גימטריה, למשל "ה" או "כז-כה" לטווח ימים)</span></div>
+    <input type="text" id="dateEvDay" value="${esc(ev ? ev.day : '')}" class="f-input" style="max-width:120px;">
+
+    <div class="field-label">חודש</div>
+    <select id="dateEvMonth" class="f-input">${monthOptions}</select>
+
+    <div class="field-label">תיאור המאורע</div>
+    <textarea id="dateEvText" class="f-textarea">${esc(ev ? ev.event : '')}</textarea>
+
+    <div class="field-label">מקור <span class="mini-hint">(פסוק בנקודתיים - "עזרא ז:ט"; או מקור חז״ל בפורמט הרגיל - "משנה, בכורות ט, ה" / "בבלי, שבת פו ע\"ב")</span></div>
+    <input type="text" id="dateEvSource" value="${esc(ev ? ev.source : '')}" class="f-input">
+    <div id="dateEvRefCheck" class="ref-check-box"></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+      <button class="nf-btn" id="dateEvSave">💾 שמירה במכשיר</button>
+      <button class="nf-btn secondary" id="dateEvCancel">ביטול</button>
+      ${isCustom ? '<button class="nf-btn secondary danger-link" id="dateEvDelete">🗑 מחיקה</button>' : ''}
+      ${isBuiltin && ev.__edited ? '<button class="nf-btn secondary" id="dateEvRestore">↺ שחזור למקור</button>' : ''}
+    </div>`;
+  entryOverlay.classList.add('open');
+
+  function liveCheck(){
+    const src = document.getElementById('dateEvSource').value.trim();
+    const box = document.getElementById('dateEvRefCheck');
+    if (!src){ box.innerHTML = ''; return; }
+    const ok = !!(parseColonVerseRef(src) || parseMidrashRef(src));
+    box.innerHTML = `<div style="font-size:12px;${ok ? 'color:var(--color-success,#2e7d32);' : 'color:var(--color-on-surface-faint,#888);'}">`
+      + `${ok ? '✓ ייפתח כקישור לספרייה' : '○ לא יזוהה כקישור לספרייה (יוצג כטקסט בלבד)'}</div>`;
+  }
+  document.getElementById('dateEvSource').addEventListener('input', liveCheck);
+  liveCheck();
+
+  document.getElementById('dateEvCancel').addEventListener('click', () => entryOverlay.classList.remove('open'));
+
+  document.getElementById('dateEvSave').addEventListener('click', () => {
+    const day = document.getElementById('dateEvDay').value.trim();
+    const month = document.getElementById('dateEvMonth').value;
+    const event = document.getElementById('dateEvText').value.trim();
+    const source = document.getElementById('dateEvSource').value.trim();
+    if (!day || !event){ window.alert('יש למלא יום ותיאור מאורע.'); return; }
+    const newEv = { day, month, event, source };
+    const ok = isBuiltin ? saveDateEventEdit(ev.__origKey, newEv)
+      : isCustom ? saveCustomDateEvent(ev.__addedIdx, newEv)
+      : addCustomDateEvent(newEv);
+    entryOverlay.classList.remove('open');
+    if (!ok) window.alert('השמירה נכשלה (ייתכן שאחסון הדפדפן מלא).');
+    renderDailyEventBody();
+  });
+
+  if (isCustom) document.getElementById('dateEvDelete').addEventListener('click', () => {
+    if (!window.confirm('למחוק את המאורע הזה לצמיתות?')) return;
+    deleteCustomDateEvent(ev.__addedIdx);
+    entryOverlay.classList.remove('open');
+    renderDailyEventBody();
+  });
+  if (isBuiltin && ev.__edited) document.getElementById('dateEvRestore').addEventListener('click', () => {
+    restoreBuiltinDateEvent(ev.__origKey);
+    entryOverlay.classList.remove('open');
+    renderDailyEventBody();
+  });
+}
+
 function renderDailyEventBody(){
   const t = todayHebrew();
   const today = eventsForToday();
@@ -349,9 +450,13 @@ function renderDailyEventBody(){
   } else {
     html += '<p class="mini-note">אין מאורע תנ״ך רשום לתאריך זה ברשימה (חלקית - ר׳ הרשימה המלאה למטה).</p>';
   }
-  html += '<div class="field-label" style="margin-top:16px;">כל מאורעות התנ״ך לפי חודש</div>';
+  html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;">
+    <div class="field-label" style="margin:0;">כל מאורעות התנ״ך לפי חודש</div>
+    <button type="button" class="nf-btn secondary" id="dateEventAddBtn" style="padding:4px 10px;font-size:13px;">＋ הוספת מאורע</button>
+  </div>`;
+  const all = allDateEvents();
   HEBREW_MONTHS_ORDER.forEach(month => {
-    const items = TANAKH_DATE_EVENTS.filter(e => e.month === month);
+    const items = all.filter(e => e.month === month);
     if (!items.length) return;
     html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
       + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
@@ -361,10 +466,13 @@ function renderDailyEventBody(){
     + '<b>מסכת בכורות</b> לטובת לומדי הדף היומי. חלק מהרשומות ממקורות נוספים '
     + '(ר׳ מקור בכל רשומה).<br>'
     + 'אי״ה בסבב התוכן ייכנסו כל התאריכים שבתנ״ך, במשנה ובתלמוד. '
-    + 'מצאתם תאריך שאינו כאן? <a href="#" id="dailyEventReportLink">שלחו לנו דיווח</a> — ונוסיף אותו.'
+    + 'מצאתם תאריך שאינו כאן? אפשר להוסיף אותו בעצמכם (＋ למעלה), או '
+    + '<a href="#" id="dailyEventReportLink">לשלוח לנו דיווח</a> ונוסיף אותו לכולם.'
     + '</p>';
   dailyEventBody.innerHTML = html;
   wireDateEventLinks(dailyEventBody);
+  const addBtn = dailyEventBody.querySelector('#dateEventAddBtn');
+  if (addBtn) addBtn.addEventListener('click', () => openDateEventForm(null));
   // "שלחו לנו דיווח" — לשונית הדיווחים באזור האישי, אותו דפוס כמו הבאנר
   // ב-talmud.js. הפאנל נסגר קודם, אחרת הוא נשאר פתוח מעל האזור האישי.
   const reportLink = dailyEventBody.querySelector('#dailyEventReportLink');
