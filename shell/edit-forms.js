@@ -248,9 +248,20 @@ function openGenericEditForm(entry, catIdOverride){
     renderGuideGrid(guideSearchBox.value);
     // 2.13.2 — דרך ממסר הדיווחים (personal.js), לא במייל. שמירה בתור + שליחה שקטה.
     const label = wasNew ? 'הצעת ערך חדש' : 'הצעת עריכה';
+    const catLabel = (CATEGORIES.find(x=>x.id===catId)||{label:''}).label;
+    // 2.17.2 — הערך הנערך מודגש בראש ההודעה. קודם הוא היה שורת טקסט רגילה
+    // לפני ה-diff, ובקריאה ב-Issue לא היה ברור מיד באיזה כרטיס ובאיזה מדריך
+    // מדובר — מה שהופך כל דיווח לחיפוש קטן במקום לפעולה.
     await sendToDev(
-      label + ' — ' + entry.name + ' (' + (CATEGORIES.find(x=>x.id===catId)||{label:''}).label + ')',
-      label + ' לערך: ' + entry.name + '\n\n' + diff,
+      label + ' — ' + entry.name + ' (' + catLabel + ')',
+      ['## ' + label + ': **' + entry.name + '**',
+       '',
+       '* **מדריך:** ' + catLabel,
+       (origName && origName !== entry.name ? '* **שם במקור:** ' + origName : ''),
+       '',
+       '### מה השתנה',
+       '',
+       diff].filter(x => x !== '').join('\n'),
       label
     );
     openEntryDetail(entry);

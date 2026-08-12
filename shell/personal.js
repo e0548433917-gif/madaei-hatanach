@@ -43,6 +43,9 @@ let activePersonalTab = 'bookmarks';
 // success:true אמיתי בתשובה (לא ניחוש דרך no-cors).
 const REPORT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxzlCAZzhaEM68jRqqekW8InrtbSiZrtiiIjgCKOInUvyBG43wLY29MYY6PrbHijpO6/exec';
 const REPORT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd7NiGDUahnwpaestosEcDxPJoAkYXzVRUa2yB5EiXkLPSWvQ/formResponse';
+// אותו טופס בדיוק, בכתובת הצפייה — זה מה שמעתיקים למי שאין לו חשבון גיטהאב.
+// מילוי הטופס בדפדפן נכנס לאותו גיליון ומשם לאותו Issue, בלי שום הרשמה.
+const REPORT_FORM_VIEW_URL = REPORT_FORM_URL.replace('/formResponse', '/viewform');
 const REPORT_FIELD_KIND    = 'entry.1407711891';   // סוג
 const REPORT_FIELD_TITLE   = 'entry.261441606';    // כותרת
 const REPORT_FIELD_DETAILS = 'entry.1548335987';   // פרטים
@@ -55,6 +58,15 @@ const REPORT_SEND_TIMEOUT_MS = 8000;      // שלא תישאר בקשה תלוי
 const REPORT_STEP_TIMEOUT_MS = 4000;      // תקרה לכל קריאת גשר/קובץ מקומי
 const REPORT_TITLE_MAX = 120;             // הטריגר חותך ל-120 בכותרת ה-Issue
 const REPORT_DETAILS_MAX = 6000;
+// ---- תמונות (2.16.2) ----
+// כל תמונה מוקטנת ל-JPEG לפני השליחה, ולא נשלחת כמו שהיא: צילום מסך של מכשיר
+// מודרני הוא 2-4MB, ובבסיס-64 זה גדל בעוד שליש. הקטנה ל-1600px היא הפרש של
+// פי עשרה בלי לאבד קריאוּת של טקסט במסך.
+const REPORT_IMG_MAX = 4;                 // מספר תמונות לדיווח
+const REPORT_IMG_SRC_MAX = 12 * 1024 * 1024;  // קובץ מקור שגדול מזה נדחה מיד
+const REPORT_IMG_DIM = 1600;              // הצלע הארוכה אחרי ההקטנה
+const REPORT_IMG_QUALITY = 0.82;
+const REPORT_IMG_TOTAL_MAX = 6 * 1024 * 1024; // סך כל ה-dataURL בדיווח אחד
 const REPORT_FLUSH_DELAY_MS = 4000;       // אחרי שהתוסף כבר שימושי
 // "משוב" ראשון בכוונה - זו נקודת הכניסה החופשית/הכי-פחות-מחייבת (במקום לשונית
 // "משוב למפתח" הנפרדת שבוטלה - ר' renderPersonalDrafts). "בקשת הצטרפות" (ג.4.4)
@@ -134,45 +146,53 @@ function reportNotify(message, type){
 
 function reportParams(item, env){
   const p = new URLSearchParams();
+  const n = (item.images || []).length;
   p.set(REPORT_FIELD_KIND, item.kind || 'דיווח');
   p.set(REPORT_FIELD_TITLE, item.title || 'דיווח מהתוסף');
-  p.set(REPORT_FIELD_DETAILS, item.details || '');
+  // שדה טופס הוא טקסט: תמונה בבסיס-64 לא נכנסת לתוכו, ומסלול הגיבוי לכן חסר
+  // תמונות מעצם טבעו. עדיף לומר זאת בגוף ה-Issue מאשר שהמתחזק יתהה איפה הן.
+  p.set(REPORT_FIELD_DETAILS, (item.details || '')
+    + (n ? '\n\n_(' + n + ' תמונות צורפו לדיווח אך לא נשלחו — הוא יצא במסלול הגיבוי, שאינו תומך בתמונות.)_' : ''));
   p.set(REPORT_FIELD_ENV, env || item.env || '');
   return p;
 }
 
-// מסלול א׳ (ראשי) — Web App עם תשובה אמיתית שאפשר לקרוא, לא no-cors.
-// "הצלחה" כאן היא result.success===true בפועל. ר' הערת הארכיטקטורה למעלה.
+// מסלול א׳ (ראשי) — Web App. **הצורה כאן זהה בכוונה לזו של תוסף "דיווח באגים"
+// (com.software_bug_report.newplugin), שרץ בהצלחה מוכחת בתוך אוצריא:**
+//
+//     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(...) });
+//
+// בלי headers · בלי signal · בלי לקרוא את התשובה. כל אחד משלושת אלה נוסה כאן
+// עד 2.16.1 ונכשל ב-WebView (הדיווח היחיד שהצליח, Issue #10, נשלח מדפדפן —
+// מעיד על כך "אוצריא —" בשדה הסביבה שלו, כלומר app.getInfo לא ענה כלל).
+//
+// למה בטוח לוותר על קריאת התשובה: `doPost` בצד גוגל רץ **ברגע שה-POST מגיע**,
+// והוא מסיים לפתוח את ה-Issue לפני שהתשובה בכלל נשלחת חזרה. נמדד: קריאות שכשלו
+// בשלב קריאת התשובה (411/404 על ההפניה ל-googleusercontent) פתחו Issues 11-14
+// בפועל. כלומר קריאת התשובה מוסיפה נקודות כשל ולא מוסיפה שום ודאות.
+//
+// ⚠️ המחיר, ולכן ה-outbox נשאר חובה: no-cors מחזיר תשובה אטומה, ולכן "הצלחה"
+// כאן היא "הבקשה יצאה בלי חריגה" בלבד. ה-id בגוף הבקשה מאפשר לצד גוגל לזרוק
+// כפילויות אם בכל זאת נשלח פעמיים (ר' סעיף ה-idempotency בסקריפט).
 function postViaWebApp(item, env){
   if (!REPORT_WEBAPP_URL) return Promise.reject(new Error('webapp not configured'));
-  const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
-  const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch(e){} }, REPORT_SEND_TIMEOUT_MS);
   const payload = {
+    id: item.id || '',
     kind: item.kind || 'דיווח',
     title: item.title || 'דיווח מהתוסף',
     details: item.details || '',
-    env: env || item.env || ''
+    env: env || item.env || '',
+    images: Array.isArray(item.images) ? item.images.map(im => im && im.dataUrl).filter(Boolean) : []
   };
-  return fetch(REPORT_WEBAPP_URL, {
-    method: 'POST',
-    // text/plain ולא application/json בכוונה: "בקשה פשוטה" בלי CORS preflight
-    // (ר' הסבר מפורט למעלה) — doPost מפרק בעצמו עם JSON.parse.
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-    signal: ctrl ? ctrl.signal : undefined
-  }).then(
-    res => {
-      clearTimeout(timer);
-      return res.text().then(text => {
-        let data = null;
-        try { data = JSON.parse(text); } catch(e){}
-        if (!data || data.success !== true){
-          throw new Error('webapp: HTTP ' + res.status + ' — ' + String(text || '').slice(0, 200));
-        }
-        return 'webapp';
-      });
-    },
-    err => { clearTimeout(timer); throw err; }
+  // AbortController נזרק כאן במתכוון (ר' למעלה) ולכן התקרה היא מרוץ חיצוני:
+  // ה-fetch ממשיך ברקע, ואם הוא יצליח אחרי שוויתרנו — ה-id ימנע כפילות.
+  return withTimeout(
+    fetch(REPORT_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload)
+    }).then(() => 'webapp'),
+    REPORT_SEND_TIMEOUT_MS, 'webapp'
   );
 }
 
@@ -256,22 +276,33 @@ async function postReportToRelay(item, env){
   throw err;
 }
 
-function newReportItem(kind, title, details, env){
+function newReportItem(kind, title, details, env, images){
   return {
     id: 'r' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
     kind: kind || 'דיווח',
     title: String(title == null ? '' : title).trim().slice(0, REPORT_TITLE_MAX) || 'דיווח מהתוסף',
     details: String(details == null ? '' : details).slice(0, REPORT_DETAILS_MAX),
     env: env || '',
+    images: Array.isArray(images) ? images.slice(0, REPORT_IMG_MAX) : [],
     savedAt: new Date().toISOString()
   };
 }
 
+// ⚠️ כל שלב כאן חייב תקרת זמן. עד 2.16.1 זו הייתה קריאת הגשר היחידה בקובץ בלי
+// withTimeout, ולכן storage.get שנתקע (ולא נכשל) בלע את השליחה כולה בשקט מוחלט —
+// המשתמש לחץ "שליחה", הפאנל נסגר, ושום הודעה לא הופיעה. אם השמירה לא הצליחה,
+// ממשיכים לשלוח בכל זאת: דיווח שנשלח ולא נשמר עדיף על דיווח שלא קרה כלום.
 async function queueReport(item){
-  const list = await reportOutboxRead();
-  list.push(item);
-  while (list.length > REPORT_OUTBOX_MAX) list.shift();   // הישן ביותר נופל
-  await reportOutboxWrite(list);
+  try {
+    const list = await withTimeout(reportOutboxRead(), REPORT_STEP_TIMEOUT_MS, 'outbox-read');
+    list.push(item);
+    while (list.length > REPORT_OUTBOX_MAX) list.shift();   // הישן ביותר נופל
+    await withTimeout(reportOutboxWrite(list), REPORT_STEP_TIMEOUT_MS, 'outbox-write');
+    return true;
+  } catch(e){
+    await reportDebugLog({ ok: false, err: 'queue: ' + ((e && e.message) || String(e)), title: item.title });
+    return false;
+  }
 }
 
 async function removeFromOutbox(id){
@@ -317,9 +348,9 @@ function reportDebugRead(){
 // הסדר הזה הוא התיקון של 2.13.3: ב-2.13.2 חישוב ה"סביבה" רץ ראשון, וכל
 // תקיעה שלו (קריאת גשר שלא חוזרת) בלעה גם את השמירה וגם את השליחה בשקט.
 // מחזירה true רק אם הבקשה לא זרקה — "נכנס לתור" אינו "נשלח".
-async function sendReport(kind, title, details){
-  const item = newReportItem(kind, title, details, '');
-  await queueReport(item);                       // ← שמור לפני הכול
+async function sendReport(kind, title, details, images){
+  const item = newReportItem(kind, title, details, '', images);
+  const queued = await queueReport(item);        // ← שמור לפני הכול
   let env = '';
   try { env = await reportEnv(); } catch(e){}    // best-effort בלבד
   item.env = env;
@@ -331,7 +362,10 @@ async function sendReport(kind, title, details){
     await markOutboxError(item.id, (e && e.message) || String(e));
     // כמו בתוסף "ביוגרפיות" — המשתמש שלחץ "שליחה" מקבל תשובה, לא שקט.
     // ההבדל: כאן הדיווח לא אבד, ולכן ההודעה מרגיעה ולא מבקשת לנסות שוב.
-    reportNotify('אין כרגע חיבור לרשת — הדיווח נשמר במכשיר ויישלח אוטומטית בפתיחה הבאה של התוסף.', 'error');
+    // אלא אם גם השמירה נכשלה — ואז אסור להבטיח שהוא נשמר.
+    reportNotify(queued
+      ? 'אין כרגע חיבור לרשת — הדיווח נשמר במכשיר ויישלח אוטומטית בפתיחה הבאה של התוסף.'
+      : 'השליחה נכשלה וגם השמירה במכשיר לא הצליחה. כדאי ללחוץ "הורדה לקובץ" כדי לא לאבד את מה שנכתב.', 'error');
     refreshPersonalIfOpen();
     return false;
   }
@@ -385,7 +419,12 @@ async function flushReportOutbox(opts){
 // לא כל סביבה מרשה הורדה מתוך WebView, ולכן יש נפילה מדורגת:
 // הורדה אמיתית → העתקה ללוח → חלון עם הטקסט לבחירה ידנית. בכל מקרה
 // המשתמש נשאר עם הטקסט ביד, ועם הכתובת שאליה אפשר להדביק אותו.
+// הקובץ הזה יורד אצל מי שהמחשב שלו כלל אינו מחובר, והוא ישלח אותו אחר כך ממחשב
+// אחר. לכן הוא חייב להיות **עומד בפני עצמו**: גם הטקסט וגם שתי הכתובות שאליהן
+// אפשר להדביק אותו, עם הסבר מה ההבדל ביניהן. אחרת הכתובת נשמרת בנפרד — או, בפועל,
+// לא נשמרת בכלל.
 function reportItemToText(item){
+  const imgs = (item.images || []).length;
   return [
     'דיווח מתוסף עינים למקרא',
     'סוג: ' + (item.kind || '—'),
@@ -395,7 +434,18 @@ function reportItemToText(item){
     '',
     item.details || '',
     '',
-    '— אפשר להדביק את הטקסט הזה כדיווח חדש ב-' + REPORT_ISSUES_URL
+    (imgs ? '⚠️ צורפו לדיווח ' + imgs + ' תמונות. הקובץ הזה הוא טקסט בלבד ואינו כולל אותן —\n'
+          + '   יש לצרף אותן ידנית בעת השליחה.\n' : ''),
+    '==============================',
+    'איך שולחים את הדיווח הזה ממחשב מחובר — שתי דרכים, שתיהן מגיעות לאותו מקום:',
+    '',
+    '1. בלי חשבון וללא הרשמה — טופס גוגל (מומלץ):',
+    '   ' + REPORT_FORM_VIEW_URL,
+    '   פותחים בדפדפן, מעתיקים לתוכו את מה שכתוב למעלה ושולחים. זהו.',
+    '',
+    '2. למי שיש חשבון גיטהאב — פתיחת דיווח ישירות:',
+    '   ' + REPORT_ISSUES_URL,
+    '   כאן אפשר גם לצרף תמונות ולעקוב אחרי התשובות לדיווח.'
   ].join('\n');
 }
 
@@ -439,6 +489,114 @@ function saveReportsToFile(items, baseName){
   }
 }
 
+// ============================================================
+//  תמונות מצורפות (2.16.2)
+//  צילום מסך אומר בשנייה מה שפסקה שלמה לא מצליחה לומר. שלוש דרכים לצרף:
+//  לחיצה על אזור ההעלאה · גרירה לתוכו · הדבקה (Ctrl+V) לתוך שדה הפירוט —
+//  האחרונה היא הדרך הטבעית אחרי צילום מסך, וגם התוסף של אוצריא תומך בה.
+// ============================================================
+let reportImages = [];   // [{ id, name, dataUrl }]
+
+function reportImagesBytes(){
+  return reportImages.reduce((n, im) => n + ((im && im.dataUrl) ? im.dataUrl.length : 0), 0);
+}
+
+// מקטין ומדחס דרך canvas. אם משהו בשרשרת נכשל (WebView בלי canvas, קובץ פגום)
+// נופלים חזרה ל-dataURL המקורי — עדיף תמונה כבדה מאשר בלי תמונה.
+function shrinkImageFile(file){
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onerror = () => resolve(null);
+    reader.onload = ev => {
+      const raw = String(ev.target.result || '');
+      if (!raw) return resolve(null);
+      try {
+        const img = new Image();
+        img.onerror = () => resolve(raw);
+        img.onload = () => {
+          try {
+            const scale = Math.min(1, REPORT_IMG_DIM / Math.max(img.width, img.height));
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            const ctx = cv.getContext('2d');
+            // רקע לבן: PNG שקוף שהופך ל-JPEG מקבל אחרת רקע שחור.
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            const out = cv.toDataURL('image/jpeg', REPORT_IMG_QUALITY);
+            resolve(out && out.length < raw.length ? out : raw);
+          } catch(e){ resolve(raw); }
+        };
+        img.src = raw;
+      } catch(e){ resolve(raw); }
+    };
+    try { reader.readAsDataURL(file); } catch(e){ resolve(null); }
+  });
+}
+
+async function addReportImage(file){
+  if (!file || !/^image\//.test(file.type || '')){
+    reportNotify('אפשר לצרף קבצי תמונה בלבד.', 'error');
+    return false;
+  }
+  if (reportImages.length >= REPORT_IMG_MAX){
+    reportNotify('אפשר לצרף עד ' + REPORT_IMG_MAX + ' תמונות לדיווח.', 'error');
+    return false;
+  }
+  if (file.size > REPORT_IMG_SRC_MAX){
+    reportNotify('התמונה גדולה מדי (מעל ' + Math.round(REPORT_IMG_SRC_MAX / 1024 / 1024) + 'MB).', 'error');
+    return false;
+  }
+  const dataUrl = await shrinkImageFile(file);
+  if (!dataUrl){ reportNotify('קריאת התמונה נכשלה.', 'error'); return false; }
+  if (reportImagesBytes() + dataUrl.length > REPORT_IMG_TOTAL_MAX){
+    reportNotify('סך התמונות בדיווח גדול מדי. אפשר להסיר אחת ולצרף במקומה.', 'error');
+    return false;
+  }
+  reportImages.push({
+    id: 'i' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+    name: file.name || 'צילום מסך.jpg',
+    dataUrl: dataUrl
+  });
+  renderReportImages();
+  return true;
+}
+
+function removeReportImage(id){
+  reportImages = reportImages.filter(im => im.id !== id);
+  renderReportImages();
+}
+
+function renderReportImages(){
+  const list = document.getElementById('reportImages');
+  if (!list) return;
+  list.innerHTML = '';
+  reportImages.forEach(im => {
+    const chip = document.createElement('div');
+    chip.className = 'report-img-chip';
+    const thumb = document.createElement('img');
+    thumb.src = im.dataUrl;
+    thumb.alt = im.name;
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'report-img-del';
+    del.title = 'הסרה';
+    del.textContent = '✕';
+    del.addEventListener('click', () => removeReportImage(im.id));
+    chip.appendChild(thumb);
+    chip.appendChild(del);
+    list.appendChild(chip);
+  });
+  const hint = document.getElementById('reportImagesHint');
+  if (hint){
+    hint.textContent = reportImages.length
+      ? reportImages.length + ' מתוך ' + REPORT_IMG_MAX + ' · ' + Math.round(reportImagesBytes() / 1024) + 'KB'
+      : '';
+  }
+}
+
 // ---- המודאל ----
 function buildReportPanel(){
   const ov = document.createElement('div');
@@ -453,7 +611,13 @@ function buildReportPanel(){
     +   REPORT_KINDS.map(k => '<option value="' + esc(k.id) + '">' + esc(k.label) + '</option>').join('')
     + '</select>'
     + '<input type="text" id="reportTitle" maxlength="' + REPORT_TITLE_MAX + '" placeholder="כותרת קצרה (רשות — אם ריק, נלקחת מהשורה הראשונה שלמטה)">'
-    + '<textarea id="reportDetails" placeholder="מה קרה? איפה? מה ציפיתם שיקרה? ככל שיהיה מפורט יותר — כך קל יותר לתקן."></textarea>'
+    + '<textarea id="reportDetails" placeholder="מה קרה? איפה? מה ציפיתם שיקרה? ככל שיהיה מפורט יותר — כך קל יותר לתקן.&#10;(אפשר גם להדביק כאן צילום מסך ב-Ctrl+V)"></textarea>'
+    + '<div class="report-upload" id="reportUpload" tabindex="0" role="button">'
+    +   '🖼️ צירוף צילום מסך — לחיצה, גרירה לכאן, או הדבקה בשדה למעלה'
+    +   '<span class="report-upload-sub" id="reportImagesHint"></span>'
+    + '</div>'
+    + '<input type="file" id="reportFile" accept="image/*" multiple hidden>'
+    + '<div class="report-imgs" id="reportImages"></div>'
     + '<div class="panel-actions">'
     +   '<button class="panel-btn" type="button" id="reportSend">📨 שליחה</button>'
     +   '<button class="panel-btn secondary" type="button" id="reportDownload">💾 הורדה לקובץ</button>'
@@ -461,10 +625,24 @@ function buildReportPanel(){
     + '</div>'
     + '<p class="panel-hint" style="margin-top:12px;">'
     +   'מעדיפים לשלוח בעצמכם? ״הורדה לקובץ״ שומרת את הדיווח כקובץ טקסט (ואם ההורדה '
-    +   'חסומה — מעתיקה אותו ללוח), ואפשר לפתוח אתו דיווח ידני בכל עת. '
-    // הקישור אינו מוצג כטקסט/כתובת גלויים בכוונה (רק כפתור העתקה) - כדי לא לחשוף
-    // את כתובת ה-Issues (ומתוכה שם המשתמש בגיטהאב) בממשק עצמו.
-    +   '<button type="button" class="panel-btn secondary" id="reportCopyIssuesLink" style="margin-top:6px;">📋 העתקת קישור לדיווח ידני</button>'
+    +   'חסומה — מעתיקה אותו ללוח). <b>הקובץ כולל בתוכו גם את כתובות השליחה</b>, כך '
+    +   'שאפשר להעביר אותו למחשב מחובר ולשלוח משם בלי לשמור שום דבר בנפרד.'
+    + '</p>'
+    + '<div class="panel-actions">'
+    // שני ערוצים, ובכוונה בסדר הזה: הטופס ראשון מפני שהוא אינו דורש חשבון כלל.
+    //
+    // הטופס מופיע בשתי צורות שרק אחת מהן גלויה בכל רגע (ר' applyOnlineState
+    // ב-refs.js): כשיש רשת — קישור שנפתח בלחיצה, כי אין סיבה להכריח העתקה
+    // ידנית; כשאין רשת — כפתור העתקה, כי קישור שאי-אפשר לפתוח הוא רק תסכול,
+    // ומה שבאמת צריך הוא להעביר את הכתובת למכשיר מחובר.
+    +   '<a href="#" class="panel-btn secondary" data-external-link="' + esc(REPORT_FORM_VIEW_URL) + '" data-requires-net>📝 שליחה בטופס — בלי חשבון</a>'
+    +   '<button type="button" class="panel-btn secondary" id="reportCopyFormLink" data-offline-only>📝 העתקת קישור לטופס — בלי חשבון</button>'
+    // כתובת הגיטהאב נשארת כפתור העתקה בלבד, בכל מצב: הצגתה כקישור גלוי חושפת
+    // את שם המשתמש בגיטהאב בממשק עצמו.
+    +   '<button type="button" class="panel-btn secondary" id="reportCopyIssuesLink">📋 העתקת קישור לגיטהאב</button>'
+    + '</div>'
+    + '<p class="panel-hint" style="margin-top:8px;font-size:.8em;opacity:.75;">'
+    +   'מנגנון השליחה כאן מבוסס על הדפוס של התוספים ״ביוגרפיות״ ו״דיווח באגים״ — תודה למפתחיהם.'
     + '</p></div>';
   document.body.appendChild(ov);
   // הפאנל נוצר בזמן ריצה ולכן אינו נתפס במאזין הכללי של .panel-overlay ב-results-ui.js
@@ -477,8 +655,46 @@ function buildReportPanel(){
     const details = ov.querySelector('#reportDetails').value;
     if (!title && !details.trim()){ window.alert('אין מה להוריד — הדיווח ריק.'); return; }
     reportEnv().then(env => {
-      const item = newReportItem(kind, title || 'דיווח מהתוסף', details, env);
+      const item = newReportItem(kind, title || 'דיווח מהתוסף', details, env, reportImages);
       saveReportsToFile([item], 'דיווח-עינים-למקרא');
+    });
+  });
+
+  // ---- תמונות: לחיצה, גרירה והדבקה ----
+  const fileInput = ov.querySelector('#reportFile');
+  const upload = ov.querySelector('#reportUpload');
+  upload.addEventListener('click', () => fileInput.click());
+  upload.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener('change', async ev => {
+    for (const f of Array.from(ev.target.files || [])) await addReportImage(f);
+    ev.target.value = '';       // שאותו קובץ יוכל להיבחר שוב אחרי הסרה
+  });
+  ['dragenter', 'dragover'].forEach(t => upload.addEventListener(t, ev => {
+    ev.preventDefault(); upload.classList.add('drag');
+  }));
+  ['dragleave', 'drop'].forEach(t => upload.addEventListener(t, ev => {
+    ev.preventDefault(); upload.classList.remove('drag');
+  }));
+  upload.addEventListener('drop', async ev => {
+    for (const f of Array.from((ev.dataTransfer && ev.dataTransfer.files) || [])) await addReportImage(f);
+  });
+  ov.querySelector('#reportDetails').addEventListener('paste', async ev => {
+    const items = Array.from((ev.clipboardData && ev.clipboardData.items) || []);
+    const imgs = items.filter(i => i.type && i.type.indexOf('image') === 0);
+    if (!imgs.length) return;   // הדבקת טקסט רגילה ממשיכה כרגיל
+    ev.preventDefault();
+    for (const i of imgs){
+      const f = i.getAsFile();
+      if (f) await addReportImage(f);
+    }
+  });
+
+  ov.querySelector('#reportCopyFormLink').addEventListener('click', () => {
+    copyReportText(REPORT_FORM_VIEW_URL).then(ok => {
+      reportNotify(ok ? 'קישור הטופס הועתק. אפשר לפתוח אותו בכל דפדפן — בלי חשבון ובלי הרשמה.'
+                      : 'ההעתקה נכשלה כאן — נסו שוב.', ok ? 'success' : 'error');
     });
   });
   ov.querySelector('#reportCopyIssuesLink').addEventListener('click', () => {
@@ -502,6 +718,8 @@ function openReportPanel(preset){
   if (preset && preset.kind) kind.value = preset.kind;
   if (preset && preset.title != null) title.value = preset.title;
   if (preset && preset.details != null) details.value = preset.details;
+  reportImages = [];                 // פתיחה חדשה = דיווח חדש, בלי תמונות שנשארו
+  renderReportImages();
   ov.classList.add('open');
   setTimeout(() => { try { title.focus(); } catch(e){} }, 30);
 }
@@ -521,7 +739,7 @@ async function submitReportPanel(){
   const label = btn.textContent;
   btn.textContent = 'שולח…';
   try {
-    await sendReport(ov.querySelector('#reportKind').value, effectiveTitle, details.value);
+    await sendReport(ov.querySelector('#reportKind').value, effectiveTitle, details.value, reportImages);
   } finally {
     btn.disabled = false;
     btn.textContent = label;
@@ -529,6 +747,8 @@ async function submitReportPanel(){
   // גם אם רק נכנס לתור — הטופס התרוקן והפאנל נסגר, כי הדיווח כבר שמור.
   title.value = '';
   details.value = '';
+  reportImages = [];
+  renderReportImages();
   closeReportPanel();
 }
 
@@ -648,6 +868,27 @@ function draftBody(d){
     + '\nנשמר: ' + (d.data.savedAt || '—');
 }
 
+// פריט שמור → אותו מבנה שהורדה לקובץ יודעת לכתוב. כך "הורדה" בהצעות ובדיווחי
+// הזיהוי מייצרת בדיוק את אותו קובץ עצמאי כמו בפאנל הדיווח — כולל שתי כתובות
+// השליחה וההסבר ביניהן (ר' reportItemToText). ההנחה שמי שאין לו רשת "פשוט
+// ישלח אחר כך" נכונה רק אם יש לו איך להוציא את התוכן מהמכשיר.
+function draftReportItem(d, env){
+  const isPropose = d.kind === 'propose';
+  return newReportItem(
+    isPropose ? 'הצעת ערך' : 'דיווח זיהוי',
+    isPropose
+      ? ('הצעת תוספת — ' + (d.data.name || ''))
+      : ('דיווח טעות בזיהוי — "' + (d.data.selectedText || '') + '"'),
+    draftBody(d), env, []);
+}
+
+// שם הקובץ נגזר מהפריט עצמו כשהוא יחיד — קובץ בשם "דיווח-עינים-למקרא" אחד
+// דורס את קודמו בתיקיית ההורדות, ומי שמוריד שלושה פריטים נשאר עם אחד.
+function downloadDrafts(list, baseName){
+  return reportEnv().catch(() => '').then(env =>
+    saveReportsToFile(list.map(d => draftReportItem(d, env)), baseName));
+}
+
 function deleteDraft(d){
   if (d.kind === 'propose'){
     const key = d.catId + '_nf_drafts_v1';
@@ -716,6 +957,53 @@ function renderPersonalBookmarks(){
   });
 }
 
+// ============================================================
+//  שליחת עריכה — הכרטיס הנערך קודם לכול (2.17.2)
+//  עד כאן גוף ההודעה נפתח ב-JSON.stringify של הכרטיס כולו, והמתחזק היה צריך
+//  לחפש בתוך גוש הנתונים מה בעצם נערך ובאיזה מדריך. עכשיו שם הכרטיס הוא
+//  הכותרת, הפרטים מודגשים מעליו, וה-JSON המלא יורד לסוף כנספח.
+// ============================================================
+function editReportTitle(e){
+  const now = (e.rec.entry && e.rec.entry.name) || e.origName;
+  return 'עריכת כרטיס — ' + now + ' (' + catLabelOf(e.catId) + ')';
+}
+
+function editReportBody(e){
+  const entry = e.rec.entry || {};
+  const now = entry.name || e.origName;
+  const lines = [
+    '## הכרטיס שנערך: **' + now + '**',
+    '',
+    '* **מדריך:** ' + catLabelOf(e.catId),
+    (now !== e.origName ? '* **שם במקור:** ' + e.origName + ' _(השם עצמו שונה בעריכה)_' : '* **שם במקור:** ' + e.origName),
+    '* **נשמר:** ' + (e.rec.savedAt || '—'),
+    '',
+    '### תוכן הכרטיס אחרי העריכה'
+  ];
+  Object.keys(entry).forEach(k => {
+    if (k.indexOf('__') === 0) return;                 // שדות פנימיים
+    const v = entry[k];
+    const txt = (v && typeof v === 'object') ? JSON.stringify(v) : String(v == null ? '' : v);
+    if (!txt.trim()) return;
+    lines.push('* **' + k + ':** ' + (txt.length > 600 ? txt.slice(0, 600) + '…' : txt));
+  });
+  lines.push('', '<details><summary>הכרטיס המלא כ-JSON</summary>', '',
+    '```json', JSON.stringify(entry, null, 1), '```', '</details>');
+  return lines.join('\n');
+}
+
+function editsBulkBody(edits){
+  return 'עריכות מקומיות מעינים למקרא — ' + edits.length + ' כרטיסים\n\n'
+    + edits.map(e => '* **' + ((e.rec.entry && e.rec.entry.name) || e.origName) + '** ('
+        + catLabelOf(e.catId) + ') — נשמר ' + fmtDate(e.rec.savedAt)).join('\n')
+    + '\n\n---\n\n' + edits.map(editReportBody).join('\n\n---\n\n');
+}
+
+function downloadEdits(edits, baseName){
+  return reportEnv().catch(() => '').then(env =>
+    saveReportsToFile(edits.map(e => newReportItem('עריכת כרטיס', editReportTitle(e), editReportBody(e), env, [])), baseName));
+}
+
 function renderPersonalEdits(){
   const edits = collectEdits();
   personalBody.appendChild(sectionHead('✏️ העריכות שלי', edits.length ? edits.length + ' כרטיסים' : ''));
@@ -731,13 +1019,21 @@ function renderPersonalEdits(){
   bulkBtn.className = 'panel-btn';
   bulkBtn.textContent = '📨 שליחת כל העריכות למפתח (' + edits.length + ')';
   bulkBtn.addEventListener('click', () => {
-    const body = 'עריכות מקומיות מעינים למקרא — ' + edits.length + ' כרטיסים\n\n'
-      + edits.map(e => '• ' + e.origName + ' (' + catLabelOf(e.catId) + ') — נשמר ' + fmtDate(e.rec.savedAt)).join('\n')
-      + '\n\n--- הנתונים המלאים ---\n'
-      + edits.map(e => '### ' + e.origName + ' [' + e.catId + ']\n' + JSON.stringify(e.rec.entry, null, 1)).join('\n\n');
-    sendToDev('עריכות מקומיות (' + edits.length + ' כרטיסים)', body, 'עריכות מקומיות');
+    sendToDev('עריכות מקומיות (' + edits.length + ' כרטיסים)', editsBulkBody(edits), 'עריכות מקומיות');
   });
   bulk.appendChild(bulkBtn);
+  // אותה בעיה שנפתרה בהצעות: "שליחה" לבדה מניחה חיבור לרשת. מי שהמחשב שלו
+  // מנותק לגמרי צריך להוציא את העריכות החוצה כקובץ — עם כתובות השליחה בתוכו.
+  const bulkDl = document.createElement('button');
+  bulkDl.type = 'button';
+  bulkDl.className = 'panel-btn secondary';
+  bulkDl.textContent = '💾 הורדת כל העריכות לקובץ';
+  bulkDl.addEventListener('click', () => downloadEdits(edits, 'עריכות-עינים-למקרא'));
+  bulk.appendChild(bulkDl);
+  bulk.insertAdjacentHTML('beforeend',
+    '<p class="mini-note" style="width:100%;margin:8px 0 0;">'
+    + 'אין חיבור במחשב הזה? ההורדה שומרת את העריכות כקובץ טקסט, '
+    + '<b>וכתובות השליחה כתובות בתוכו</b> — אפשר להעביר אותו למכשיר מחובר ולשלוח משם.</p>');
   personalBody.appendChild(bulk);
 
   edits.forEach(e => {
@@ -748,11 +1044,9 @@ function renderPersonalEdits(){
       [
         { label: 'פתיחה', onClick: () => openEntryByBookmark(e.catId, e.origName, e.origName) },
         { label: 'שליחה', secondary: true, onClick: () => sendToDev(
-            'עריכת כרטיס — ' + e.origName,
-            'עריכה מקומית של הכרטיס "' + e.origName + '" במדריך ' + catLabelOf(e.catId)
-              + '\nנשמר: ' + (e.rec.savedAt || '—') + '\n\n' + JSON.stringify(e.rec.entry, null, 1),
-            'עריכת כרטיס'
-          ) },
+            editReportTitle(e), editReportBody(e), 'עריכת כרטיס') },
+        { label: '💾 הורדה', secondary: true, onClick: () => downloadEdits([e],
+            'עריכה-' + ((e.rec.entry && e.rec.entry.name) || e.origName)) },
         { label: 'שחזור למקור', secondary: true, onClick: async () => {
             if (!window.confirm('לשחזר את "' + e.origName + '" לגרסת המקור? העריכה שלכם תימחק.')) return;
             const cat = CATEGORIES.find(c => c.id === e.catId);
@@ -921,6 +1215,18 @@ function renderPersonalDrafts(){
     }
   });
   bulk.appendChild(bulkBtn);
+  // ההורדה אינה דורשת רשת בכלל, ולכן אינה מסומנת data-requires-net: זו בדיוק
+  // הפעולה שנחוצה כשאין חיבור.
+  const bulkDl = document.createElement('button');
+  bulkDl.type = 'button';
+  bulkDl.className = 'panel-btn secondary';
+  bulkDl.textContent = '💾 הורדת הכל לקובץ';
+  bulkDl.addEventListener('click', () => downloadDrafts(drafts, 'פריטים-שמורים-עינים-למקרא'));
+  bulk.appendChild(bulkDl);
+  bulk.insertAdjacentHTML('beforeend',
+    '<p class="mini-note" style="width:100%;margin:8px 0 0;">'
+    + 'אין חיבור במחשב הזה? ״הורדת הכל לקובץ״ שומרת את הפריטים כקובץ טקסט אחד, '
+    + '<b>וכתובות השליחה כתובות בתוכו</b> — אפשר להעביר אותו למכשיר מחובר ולשלוח משם.</p>');
   personalBody.appendChild(bulk);
 
   drafts.forEach(d => {
@@ -936,6 +1242,8 @@ function renderPersonalDrafts(){
           draftBody(d),
           d.kind === 'propose' ? 'הצעת ערך' : 'דיווח זיהוי'
         ) },
+      { label: '💾 הורדה', secondary: true, onClick: () => downloadDrafts([d],
+          d.kind === 'propose' ? ('הצעה-' + (d.data.name || 'ערך')) : 'דיווח-זיהוי') },
       { label: 'מחיקה', secondary: true, onClick: () => {
           if (window.confirm('למחוק את הפריט?')) deleteDraft(d);
         } }

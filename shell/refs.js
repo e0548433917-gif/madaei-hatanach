@@ -131,24 +131,44 @@ function applyOnlineState() {
     el.disabled = !isOnline;
     el.classList.toggle('net-disabled', !isOnline);
   });
+  // התמונה המשלימה (2.17.2): אלמנט שקיים **רק** כשאין רשת. הצורך עלה מכתובת
+  // הטופס בפאנל הדיווח — כשיש חיבור זה קישור שנפתח בלחיצה, וכשאין חיבור קישור
+  // כזה חסר משמעות ובמקומו צריך כפתור העתקה, כדי שאפשר יהיה לשלוח ממכשיר אחר.
+  // שני האלמנטים נכתבים תמיד; רק אחד מהם גלוי בכל רגע.
+  document.querySelectorAll('[data-offline-only]').forEach((el) => {
+    el.classList.toggle('net-disabled', !!isOnline);
+  });
 }
 
-async function verifyOnline() {
-  if (typeof Otzaria === 'undefined' || !Otzaria.call) return;
+// עד 2.17.2 זו הייתה בקשת HEAD ל-otzaria.org דרך network.fetch. שני דברים היו רעים
+// בזה: (1) network.fetch **מוסר ב-0.9.98**, ומאותו רגע הקריאה הייתה נכשלת תמיד,
+// isOnline היה ננעל על false, וכל הקישורים החיצוניים היו נעלמים גם למי שיש לו
+// אינטרנט; (2) הבדיקה התעלמה מהגדרת ״ללא גישה לאינטרנט״ של אוצריא עצמה — משתמש
+// שסימן אותה עדיין ראה קישורים חיצוניים.
+//
+// app.getConnectivity מחזיר את שניהם: isOfflineMode (ההגדרה) ו-hasNetwork (חיבור
+// בפועל), ו-isOnline הוא הצירוף. אוצריא שומרת את התוצאה ל-30 שניות, ולכן אין צורך
+// ב-timeout ידני ואסור לקרוא לזה מכל רינדור (מגביל קצב RPC).
+async function verifyOnline(forceRefresh) {
+  if (typeof Otzaria === 'undefined' || !Otzaria.call) return;   // גרסה עצמאית: navigator.onLine
   try {
-    const res = await Promise.race([
-      Otzaria.call('network.fetch', { url: 'https://otzaria.org', method: 'HEAD' }),
-      new Promise((_, reject) => setTimeout(reject, 3000)),
-    ]);
-    isOnline = res.success;   // כל תשובה מהשרת מוכיחה חיבור, גם 404
+    let res = await Otzaria.call('app.getConnectivity', forceRefresh ? { forceRefresh: true } : {});
+    // null = ״טרם הוכרע״: אוצריא לא מעכבת את פתיחת התוסף כדי להמתין לרשת.
+    // מנסים שוב פעם אחת, ורק אז מוותרים.
+    if (res && res.success && res.data && res.data.isOnline === null) {
+      res = await Otzaria.call('app.getConnectivity');
+    }
+    isOnline = !!(res && res.success && res.data && res.data.isOnline);
   } catch {
-    isOnline = false;         // כולל פסילה ב-timeout: רשת בלי אינטרנט
+    isOnline = false;
   }
   applyOnlineState();
 }
 
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-  window.addEventListener('online',  () => { verifyOnline(); });
+  // מעבר מנותק→מחובר הוא בדיוק "נקודת מעבר משמעותית" שבה התיעוד מתיר forceRefresh:
+  // בלעדיו התשובה השמורה (עד 30 שניות) עדיין תגיד "אין רשת".
+  window.addEventListener('online',  () => { verifyOnline(true); });
   window.addEventListener('offline', () => { isOnline = false; applyOnlineState(); });
 }
 applyOnlineState();
@@ -162,7 +182,8 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' &
     for (const m of mutations) {
       for (const node of m.addedNodes) {
         if (node.nodeType !== 1) continue;
-        if (node.matches && node.matches('[data-requires-net]') || (node.querySelector && node.querySelector('[data-requires-net]'))) {
+        const sel = '[data-requires-net],[data-offline-only]';
+        if (node.matches && node.matches(sel) || (node.querySelector && node.querySelector(sel))) {
           applyOnlineState();
           return;
         }
