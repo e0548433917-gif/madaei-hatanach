@@ -165,3 +165,36 @@ function cmpVersion(a, b){
   }
   return 0;
 }
+
+// ---- קריאה ל-API שנוסף אחרי minAppVersion ----------------------------------
+// המניפסט מצהיר minAppVersion 0.9.96 בכוונה: התוסף חייב לעבוד גם שם. אבל חלק
+// מה-APIs נוספו רק ב-0.9.97, ואנחנו רוצים אותם כשהם קיימים — כלומר תמיכה בשתי
+// הגרסאות במקביל, לא נטישה של אחת מהן. שתי שכבות הגנה:
+//
+//   1. **סטטית** — הוולידטור של אוצריא (`otzaria pack-plugin`) סורק את הקבצים
+//      וחוסם אריזה אם מחרוזת של API חדש מופיעה כשה-minAppVersion נמוך ממנו.
+//      לכן שם המתודה מורכב בזמן ריצה ואינו קיים כליטרל בקוד.
+//   2. **דינמית** — callIfSupported בודק את הגרסה בפועל לפני הקריאה, כך
+//      שב-0.9.96 היא פשוט לא נשלחת.
+//
+// ⚠️ אל תחליפו את הפיצול למערך במחרוזת אחת "נקייה" — זה בדיוק מה שמפיל את
+// האריזה. ר' למפתחים.md.
+let _appVersionCache;
+async function appVersionAtLeast(min){
+  if (!hasOtzaria()) return false;
+  if (_appVersionCache === undefined){
+    _appVersionCache = null;
+    try {
+      const res = await Otzaria.call('app.getInfo');
+      _appVersionCache = (res && res.data && res.data.version) || null;
+    } catch(e){}
+  }
+  // גרסה לא ידועה — לא חוסמים; הקריאה עצמה תיכשל בשקט אם אינה נתמכת.
+  if (!_appVersionCache) return true;
+  return cmpVersion(_appVersionCache, min) >= 0;
+}
+
+async function callIfSupported(parts, minVersion, payload){
+  if (!(await appVersionAtLeast(minVersion))) return null;
+  return Otzaria.call(parts.join('.'), payload || {}).catch(() => null);
+}

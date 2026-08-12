@@ -192,30 +192,44 @@ async function handleIdentifyClick(payload){
     });
     return Array.from(counts.values()).map(v => v.icon + ' ' + v.n + ' ' + v.label).join(' · ');
   }
+  // סדר עדיפות: בע״ח/צומח/דומם קודם (זיהוי כמעט תמיד אמין), אישים ובית המקדש
+  // (הכי תלויים בהתאמת-שם גנרית, לכן הכי חשופים לזיהויי שווא) נדחפים לסוף.
+  const CAT_PRIORITY = { animal: 0, flora: 0, domem: 0, people: 2, beithamikdash: 2 };
+  const ranked = matches
+    .map((m, i) => ({ m, i, rank: CAT_PRIORITY[m.catId] != null ? CAT_PRIORITY[m.catId] : 1 }))
+    .sort((a, b) => a.rank - b.rank || a.i - b.i)
+    .map(x => x.m);
+
   const TOP_N = 5;
-  const top = matches.slice(0, TOP_N);
-  const restCount = matches.length - top.length;
+  const top = ranked.slice(0, TOP_N);
+  const restCount = ranked.length - top.length;
   const title = matches.length === 1
     ? (matches[0].catIcon + ' ' + matches[0].name)
     : ('נמצאו ' + matches.length + ' התאמות ל"' + snippet(text, 40) + '"');
 
   // ההוראה מופיעה **לפני** רשימת ההתאמות בכוונה: הרשימה היא החלק שגדל בלי גבול,
   // וכל מה שמתחתיה נדחק מחוץ לחלון החתוך. מה שחייב להיקרא נמצא בשתי השורות הראשונות.
+  // אזהרת "זיהויי שווא" ממוזגת לתוך אותה שורה במקום שורה נפרדת - חוסך שורה שלמה
+  // מהחלון החתוך.
   const action = canOpenSelf
-    ? ('לחיצה על אישור תפתח את עינים למקרא עם ' + (matches.length === 1 ? 'הכרטיס המלא.' : 'כל ' + matches.length + ' ההתאמות.'))
-    : 'אין מעבר אוטומטי בגרסת אוצריא זו — יש לפתוח את עינים למקרא ידנית.';
+    ? ('לחיצה על אישור תפתח את עינים למקרא עם ' + (matches.length === 1 ? 'הכרטיס המלא' : 'כל ' + matches.length + ' ההתאמות')
+      + '. ייתכנו זיהויי שווא — בחלון התוצאות יש כפתור דיווח.')
+    : 'אין מעבר אוטומטי בגרסת אוצריא זו — יש לפתוח את עינים למקרא ידנית. ייתכנו זיהויי שווא — בחלון התוצאות יש כפתור דיווח.';
   const contentParts = [];
   if (matches.length === 1){
     contentParts.push(lineFor(matches[0]));
     contentParts.push(action);
+    // בהתאמה יחידה הכותרת מציגה את שם הערך ולא את הקטע שנבחר - כאן זו הפעם היחידה
+    // שהמשתמש רואה מה בדיוק סומן, ולכן השורה נשארת.
+    contentParts.push('הקטע שנבחר: "' + snippet(text, 120) + '"');
   } else {
+    // בריבוי התאמות הכותרת כבר מכילה את הקטע שנבחר (עד 40 תווים) - שורה נפרדת
+    // כאן הייתה כפילות מיותרת.
     contentParts.push(summaryLine(matches));
     contentParts.push(action);
     contentParts.push(top.map(lineFor).join('\n') + (restCount > 0 ? '\nועוד ' + restCount + '…' : ''));
   }
-  contentParts.push('⚠️ ייתכנו זיהויי שווא — בחלון התוצאות יש כפתור דיווח.');
-  contentParts.push('הקטע שנבחר: "' + snippet(text, 120) + '"');
-  const content = contentParts.join('\n\n');
+  const content = contentParts.join('\n');
 
   try {
     const res = await Otzaria.call('ui.showConfirm', { title, content });
@@ -282,7 +296,7 @@ function waitForOtzaria(elapsed){
       // במופע רקע: מסיימים מפורשות אחרי שהלחיצה טופלה, במקום להמתין לכיבוי
       // האוטומטי אחרי שלוש דקות חוסר פעילות.
       handleIdentifyClick(payload).finally(() => {
-        if (runMode === 'background') Otzaria.call('plugin.backgroundDone').catch(()=>{});
+        if (runMode === 'background') callIfSupported(['plugin', 'backgroundDone'], '0.9.97');
       });
     });
     // חשוב: לרנדר את כרטיסי דפי ה-HTML השמורים רק אחרי ש-Otzaria אכן זמין -

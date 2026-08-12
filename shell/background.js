@@ -20,9 +20,9 @@ let bgPending = 0;
 function bgStart(){ bgPending++; }
 function bgEnd(){
   bgPending = Math.max(0, bgPending - 1);
-  if (bgPending === 0 && window.Otzaria && Otzaria.call){
-    Otzaria.call('plugin.backgroundDone').catch(()=>{});
-  }
+  // plugin.backgroundDone נוסף ב-0.9.97. ב-0.9.96 פשוט לא קוראים לו והמנוע
+  // נכבה לבד אחרי ~3 דקות חוסר פעילות — התנהגות תקינה, רק פחות חסכונית.
+  if (bgPending === 0) callIfSupported(['plugin', 'backgroundDone'], '0.9.97');
 }
 
 // ---- 1. לחיצה על פריט תפריט ההקשר ------------------------------------------
