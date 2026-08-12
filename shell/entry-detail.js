@@ -238,7 +238,8 @@ const GUIDE_FIELDS = {
   flora:  ['explanation','latin','wiki','confidence','note'],
   domem:  ['tribe','explanation','identification','note'],
   beithamikdash: ['explanation','identification','note'],
-  mumim:  ['explanation','modern','note']
+  mumim:  ['explanation','modern','note'],
+  sukkah: ['explanation','note']
 };
 // שדות שיושבים בתוך methods[0] ולא ישירות על הערך (חי/צומח/מקומות/מקדש)
 const METHOD_FIELDS = new Set(['explanation','latin','wiki','confidence','modern','mapQuery']);
