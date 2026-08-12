@@ -227,6 +227,16 @@ if (Test-Path $roadmapPath) {
   Write-Warning "ROADMAP.md לא נמצא בשורש הריפו — guides/_shared/roadmap-embedded.js לא עודכן."
 }
 
+# ---- 1ה. הטמעת מספר הגרסה כקבוע JS (guides/_shared/version-embedded.js) ----
+# אותה בעיה בדיוק כמו 1ג/1ד: fetch('manifest.json') מתוך bridge.js/personal.js
+# נכשל בפועל בתוך ה-WebView של אוצריא (בדיוק כמו fetch('CHANGELOG.md') לפני 1ג) -
+# ולכן "הגרסה המותקנת אצלך" בלשונית "מה חדש" הציגה "לא ידועה" בכל התקנה אמיתית,
+# אף שהיא ממש הגרסה שנארזת כאן. מטביעים את המספר כקבוע, בלי fetch בזמן ריצה.
+$versionEmbedPath = Join-Path $root "guides\_shared\version-embedded.js"
+$versionEmbedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך manifest.json - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_PLUGIN_VERSION = " + ($newVersion | ConvertTo-Json -Compress) + ";`r`n"
+[System.IO.File]::WriteAllText($versionEmbedPath, $versionEmbedContent, [System.Text.UTF8Encoding]::new($false))
+Write-Host "הוטמע מספר הגרסה כקבוע JS: guides/_shared/version-embedded.js"
+
 # ---- 2. הכנת תיקיית staging נקייה (בלי קבצי build/debug) ----
 $stageDir = Join-Path $env:TEMP "madaei-hatanach-stage"
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }

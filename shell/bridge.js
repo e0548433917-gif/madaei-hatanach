@@ -350,15 +350,14 @@ const UPDATE_MANIFEST_URLS = [
 // התראת שווא.
 function isPlainVersion(v){ return typeof v === 'string' && /^\d+(?:\.\d+){0,3}$/.test(v); }
 
-// מקור האמת לגרסה המקומית הוא המניפסט שנארז בחבילה — בדיוק הקובץ ש-pack.ps1
-// מעלה בכל אריזה. לא קבוע בקוד, כדי שלא יתיישן ויתחיל להתריע לשווא.
+// מקור האמת לגרסה המקומית הוא EMBEDDED_PLUGIN_VERSION (guides/_shared/
+// version-embedded.js) שמוטבע ב-build/pack.ps1 מתוך manifest.json בכל אריזה -
+// בדיוק אותה גרסה שנארזת. לא fetch('manifest.json') בזמן ריצה: זה נכשל בפועל
+// בתוך ה-WebView של אוצריא (אותה תקלה בדיוק שכבר תועדה אצל CHANGELOG.md/
+// ROADMAP.md לפני שהוטבעו הם), והציג "לא ידועה" בלשונית "מה חדש" בכל התקנה.
 async function readLocalPluginVersion(){
-  try {
-    const res = await fetch('manifest.json', { cache: 'no-store' });
-    if (!res || !res.ok) return null;
-    const data = JSON.parse(await res.text());
-    return isPlainVersion(data && data.version) ? data.version : null;
-  } catch(e){ return null; }
+  const v = (typeof EMBEDDED_PLUGIN_VERSION !== 'undefined') ? EMBEDDED_PLUGIN_VERSION : null;
+  return isPlainVersion(v) ? v : null;
 }
 
 function fetchUpdateManifest(url){

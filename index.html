@@ -314,6 +314,10 @@
 <!-- תוכן ROADMAP.md מוטבע ב-build/pack.ps1 באותו אופן בדיוק - "מה מתוכנן בהמשך"
      (personal.js) קורא מ-EMBEDDED_ROADMAP_MD. -->
 <script src="guides/_shared/roadmap-embedded.js"></script>
+<!-- מספר הגרסה מוטבע ב-build/pack.ps1 באותו אופן בדיוק - bridge.js/personal.js
+     קוראים מ-EMBEDDED_PLUGIN_VERSION ולא מ-fetch('manifest.json'), שנכשל בפועל
+     בתוך ה-WebView של אוצריא (בדיוק כמו fetch('CHANGELOG.md') למעלה). -->
+<script src="guides/_shared/version-embedded.js"></script>
 <script src="shell/parasha.js"></script>
 <!-- שלושת שערי הלימוד (מפרט 4.0 ב.1). אחרי parasha.js — לוקח ממנו את
      ensureAllGuidesLoaded/parashaDataReady; לפני talmud.js — שלוקח מכאן את 63 המסכתות. -->
