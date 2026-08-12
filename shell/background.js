@@ -79,25 +79,31 @@ async function bgHandleIdentifyClick(payload){
     return Array.from(counts.values()).map(v => v.icon + ' ' + v.n + ' ' + v.label).join(' · ');
   };
 
-  const top = matches.slice(0, 5);
-  const restCount = matches.length - top.length;
+  // אותו סדר עדיפות כמו ב-bridge.js: בע״ח/צומח/דומם קודם, אישים ובית המקדש לסוף.
+  const CAT_PRIORITY = { animal: 0, flora: 0, domem: 0, people: 2, beithamikdash: 2 };
+  const ranked = matches
+    .map((m, i) => ({ m, i, rank: CAT_PRIORITY[m.catId] != null ? CAT_PRIORITY[m.catId] : 1 }))
+    .sort((a, b) => a.rank - b.rank || a.i - b.i)
+    .map(x => x.m);
+
+  const top = ranked.slice(0, 5);
+  const restCount = ranked.length - top.length;
   const title = matches.length === 1
     ? (matches[0].catIcon + ' ' + matches[0].name)
     : ('נמצאו ' + matches.length + ' התאמות ל"' + bgSnippet(text, 40) + '"');
   const action = 'לחיצה על אישור תפתח את עינים למקרא עם '
-    + (matches.length === 1 ? 'הכרטיס המלא.' : 'כל ' + matches.length + ' ההתאמות.');
+    + (matches.length === 1 ? 'הכרטיס המלא' : 'כל ' + matches.length + ' ההתאמות')
+    + '. ייתכנו זיהויי שווא — בחלון התוצאות יש כפתור דיווח.';
 
   const parts = [];
   if (matches.length === 1){
-    parts.push(lineFor(matches[0]), action);
+    parts.push(lineFor(matches[0]), action, 'הקטע שנבחר: "' + bgSnippet(text, 120) + '"');
   } else {
     parts.push(summaryLine(matches), action,
       top.map(lineFor).join('\n') + (restCount > 0 ? '\nועוד ' + restCount + '…' : ''));
   }
-  parts.push('⚠️ ייתכנו זיהויי שווא — בחלון התוצאות יש כפתור דיווח.');
-  parts.push('הקטע שנבחר: "' + bgSnippet(text, 120) + '"');
 
-  const res = await Otzaria.call('ui.showConfirm', { title, content: parts.join('\n\n') }).catch(() => null);
+  const res = await Otzaria.call('ui.showConfirm', { title, content: parts.join('\n') }).catch(() => null);
   // כשל בפופאפ עצמו לא אמור לבלוע את הזיהוי — פותחים בכל זאת.
   if (!res) { await handoff('results'); return; }
   if (res.success && res.data && res.data.confirmed === true) await handoff('results');

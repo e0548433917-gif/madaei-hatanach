@@ -321,10 +321,14 @@ const dailyEventLabel = document.getElementById('dailyEventLabel');
 const dailyEventOverlay = document.getElementById('dailyEventOverlay');
 const dailyEventBody = document.getElementById('dailyEventBody');
 
-// מקור המאורע הופך לקישור לחיץ לספרייה כשהוא נפרש (parseColonVerseRef, dates.js) -
+// מקור המאורע הופך לקישור לחיץ לספרייה כשהוא נפרש - קודם parseColonVerseRef
+// (dates.js, "ספר פרק:פסוק" - רוב הרשומות, מקור תנ״כי) ואם זה נכשל parseMidrashRef
+// (refs.js, "משנה, X Y, Z" / "בבלי, X Y" וכו' - מקורות חז״ל/הלכה חוץ-מקראיים,
+// כמו "משנה, בכורות ט, ה"). "תלמוד בבלי, ..." (בניגוד ל"בבלי, ...") לא נתפס ע"י
+// אף אחד מהשניים בכוונה - ר' הערת הכותב בראש dates.js.
 // הקליק עצמו מחובר אחרי ה-innerHTML, כמו verse-card.clickable ב-entry-detail.js.
 function dateEventRow(ev, monthLabel){
-  const parsed = parseColonVerseRef(ev.source);
+  const parsed = parseColonVerseRef(ev.source) || parseMidrashRef(ev.source);
   const openAttr = parsed ? ` data-vbook="${esc(parsed.bookId)}" data-vref="${esc(parsed.ref)}"` : '';
   return `<div class="src-item${parsed ? ' clickable' : ''}"${openAttr}>
     <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}</div>
