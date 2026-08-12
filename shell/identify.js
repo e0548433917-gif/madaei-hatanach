@@ -154,7 +154,28 @@ async function identify(rawText, opts){
   return results;
 }
 
+// בודקת אם רצף הטוקנים needle מופיע ברצף (ובסדר) בתוך haystack - התאמת
+// טוקנים מלאה, לא substring גולמי. משתמשת ב-tokenizeHeb, בדיוק כמו הפירוק
+// שהמנוע הראשי עושה לטקסט הנבחר לפני חיפוש ב-lookup.
+function containsTokenSequence(haystack, needle){
+  if (!needle.length || needle.length > haystack.length) return false;
+  outer: for (let i = 0; i <= haystack.length - needle.length; i++){
+    for (let j = 0; j < needle.length; j++){
+      if (haystack[i + j] !== needle[j]) continue outer;
+    }
+    return true;
+  }
+  return false;
+}
+
+// היה plain.includes(normalizedText) - substring גולמי. שני כשלים: (א) מילה קצרה
+// כמו "עוד" נתפסת כ-substring כמעט בכל דף (למשל בתוך "לעודד"), זיהוי שווא שלחיצה
+// עליו לא "פותחת" כלום. (ב) חיפוש רב-מילים כמעט אף פעם לא תואם בגלל רווחים/פיסוק
+// שונים בין הטקסט הנבחר לתוכן הדף. פתרון: פירוק שני הצדדים לטוקנים (tokenizeHeb,
+// כמו במנוע הראשי) והתאמת רצף טוקנים מלא במקום substring של תווים.
 async function identifyInCustomPages(normalizedText){
+  const searchTokens = tokenizeHeb(normalizedText);
+  if (!searchTokens.length) return [];
   const index = await getHtmlPagesIndex();
   const results = [];
   for (const page of index){
@@ -162,7 +183,8 @@ async function identifyInCustomPages(normalizedText){
     const content = await storageGet('madaei_html_page__' + name);
     if (!content) continue;
     const plain = normalizeHeb(content.replace(/<[^>]*>/g, ' '));
-    if (plain.includes(normalizedText)){
+    const pageTokens = tokenizeHeb(plain);
+    if (containsTokenSequence(pageTokens, searchTokens)){
       results.push({ catId: 'custom', catLabel: 'דף מותאם', catIcon: '➕', name: name, term: name });
     }
   }
