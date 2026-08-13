@@ -70,9 +70,6 @@
         "app.startup"
       ],
       "keepAlive": false
-    },
-    "background": {
-      "entrypoint": "background.html"
     }
   }
 }

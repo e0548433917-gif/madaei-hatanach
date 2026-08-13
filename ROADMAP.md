@@ -54,7 +54,18 @@
 הליבה — `contributes.startup.contextMenuItems` והסרגל העליון — נסגרה ב-2.17.0.
 מה שנשאר הוא שיפור ולא חסם: 0.9.98 כבר לא תפיל את התוסף.
 
-* **4.10 — `contributes.background.entrypoint`: עמוד רקע רזה.** היום מנוע הרקע שנדלק בלחיצה על תפריט ההקשר טוען את `index.html` המלא — כולל Leaflet, `geo-basemap.js` (480KB) וכל שכבת ה-UI — רק כדי להריץ `identify()` ולמסור את התוצאה. עמוד רקע נפרד שיטען רק `core/data/refs/identify` יחסוך את רובו. דורש גם לגדר את `showResults`/`openGenericProposeForm` מקריאה במצב רקע (אין להם DOM שם).
+* ⏸️ **4.10 — `contributes.background.entrypoint`: עמוד רקע רזה — ממומש אך מנוטרל (14.8.26).**
+  `background.html`/`shell/background.js` קיימים בריפו ועובדים במלואם בסימולציה
+  (זיהוי + `ui.showConfirm` + `plugin.backgroundDone` — נבדק ידנית בדפדפן).
+  **אבל הוסרו מ-`manifest.json`**: משתמש עם 0.9.97 דיווח שהפריט בתפריט ההקשר
+  נמצא אך לחיצה עליו לא עשתה כלום — בעוד שאותה לחיצה **כן** עובדת כשמנוע הרקע
+  טוען את `index.html` הרגיל (נבדק גם כן בסימולציה, על שני מצבי `runMode`).
+  המסקנה הזהירה: אין דרך לאמת מקומית שהאפליקציה המותקנת בפועל מכירה את השדה
+  `contributes.background.entrypoint` (אותה בעיה בדיוק כמו `app.startup_contributions`
+  ו-`reader.toolbar` — קיים בתיעוד, לא מאומת מול בנייה אמיתית). עד שמישהו עם
+  מכשיר 0.9.97 יאשר שההצהרה הזאת עובדת, המנוע חוזר לטעון את `index.html` המלא —
+  פחות יעיל, אבל זו בדיוק ההתנהגות שכבר הוכחה עובדת. **לא למחוק את הקבצים** —
+  להחזיר את `"background": {"entrypoint": "background.html"}` למניפסט ברגע שיש אישור.
 * **4.11 — `contributes.startup.toolbarItems`.** כפתור זיהוי בסרגל הקורא עצמו, לצד הפריט בתפריט ההקשר. דורש הרשאת `reader.toolbar`. עד שני פריטים ראשיים לתוסף.
 * ⏳ **4.13 — שפת ממשק (i18n).** אוצריא תחזיר `app.language`/`textDirection` אמיתיים
   במקום `he-IL` קבוע, עם דפוס מילון מוטמע (`window.TRANSLATIONS.<lang>`, מפתחות
