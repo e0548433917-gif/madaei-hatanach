@@ -45,7 +45,13 @@ function masechetCardHtml(name, page){
   // guideId = כרטסת ילידית מלאה, לא זמנית.
   const badge = (tool && !tool.guideId) ? '<span class="talmud-tool-badge">גרסה ראשונית</span>'
     : (!tool && page) ? '<span class="talmud-tool-badge">דף אישי</span>' : '';
-  return `<div class="card" data-masechet="${esc(name)}">` +
+  // הדגשת מסכתות עם תוכן בפועל מתוך 63 (רוב הכרטיסים עדיין placeholder):
+  // מסגרת צבעונית למי שיש לו כלי-עזר/דף אישי, עמעום למי שאין. כלל קבוע —
+  // כל מדריך/כלי-עזר חדש שנכנס מקבל את אותה מסגרת, עד שרוב המסכתות מכוסות
+  // ואפשר להסיר את ההדגשה (ר' מפרט 4.0, ד.3).
+  const hasContent = (tool && tool.guideId) || page;
+  const stateClass = hasContent ? ' tool-has-content' : ' tool-placeholder';
+  return `<div class="card${stateClass}" data-masechet="${esc(name)}">` +
     `<img class="icon-img" src="${esc(icon)}" alt="" onerror="this.src='icon/icon.png'">` +
     `<span class="label">${esc(name)}${badge}</span></div>`;
 }

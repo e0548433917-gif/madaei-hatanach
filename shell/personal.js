@@ -116,9 +116,10 @@ let reportEnvCache = null;
 async function reportEnv(){
   if (reportEnvCache) return reportEnvCache;
   let plug = '—', otz = '—';
+  // EMBEDDED_PLUGIN_VERSION (guides/_shared/version-embedded.js), לא
+  // fetch('manifest.json') - זה נכשל בפועל בתוך ה-WebView של אוצריא, ר' bridge.js.
   try {
-    const res = await withTimeout(fetch('manifest.json', { cache: 'no-store' }), REPORT_STEP_TIMEOUT_MS, 'manifest');
-    if (res && res.ok){ const m = JSON.parse(await withTimeout(res.text(), REPORT_STEP_TIMEOUT_MS, 'manifest-text')); if (m && m.version) plug = String(m.version); }
+    if (typeof EMBEDDED_PLUGIN_VERSION !== 'undefined' && EMBEDDED_PLUGIN_VERSION) plug = String(EMBEDDED_PLUGIN_VERSION);
   } catch(e){}
   if (hasOtzaria()){
     try {

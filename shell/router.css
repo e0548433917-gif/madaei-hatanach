@@ -792,6 +792,16 @@ html, body {
   color: var(--color-on-surface-faint);
 }
 
+/* הדגשת מסכתות עם תוכן בפועל מול שאר ה-placeholder (ר' masechetCardHtml).
+   מסגרת צבעונית + רקע עדין למי שיש לו כלי-עזר/דף אישי; עמעום (כמו .card-soon
+   הקיים בעמוד הבית) למי שאין - כדי שהעין תיפול על מה שכבר בנוי בתוך 63 הכרטיסים. */
+.card.tool-has-content {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+.card.tool-placeholder { opacity: .55; }
+.card.tool-placeholder:hover { opacity: .8; }
+
 /* רשימת המסכתות: מקובצת לפי סדר (כמו .entry-section-head), .cards רגילה אבל
    ברוחב מלא ובעמודות צפופות יותר - 63 כרטיסים ולא 6. */
 .masechet-seder-head { margin: 22px 0 10px; }

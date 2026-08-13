@@ -279,7 +279,7 @@ function openEditForm(item){
     render();
     if (window.Otzaria && Otzaria.call){
       try {
-        await Otzaria.call('feedback.sendEmail', { to: REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - מקומות בתנ״ך', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
+        await Otzaria.call('feedback.sendEmail', { to: REPORT_EMAIL, subject: 'הצעת עריכה - ' + item.name + ' - מקומות', body: 'הצעת עריכה לערך: ' + item.name + '\n\n' + diff, includeSystemInfo: true });
         await Otzaria.call('notifications.showInApp', { message: 'ההצעה נשלחה, תודה!', type: 'success' }).catch(()=>{});
       } catch(e){
         await Otzaria.call('notifications.showInApp', { message: 'שגיאה בשליחת ההצעה', type: 'error' }).catch(()=>{});
@@ -635,7 +635,7 @@ function openNotFoundModal(searchedText){
     const name = document.getElementById('nfName').value.trim();
     const source = document.getElementById('nfSource').value.trim();
     const notes = document.getElementById('nfNotes').value.trim();
-    return `הצעת תוספת למדריך מקומות בתנ״ך\nלשליחה אל: ${REPORT_EMAIL}\n\nההוספה המוצעת: ${name}\nהמקור בספרייה: ${source || '—'}\nהערות נוספות: ${notes || '—'}\n`;
+    return `הצעת תוספת למדריך מקומות\nלשליחה אל: ${REPORT_EMAIL}\n\nההוספה המוצעת: ${name}\nהמקור בספרייה: ${source || '—'}\nהערות נוספות: ${notes || '—'}\n`;
   }
 
   document.getElementById('nfSave').addEventListener('click', ()=>{
@@ -657,7 +657,7 @@ function openNotFoundModal(searchedText){
     try {
       await Otzaria.call('feedback.sendEmail', {
         to: REPORT_EMAIL,
-        subject: 'הצעת תוספת - מדריך מקומות בתנ״ך',
+        subject: 'הצעת תוספת - מדריך מקומות',
         body: buildReport(),
         includeSystemInfo: true
       });
@@ -705,7 +705,7 @@ async function goToPluginOnConfirm(title, content, fallbackMessage){
       const nav = await Otzaria.call(openSelfMethod, {}).catch(() => ({ success: false }));
       if (!nav || !nav.success){
         await Otzaria.call('notifications.showInApp', {
-          message: 'מעבר אוטומטי ללשונית נתמך רק מגרסת אוצריא 0.9.96 ואילך. אפשר לעבור ידנית ללשונית "כלים" > "מקומות בתנ״ך" — הכרטיס כבר פתוח שם.',
+          message: 'מעבר אוטומטי ללשונית נתמך רק מגרסת אוצריא 0.9.96 ואילך. אפשר לעבור ידנית ללשונית "כלים" > "מקומות" — הכרטיס כבר פתוח שם.',
           type: 'info'
         }).catch(()=>{});
       }
@@ -738,8 +738,8 @@ async function handleContextMenuClick(data){
       }).join('\n');
       await goToPluginOnConfirm(
         '📍 נמצאו ' + matches.length + ' מקומות',
-        'נמצאו במדריך כמה מקומות בקטע שסימנתם:\n\n' + lines + '\n\nהרשימה המלאה כבר פתוחה ברקע. לחיצה על אישור תעביר אותך ללשונית "מקומות בתנ״ך".',
-        '📍 נמצאו ' + matches.length + ' מקומות — פתוח בלשונית "מקומות בתנ״ך".'
+        'נמצאו במדריך כמה מקומות בקטע שסימנתם:\n\n' + lines + '\n\nהרשימה המלאה כבר פתוחה ברקע. לחיצה על אישור תעביר אותך ללשונית "מקומות".',
+        '📍 נמצאו ' + matches.length + ' מקומות — פתוח בלשונית "מקומות".'
       );
     }
     return;
@@ -755,7 +755,7 @@ async function handleContextMenuClick(data){
       const content = explanation
         + (firstVerse ? '\n\nלפי: ' + firstVerse : '')
         + (hasModernInfo(modern) ? '\n\n📍 המקום כיום: ' + modern : '')
-        + '\n\nלחיצה על אישור תעביר אותך ללשונית "מקומות בתנ״ך" לכרטיס המלא (עם פסוקים ומקורות).';
+        + '\n\nלחיצה על אישור תעביר אותך ללשונית "מקומות" לכרטיס המלא (עם פסוקים ומקורות).';
       await goToPluginOnConfirm('📍 ' + item.name, content, '📍 זוהה: ' + item.name);
     }
   } else if (matches.length === 1 && matches[0].kind === 'extra'){
@@ -765,7 +765,7 @@ async function handleContextMenuClick(data){
       const displayName = stripNiqqudDisplay(t.text).replace(/^\(.+?\)\s*/,'').slice(0,40);
       const content = 'עיר ברשימת נחלת ' + t.tribe + ' (יהושע), ללא כרטיס מלא — לרוב אין לה זיהוי מודרני ודאי.'
         + '\n\nלפי: ' + t.ref
-        + '\n\nהפרטים כבר פתוחים ברקע. לחיצה על אישור תעביר אותך ללשונית "מקומות בתנ״ך".';
+        + '\n\nהפרטים כבר פתוחים ברקע. לחיצה על אישור תעביר אותך ללשונית "מקומות".';
       await goToPluginOnConfirm('📍 ' + displayName, content, '📍 זוהה: ' + displayName + ' (נחלת ' + t.tribe + ')');
     }
   } else {
@@ -773,8 +773,8 @@ async function handleContextMenuClick(data){
     if (hasOtzaria()){
       await goToPluginOnConfirm(
         '❓ לא נמצא: ' + text,
-        'לא נמצא מקום במדריך עבור "' + text + '".\n\nטופס להצעת תוספת כבר פתוח ברקע. לחיצה על אישור תעביר אותך ללשונית "מקומות בתנ״ך".',
-        '❓ לא זוהה מקום עבור "' + text + '" — טופס הצעת תוספת פתוח בלשונית "מקומות בתנ״ך".'
+        'לא נמצא מקום במדריך עבור "' + text + '".\n\nטופס להצעת תוספת כבר פתוח ברקע. לחיצה על אישור תעביר אותך ללשונית "מקומות".',
+        '❓ לא זוהה מקום עבור "' + text + '" — טופס הצעת תוספת פתוח בלשונית "מקומות".'
       );
     }
   }
@@ -787,7 +787,7 @@ document.getElementById('lightbulb-btn').addEventListener('click', async () => {
   try {
     await Otzaria.call('feedback.sendEmail', {
       to: REPORT_EMAIL,
-      subject: 'משוב על תוסף מדריך מקומות בתנ״ך',
+      subject: 'משוב על תוסף מדריך מקומות',
       body: msg.trim(),
       includeSystemInfo: true
     });
