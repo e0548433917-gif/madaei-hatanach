@@ -1320,8 +1320,21 @@ function whatsNewStatusHTML(local, remote){
 // פרסינג קל ל-CHANGELOG.md: מפצל לפי כותרות "## " (גרסה+תאריך), וממיר כל
 // גוף בלוק ל-HTML מינימלי (שורת בולט "* " -> <li>, **מודגש** -> <strong>).
 // לא פרסר Markdown מלא - רק מה שהפורמט הקבוע של הקובץ הזה בפועל משתמש בו.
+// [טקסט](נתיב) בתוך ROADMAP.md/CHANGELOG.md -> קישור לגיטהאב שקיים רק כשיש רשת
+// (data-requires-net, כמו כל קישור חיצוני אחר בקובץ הזה) + טקסט רגיל שקיים רק
+// כשאין רשת (data-offline-only) - אותו דפוס זוגי בדיוק כמו כפתור טופס הדיווח
+// למעלה, כדי שבמצב אופליין יישאר כתוב ולא ייעלם (net-disabled = display:none).
+// נתיב שאינו http נחשב יחסי לשורש הריפו, כי משם ROADMAP.md/CHANGELOG.md נטענים.
+const REPO_BLOB_BASE = 'https://github.com/e0548433917-gif/madaei-hatanach/blob/main/';
+function mdLinkify(html){
+  return html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+    const full = /^https?:\/\//.test(url) ? url : REPO_BLOB_BASE + url;
+    return '<a href="#" data-external-link="' + full + '" data-requires-net>' + text + ' ↗</a>'
+         + '<span data-offline-only>' + text + '</span>';
+  });
+}
 function mdBoldify(s){
-  return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  return mdLinkify(esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>'));
 }
 function mdLiteToHtml(md){
   const lines = String(md || '').split('\n');
