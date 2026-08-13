@@ -366,7 +366,11 @@ async function openGuide(catId, term){
   frameWrap.classList.remove('open');
   resultsOverlay.classList.remove('open');
   guideView.classList.add('open');
-  guideViewTitle.innerHTML = catIconHtml(cat.id, 26) + ' ' + esc(cat.label);
+  // מדריך "אנשים מהתלמוד" נעזר בתוסף "ביוגרפיות" מאת יאיר דניאל לאימות זהות
+  // אמוראים (ר' docs/בלוק-סריקת-אישים-בכורות.md) - קרדיט קצר, כמו ב"ערך היום" (home.js).
+  const credit = (cat.id === 'amoraim')
+    ? ' <span class="mini-note" style="font-weight:400;">— בעזרת תוסף ״ביוגרפיות״ מאת יאיר דניאל</span>' : '';
+  guideViewTitle.innerHTML = catIconHtml(cat.id, 26) + ' ' + esc(cat.label) + credit;
   guideSearchBox.value = '';
   activeGuideChip = 'all';
   activeGuideEra = 'all';
