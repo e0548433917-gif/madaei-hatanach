@@ -7,7 +7,7 @@
   "schemaVersion": 1,
   "sdkVersion": "1.x",
   "stability": "beta",
-  "minAppVersion": "0.9.97",
+  "minAppVersion": "0.9.96",
   "icon": "icon/icon.png",
   "entrypoint": "index.html",
   "permissions": [
@@ -15,7 +15,6 @@
     "reader.open",
     "published_data.write",
     "app.run_on_startup",
-    "app.startup_contributions",
     "notifications.send",
     "ui.feedback",
     "app.open_url",
@@ -65,19 +64,6 @@
           "contexts": [
             "reader-selection"
           ]
-        }
-      ],
-      "toolbarItems": [
-        {
-          "id": "madaei-hatanach-open",
-          "type": "button",
-          "title": "עינים למקרא",
-          "icon": "book_24_regular",
-          "contexts": [
-            "reader-text",
-            "reader-pdf"
-          ],
-          "openPlugin": true
         }
       ],
       "activationEvents": [

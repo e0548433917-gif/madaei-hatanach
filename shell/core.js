@@ -6,10 +6,11 @@
 // כל מדריך נשאר קובץ עצמאי לגמרי (guides/<cat>/...) — הקובץ הזה רק קורא להם.
 
 const MENU_ITEM_ID = 'madaei-hatanach-identify';
-// כפתור בסרגל הקורא (contributes.startup.toolbarItems). מוצהר עם openPlugin:true,
-// כלומר אוצריא פותחת את דף התוסף בעצמה — אין צורך במאזין, ולכן המזהה כאן הוא
-// לתיעוד ולשמירה על אותה מוסכמה. חייב להישאר זהה למניפסט.
-const TOOLBAR_ITEM_ID = 'madaei-hatanach-open';
+// TOOLBAR_ITEM_ID (contributes.startup.toolbarItems, ROADMAP 4.11) הוסר ב-2.19.2:
+// reader.addToolbarItem זמין רק מ-0.9.97 (otzaria_plugin.d.ts), וזה כפה
+// minAppVersion 0.9.97 על המניפסט כולו — מה שחסם כל מי שעל 0.9.96 מלהתקין
+// בכלל, כולל את הפריט בלחיצה ימנית שכן עובד שם. חוזר כשנרגיש בנוח להעלות
+// את הרצפה, או כשהתמיכה ב-0.9.96 בפועל תרד מספיק.
 const DEV_EMAIL = 'E0548433917@outlook.com';
 const HTML_PAGES_INDEX_KEY = 'madaei_hatanach_html_pages_index';
 // מפתח ה"מסירה" (handoff) של זיהוי שממתין להצגה אחרי מעבר ללשונית התוסף. ר' setPendingIdentify.
@@ -201,15 +202,15 @@ function cmpVersion(a, b){
 }
 
 // ---- קריאה ל-API שנוסף אחרי minAppVersion ----------------------------------
-// המניפסט מצהיר minAppVersion 0.9.97 (הועלה מ-0.9.96 ב-2.19.1: toolbarItems
-// עצמו זמין רק מ-0.9.97 לפי otzaria_plugin.d.ts, ואפליקציה אמיתית ב-0.9.97
-// דרשה בהתקנה גם את ההרשאה app.startup_contributions בפועל — בניגוד למה
-// שתועד, ר' otzaria_dev_docs_vs_shipped.md). callIfSupported נשאר בכל זאת:
-// יש עדיין פער בין הסף הזה לבין APIs ישנים/חדשים יותר (plugin.openSelf כבר
-// ב-0.9.96, plugin.backgroundDone רק ב-0.9.97) ואין ודאות שכל אפליקציה
-// אמיתית אוכפת minAppVersion באמינות לפני שהיא מריצה את קוד התוסף — נצפה
-// בפועל שגרסה נמוכה מ-minAppVersion (0.9.95) הגיעה עד לכדי חריגה על הרשאה
-// לא מוכרת במקום סירוב נקי. שתי שכבות הגנה, בכל זאת:
+// המניפסט חוזר ל-minAppVersion 0.9.96 ב-2.19.2 (ר' תיעוד ב-CHANGELOG): גרסה
+// אמיתית של 0.9.97 דרשה בהתקנה גם את app.startup_contributions וגם
+// toolbarItems דרש בפועל 0.9.97+ — אבל העלאת הרצפה ל-0.9.97 חוסמת לגמרי כל
+// מי שעל 0.9.96, כולל הפריט בלחיצה ימנית שכן עובד שם. לכן הרצפה חוזרת
+// ל-0.9.96, toolbarItems ירד (ROADMAP 4.11), וה-API-ים שכן דורשים 0.9.97
+// (למשל plugin.backgroundDone) עוברים דרך callIfSupported במקום להיות
+// תנאי סף גורף. אין ודאות שכל אפליקציה אוכפת minAppVersion באמינות לפני
+// הרצת קוד התוסף — נצפה בפועל שגרסה מתחת לרצפה (0.9.95) הגיעה עד לחריגה על
+// הרשאה לא מוכרת במקום סירוב נקי. שתי שכבות הגנה, בכל זאת:
 //
 //   1. **סטטית** — הוולידטור של אוצריא (`otzaria pack-plugin`) סורק את הקבצים
 //      וחוסם אריזה אם מחרוזת של API חדש מופיעה כשה-minAppVersion נמוך ממנו.
