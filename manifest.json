@@ -7,7 +7,7 @@
   "schemaVersion": 1,
   "sdkVersion": "1.x",
   "stability": "beta",
-  "minAppVersion": "0.9.96",
+  "minAppVersion": "0.9.97",
   "icon": "icon/icon.png",
   "entrypoint": "index.html",
   "permissions": [
@@ -15,6 +15,7 @@
     "reader.open",
     "published_data.write",
     "app.run_on_startup",
+    "app.startup_contributions",
     "notifications.send",
     "ui.feedback",
     "app.open_url",
@@ -62,7 +63,7 @@
           "title": "זיהוי בעינים למקרא",
           "icon": "search_24_regular",
           "contexts": [
-            "reader-text"
+            "reader-selection"
           ]
         }
       ],

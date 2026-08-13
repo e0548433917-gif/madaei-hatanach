@@ -18,7 +18,7 @@ const BOOKMARKS_KEY = 'madaei_hatanach_bookmarks_v1';
 
 const CATEGORIES = [
   { id: 'people', label: 'אישים בתנ״ך', icon: '👤', loaderPath: 'guides/people/data/_loader.html' },
-  { id: 'places', label: 'מקומות בתנ״ך', icon: '📍', loaderPath: 'guides/places/data/_loader.html' },
+  { id: 'places', label: 'מקומות', icon: '📍', loaderPath: 'guides/places/data/_loader.html' },
   { id: 'animal', label: 'בע״ח', icon: '🐾', loaderPath: 'guides/animal/data/_loader.html' },
   { id: 'flora', label: 'צומח', icon: '🌿', loaderPath: 'guides/flora/data/_loader.html' },
   { id: 'domem', label: 'דומם', icon: '💎', loaderPath: 'guides/domem/data/_loader.html' },
@@ -201,15 +201,21 @@ function cmpVersion(a, b){
 }
 
 // ---- קריאה ל-API שנוסף אחרי minAppVersion ----------------------------------
-// המניפסט מצהיר minAppVersion 0.9.96 בכוונה: התוסף חייב לעבוד גם שם. אבל חלק
-// מה-APIs נוספו רק ב-0.9.97, ואנחנו רוצים אותם כשהם קיימים — כלומר תמיכה בשתי
-// הגרסאות במקביל, לא נטישה של אחת מהן. שתי שכבות הגנה:
+// המניפסט מצהיר minAppVersion 0.9.97 (הועלה מ-0.9.96 ב-2.19.1: toolbarItems
+// עצמו זמין רק מ-0.9.97 לפי otzaria_plugin.d.ts, ואפליקציה אמיתית ב-0.9.97
+// דרשה בהתקנה גם את ההרשאה app.startup_contributions בפועל — בניגוד למה
+// שתועד, ר' otzaria_dev_docs_vs_shipped.md). callIfSupported נשאר בכל זאת:
+// יש עדיין פער בין הסף הזה לבין APIs ישנים/חדשים יותר (plugin.openSelf כבר
+// ב-0.9.96, plugin.backgroundDone רק ב-0.9.97) ואין ודאות שכל אפליקציה
+// אמיתית אוכפת minAppVersion באמינות לפני שהיא מריצה את קוד התוסף — נצפה
+// בפועל שגרסה נמוכה מ-minAppVersion (0.9.95) הגיעה עד לכדי חריגה על הרשאה
+// לא מוכרת במקום סירוב נקי. שתי שכבות הגנה, בכל זאת:
 //
 //   1. **סטטית** — הוולידטור של אוצריא (`otzaria pack-plugin`) סורק את הקבצים
 //      וחוסם אריזה אם מחרוזת של API חדש מופיעה כשה-minAppVersion נמוך ממנו.
 //      לכן שם המתודה מורכב בזמן ריצה ואינו קיים כליטרל בקוד.
 //   2. **דינמית** — callIfSupported בודק את הגרסה בפועל לפני הקריאה, כך
-//      שב-0.9.96 היא פשוט לא נשלחת.
+//      שבגרסה שאינה תומכת היא פשוט לא נשלחת.
 //
 // ⚠️ אל תחליפו את הפיצול למערך במחרוזת אחת "נקייה" — זה בדיוק מה שמפיל את
 // האריזה. ר' למפתחים.md.
