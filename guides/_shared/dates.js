@@ -128,6 +128,16 @@ function todayHebrew(){
   return { dayLetters: numToHeb(raw.day), monthName: hebMonthNameOf(raw.month, isLeap), raw: raw };
 }
 
+// שנות מאורעות התנ״ך/תלמוד ברשימה הן חוזרות (יום+חודש בלבד, לא שנה מסוימת),
+// ולכן "שנים מאז החורבן" מחושב תמיד מול השנה העברית הנוכחית - אותו מספר
+// לכל השורות (משתנה רק בראש השנה). מחושב פעם אחת מ-ט' באב ע' לספירה,
+// אותו תאריך יסוד כמו הטיימר בפאנל (shell/home.js:updateTempleTimer).
+let _churbanHebYear = null;
+function yearsSinceChurban(){
+  if (_churbanHebYear == null) _churbanHebYear = gregToHebDate(70, 8, 4).year;
+  return todayHebrew().raw.year - _churbanHebYear;
+}
+
 // אדר בשנה מעוברת הוא "אדר א׳"/"אדר ב׳" - באירועי התנ״ך תמיד "אדר" סתם, ולכן
 // מתאימים לשניהם. gematriaValue (co-mentions.js) הופך אותיות ליום מספרי.
 function monthMatchesEventMonth(monthName, eventMonth){

@@ -337,8 +337,11 @@ function dateEventRow(ev, monthLabel){
   // לא נעשה שימוש ב-edited-badge/✏️ הכללי (guides.js) כאן - הוא היה מתנגש חזותית
   // עם כפתור העריכה הייעודי (גם הוא ✏️) שכל שורה כבר מציגה.
   const badge = ev.__edited ? ' <span class="mini-hint">(נערך)</span>' : (ev.__custom ? ' <span class="missing-chip">מותאם אישית</span>' : '');
+  // מחושב מול השנה העברית הנוכחית - ר' yearsSinceChurban (dates.js). אותו
+  // מספר בכל השורות (יום+חודש חוזרים, לא שנה מסוימת), משתנה רק בראש השנה.
+  const churban = ` <span class="mini-hint">(${yearsSinceChurban()} שנה לחורבן)</span>`;
   return `<div class="src-item${parsed ? ' clickable' : ''}"${openAttr}>
-    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}${badge}
+    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}${badge}${churban}
       <button type="button" class="date-ev-edit-btn"${editAttr} title="עריכת מאורע">✏️</button>
     </div>
     ${ev.source ? `<div class="src-note">${esc(ev.source)}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>` : ''}
@@ -446,12 +449,12 @@ function renderDailyEventBody(){
   const today = eventsForToday();
   let html = `<p class="panel-hint">היום ${esc(t.dayLetters)}' ${esc(t.monthName)}</p>`;
   if (today.length){
-    html += '<div class="field-label">מאורעות התנ״ך היום</div>' + today.map(ev => dateEventRow(ev, t.monthName)).join('');
+    html += '<div class="field-label">מאורעות התנ״ך והתלמוד היום</div>' + today.map(ev => dateEventRow(ev, t.monthName)).join('');
   } else {
-    html += '<p class="mini-note">אין מאורע תנ״ך רשום לתאריך זה ברשימה (חלקית - ר׳ הרשימה המלאה למטה).</p>';
+    html += '<p class="mini-note">אין מאורע רשום לתאריך זה ברשימה (חלקית - ר׳ הרשימה המלאה למטה).</p>';
   }
   html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;">
-    <div class="field-label" style="margin:0;">כל מאורעות התנ״ך לפי חודש</div>
+    <div class="field-label" style="margin:0;">כל מאורעות התנ״ך והתלמוד לפי חודש</div>
     <button type="button" class="nf-btn secondary" id="dateEventAddBtn" style="padding:4px 10px;font-size:13px;">＋ הוספת מאורע</button>
   </div>`;
   const all = allDateEvents();

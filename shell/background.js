@@ -155,7 +155,9 @@ async function publishTodayEvents(){
         startsAt: startsAt,
         source: 'עינים למקרא',
         importance: 'low',
-        description: t.dayLetters + '׳ ' + t.monthName + (ev.source ? ' · ' + ev.source : '')
+        description: t.dayLetters + '׳ ' + t.monthName
+          + (typeof yearsSinceChurban === 'function' ? ' · ' + yearsSinceChurban() + ' שנה לחורבן' : '')
+          + (ev.source ? ' · ' + ev.source : '')
       }
     }).catch(() => null);
     if (res && res.success) keys.push(key);
