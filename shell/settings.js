@@ -158,14 +158,14 @@ function setPref(key, val){
 }
 
 // ---- הנקדן המקומי (2.17.2) ----
-// "הנקדן" הוא תוסף אוצריא נפרד (לא קובץ הפעלה עצמאי), מאת יוסף שלום בן שטרית -
-// מותקן מחנות התוספים של אוצריא, לא מורד מאתר חיצוני. שני הקישורים הועתקו
-// מ-index.html של "שומר השם" (תוסף אחר שכבר משתמש באותו מנוע, אותו פרוטוקול
-// מקומי) - שם זה בדיוק הצירוף שמוצג למשתמש. otzaria.org לא צריך להתווסף
-// ל-network.allowlist: app.openUrl מוסר לדפדפן המערכת ואינו fetch מתוך ה-webview
-// (שומר השם עצמו מקשר לכתובות האלה בלי otzaria.org ברשימת ה-allowlist שלו).
+// "הנקדן" הוא תוסף אוצריא נפרד (לא קובץ הפעלה עצמאי), לא מורד מאתר חיצוני.
+// NAKDAN_STORE_URL הועתק מ-index.html של "שומר השם" (חנות התוספים הכללית).
+// NAKDAN_FORUM_URL הוא הקישור הישיר לפוסט שבו הנקדן פורסם בפועל (מהמשתמש,
+// 13.8.26) - עדיף על קישור הנושא הכללי שהיה כאן קודם. otzaria.org לא צריך
+// להתווסף ל-network.allowlist: app.openUrl מוסר לדפדפן המערכת ואינו fetch
+// מתוך ה-webview (כך גם ב-שומר השם עצמו).
 const NAKDAN_STORE_URL = 'https://otzaria.org/plugins';
-const NAKDAN_FORUM_URL = 'https://otzaria.org/forum/topic/1514/בירור-תוסף-ניקוד';
+const NAKDAN_FORUM_URL = 'https://otzaria.org/forum/post/31275';
 
 // מצב החיבור מתעדכן ברקע (NikudEngine.watch ב-bridge.js). הפאנל מרענן בכל פתיחה,
 // ולכן אין צורך במאזין - מספיק לקרוא את המצב האחרון בכל openSettings.
