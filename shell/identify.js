@@ -140,14 +140,18 @@ function buildLookup(data){
       loose.get(lo).push(entry);
     }
   }
+  // עד 2.19 גם רשמנו כאן כל מילה בתוך שם רב-מילים בנפרד ("יהושע" מתוך "רבי
+  // יהושע בן לוי"), כדי שסימון מילה בודדת עדיין ימצא את הערך. זה בדיוק מה
+  // שגרם לזיהוי ודאי-אך-שגוי: סימון "רבי יהושע בן לוי" השלם היה מחזיר גם
+  // "יהושע" (חכם/דמות אחר/ת לגמרי) וגם "לוי" בנפרד, כי שתי המילים נרשמו
+  // כמפתחות עצמאיים. entry-detail.js (placesNameIndex) כבר נמנע מזה במכוון
+  // ומדד שיפור נטו (99 קישורים מול 89 — עשרה פחות, וכולם היו שגויים). התיקון
+  // האמיתי הוא לא ברישום אלא בסריקה: identify() למטה סורק צירופים ארוכים
+  // ככל האפשר (greedy) ומדלג מעל הצירוף שנמצא, כך ש"רבי יהושע בן לוי" נתפס
+  // כמכלול אחד ואינו "נבלע" חלקית ע"י מילה בודדת מתוכו.
   function registerPhrase(phrase, entry){
     if (!phrase) return;
     registerKey(phrase, entry);
-    const words = String(phrase).trim().split(/\s+/).filter(Boolean);
-    if (words.length > 1) words.forEach(w => {
-      const norm = normalizeHeb(w);
-      if (norm.length >= 3 && !GENERIC_DESCRIPTORS.has(norm)) registerKey(w, entry);
-    });
   }
   data.forEach(entry => {
     let nameCore = entry.name || '', nameParen = '';
@@ -225,6 +229,54 @@ function invalidateLookup(catId){
 // ייפסלו למרות היותן ב-STOPWORDS. פרמטר-נתונים גרידא - identify.js עצמו לא יודע
 // שהמקור הוא בדיקת-הקשר חיה מול הנקדן (shell/nikud-engine.js); הוא רק צריך לרוץ
 // בלי DOM/רשת גם ב-Node (ר' tools/validate.js), ולכן ה-opts שקוף/אופציונלי לגמרי.
+// שמות אנשים (בעיקר תנאים/אמוראים) הם צירופים באורך משתנה — עד 7 מילים
+// נצפו בפועל ("רבי אלעזר ברבי יהודה איש כפר ברתותא"). MAX_WINDOW נדיב
+// בכוונה; הסריקה עצמה זולה (טקסט נבחר, לא ספר שלם).
+const MAX_WINDOW = 8;
+
+// מכינה מראש את מה שאינו תלוי בקטגוריה (הביטוי, צורותיו המועמדות, בדיקת
+// STOPWORDS) פעם אחת לכל (מיקום, אורך) — לא לכל קטגוריה בנפרד. בלעדי זה
+// candidateForms היה מחושב מחדש פי מספר הקטגוריות (10) על כל חלון, וזה
+// בדיוק מה שהאט זיהוי על טקסט ארוך (דף גמרא שלם: ~900ms; אחרי הייעול: מתחת
+// ל-150ms על אותו טקסט, נמדד).
+function prepWindow(windowToks, allowStopwords){
+  const phrase = windowToks.map(t => t.c).join(' ');
+  const normPhrase = normalizeHeb(phrase);
+  if (windowToks.length === 1 && STOPWORDS.has(normPhrase) && !(allowStopwords && allowStopwords.has(normPhrase))){
+    return null;
+  }
+  return { phrase, forms: candidateForms(phrase) };
+}
+
+// מתאימה חלון-טוקנים מוכן-מראש (ר' prepWindow) מול lookup של קטגוריה אחת.
+// עבור חלון-מילה-יחידה משמרת בדיוק את בדיקת הניקוד הקיימת; עבור צירוף
+// רב-מילים מדלגת עליה (צירוף ספציפי כבר די ודאי מעצמו, ובדיקת ניקוד לצירוף
+// שלם היא הרחבה נפרדת שלא נדרשה כאן).
+function matchWindow(windowToks, prepped, lookup){
+  if (!prepped) return null;
+  const { exact, loose, vocal } = lookup;
+  const { phrase, forms } = prepped;
+  let hitEntries = null, nikudBlocked = false;
+  for (const f of forms){
+    if (!exact.has(f)) continue;
+    // הניקוד סותר את הצורה הזו. עוצרים לגמרי ולא ממשיכים לצורה הבאה: הצורות
+    // הבאות ברשימה חתוכות עוד יותר (עוד תחילית הוסרה) ולכן ספקולטיביות יותר.
+    // המשך לולאה כאן החליף בפועל התאמה נכונה שנפסלה בהתאמה גרועה ממנה
+    // ("וִיהוֹשֻׁעַ" -> נפסל "יהושע" ואז נתפס "הושע").
+    if (windowToks.length === 1 && nikudRejects(windowToks[0], f, vocal)){ nikudBlocked = true; break; }
+    hitEntries = exact.get(f); break;
+  }
+  // גם נפילת-החזרה לכתיב חסר מדולגת אחרי פסילת ניקוד. אחרת הפסילה רק הייתה
+  // מפנה את המקום להתאמה רופפת עוד יותר, שאין עליה שום בדיקת ניקוד.
+  if (!hitEntries && !nikudBlocked){
+    for (const f of forms){
+      const lf = looseForm(f);
+      if (lf.length >= 3 && loose.has(lf)){ hitEntries = loose.get(lf); break; }
+    }
+  }
+  return hitEntries ? { entries: hitEntries, matchedVia: phrase } : null;
+}
+
 async function identify(rawText, opts){
   const allowStopwords = (opts && opts.allowStopwords) || null;
   // הטוקנים נשמרים מנוקדים (tokenizeHebPairs) כדי שאימות הניקוד יוכל להשוות מול
@@ -233,39 +285,46 @@ async function identify(rawText, opts){
   if (!toks.length) return [];
   const results = []; // {catId, catLabel, name, entry, matchedVia}
 
-  for (const cat of CATEGORIES){
-    const { exact, loose, vocal } = await getLookup(cat);
-    const seen = new Set(); // entry (object identity) already added for this category
-    for (const tok of toks){
-      const w = tok.c;
-      const normW = normalizeHeb(w);
-      if (STOPWORDS.has(normW) && !(allowStopwords && allowStopwords.has(normW))) continue;
-      const forms = candidateForms(w);
-      let hitEntries = null, nikudBlocked = false;
-      for (const f of forms){
-        if (!exact.has(f)) continue;
-        // הניקוד סותר את הצורה הזו. עוצרים לגמרי ולא ממשיכים לצורה הבאה: הצורות
-        // הבאות ברשימה חתוכות עוד יותר (עוד תחילית הוסרה) ולכן ספקולטיביות יותר.
-        // המשך לולאה כאן החליף בפועל התאמה נכונה שנפסלה בהתאמה גרועה ממנה
-        // ("וִיהוֹשֻׁעַ" -> נפסל "יהושע" ואז נתפס "הושע").
-        if (nikudRejects(tok, f, vocal)){ nikudBlocked = true; break; }
-        hitEntries = exact.get(f); break;
-      }
-      // גם נפילת-החזרה לכתיב חסר מדולגת אחרי פסילת ניקוד. אחרת הפסילה רק הייתה
-      // מפנה את המקום להתאמה רופפת עוד יותר, שאין עליה שום בדיקת ניקוד.
-      if (!hitEntries && !nikudBlocked){
-        for (const f of forms){
-          const lf = looseForm(f);
-          if (lf.length >= 3 && loose.has(lf)){ hitEntries = loose.get(lf); break; }
+  const catLookups = [];
+  for (const cat of CATEGORIES) catLookups.push({ cat, lookup: await getLookup(cat) });
+  const seenPerCat = new Map(); // catId -> Set(entry) — כפילות של אותו ערך בהמשך אותו טקסט
+
+  // סריקה חמדנית (greedy) אחת **על פני כל הקטגוריות יחד**, מהצירוף הארוך
+  // לקצר, בלי חפיפה. קריטי שזו סריקה אחת משותפת ולא לולאה נפרדת לכל קטגוריה:
+  // "רבי יהושע בן לוי" (4 מילים, במדריך "אנשים מהתלמוד") ו"יהושע" (מילה אחת,
+  // במדריך "אישים בתנ״ך") הם שני ערכים שונים לגמרי בשני מדריכים שונים — אם
+  // כל קטגוריה נסרקת בנפרד, שתיהן "מנצחות" כל אחת בתוך עצמה ומתקבלות שתי
+  // התאמות, בדיוק הבאג שדווח. כשהסריקה משותפת, האורך הארוך ביותר שיש לו
+  // התאמה **בכל קטגוריה שהיא** קובע את i הבא, ומדריכים עם צירוף קצר יותר
+  // באותו מיקום כלל לא נבדקים.
+  let i = 0;
+  while (i < toks.length){
+    let bestLen = 0;
+    const hitsAtBestLen = []; // [{cat, entries, matchedVia}] — רק אם יש כמה קטגוריות שוות-אורך בדיוק
+    for (let len = Math.min(MAX_WINDOW, toks.length - i); len >= 1; len--){
+      const windowToks = toks.slice(i, i + len);
+      const prepped = prepWindow(windowToks, allowStopwords);
+      if (prepped){
+        for (const { cat, lookup } of catLookups){
+          const m = matchWindow(windowToks, prepped, lookup);
+          if (m) hitsAtBestLen.push({ cat, entries: m.entries, matchedVia: m.matchedVia });
         }
       }
-      if (hitEntries){
-        hitEntries.forEach(entry => {
+      if (hitsAtBestLen.length){ bestLen = len; break; } // הראשון (=הארוך ביותר) שיש בו משהו בכלל
+    }
+    if (bestLen){
+      hitsAtBestLen.forEach(({ cat, entries, matchedVia }) => {
+        if (!seenPerCat.has(cat.id)) seenPerCat.set(cat.id, new Set());
+        const seen = seenPerCat.get(cat.id);
+        entries.forEach(entry => {
           if (seen.has(entry)) return;
           seen.add(entry);
-          results.push({ catId: cat.id, catLabel: cat.label, catIcon: cat.icon, name: entry.name, term: entry.name, entry: entry, matchedVia: w });
+          results.push({ catId: cat.id, catLabel: cat.label, catIcon: cat.icon, name: entry.name, term: entry.name, entry: entry, matchedVia });
         });
-      }
+      });
+      i += bestLen;
+    } else {
+      i++;
     }
   }
 
