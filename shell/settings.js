@@ -157,10 +157,52 @@ function setPref(key, val){
   applyPrefs();
 }
 
+// ---- הנקדן המקומי (2.17.2) ----
+// ⚠️ למלא את כתובת ההורדה של הנקדן. כל עוד הערך null, שורת הכפתורים מוסתרת
+// לגמרי וההסבר לבדו מוצג - עדיף כך מאשר קישור שבור. ⚠️ בעת המילוי יש להוסיף
+// את המארח גם ל-network.allowlist ב-manifest.json, אחרת app.openUrl ייחסם.
+const NAKDAN_DOWNLOAD_URL = null;
+
+// מצב החיבור מתעדכן ברקע (NikudEngine.watch ב-bridge.js). הפאנל מרענן בכל פתיחה,
+// ולכן אין צורך במאזין - מספיק לקרוא את המצב האחרון בכל openSettings.
+function syncNikudSettings(){
+  const el = document.getElementById('setNikudStatus');
+  if (!el) return;
+  const connected = !!(window.NikudEngine && NikudEngine.isConnected());
+  el.textContent = connected
+    ? '🟢 מחובר — הזיהוי ההקשרי פעיל'
+    : '⚪ לא מחובר — הזיהוי פועל כרגיל, בלי ההבחנה לפי ניקוד';
+  el.classList.toggle('on', connected);
+  const row = document.getElementById('setNikudLinkRow');
+  if (!row) return;
+  // הקישור מוצג רק כשיש כתובת. כפתור הפתיחה מוסתר גם כשאין רשת (אז נשארת
+  // ההעתקה בלבד, למי שיוריד ממחשב אחר) - אותו דפוס נעילת-רשת של refs.js.
+  row.style.display = NAKDAN_DOWNLOAD_URL ? '' : 'none';
+  const openBtn = document.getElementById('setNikudOpen');
+  if (openBtn) openBtn.style.display = (NAKDAN_DOWNLOAD_URL && typeof isOnline !== 'undefined' && !isOnline) ? 'none' : '';
+}
+
+function wireNikudSettings(){
+  const openBtn = document.getElementById('setNikudOpen');
+  if (openBtn) openBtn.addEventListener('click', () => {
+    if (NAKDAN_DOWNLOAD_URL) confirmOpenExternal(NAKDAN_DOWNLOAD_URL);
+  });
+  const copyBtn = document.getElementById('setNikudCopy');
+  if (copyBtn) copyBtn.addEventListener('click', async () => {
+    if (!NAKDAN_DOWNLOAD_URL) return;
+    try {
+      await navigator.clipboard.writeText(NAKDAN_DOWNLOAD_URL);
+      copyBtn.textContent = '✓ הועתק';
+      setTimeout(() => { copyBtn.textContent = '📋 העתקת הקישור'; }, 1800);
+    } catch(e){ window.prompt('העתיקו את הקישור:', NAKDAN_DOWNLOAD_URL); }
+  });
+}
+
 function openSettings(){
   document.getElementById('settingsScrim').classList.add('open');
   document.getElementById('settingsPanel').classList.add('open');
   syncSettingsUI();
+  syncNikudSettings();
 }
 function closeSettings(){
   document.getElementById('settingsScrim').classList.remove('open');
@@ -168,6 +210,7 @@ function closeSettings(){
 }
 
 function wireSettings(){
+  wireNikudSettings();
   const btn = document.getElementById('settingsBtn');
   if (btn) btn.addEventListener('click', openSettings);
   const x = document.getElementById('settingsCloseBtn');

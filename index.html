@@ -277,6 +277,24 @@
     </label>
   </div>
 
+  <!-- הנקדן המקומי (2.17.2): מנוע ניקוד אופציונלי שרץ על המחשב, אותו פרוטוקול
+       כמו ב"שומר השם". כשהוא פועל, הזיהוי מבחין בין מילים דו-משמעיות לפי ניקוד. -->
+  <div class="set-group">
+    <label class="set-title">🔤 הנקדן המקומי (אופציונלי)</label>
+    <div id="setNikudStatus" class="nikud-status"></div>
+    <p class="set-note" style="margin:7px 0 0;">
+      הנקדן הוא תוכנה חינמית שרצה על המחשב שלכם ומנקדת טקסט עברי. היא אינה נדרשת
+      לשום דבר — אבל כשהיא פועלת, הזיהוי משתמש בניקוד כדי להבחין בין מילים שנכתבות
+      אותו הדבר: ״בָּא <b>אֶל</b> משה״ (מילת יחס) מול ״ה<b>אֵל</b> הגדול״ (שם),
+      ו״בני <b>אָשֵׁר</b>״ (שם) מול ״כי <b>אֲשֶׁר</b> יאמר״ (מילת קישור).
+      הזיהוי עובד היטב גם בלעדיה.
+    </p>
+    <div class="set-row" id="setNikudLinkRow" style="margin-top:8px;display:none;">
+      <button class="panel-btn secondary" type="button" id="setNikudOpen">🌐 להורדת הנקדן</button>
+      <button class="panel-btn secondary" type="button" id="setNikudCopy">📋 העתקת הקישור</button>
+    </div>
+  </div>
+
   <div class="set-group">
     <label class="set-title">תצוגה מקדימה</label>
     <div class="set-preview">
