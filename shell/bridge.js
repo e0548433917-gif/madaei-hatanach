@@ -3,16 +3,21 @@
 // אין להפוך ל-type="module" — כל הקבצים חולקים scope גלובלי אחד.
 
 
-// עוטפת את identify() עם בדיקת-ההקשר החיה מול הנקדן (ר' nikud-engine.js) - פיילוט
-// ממוקד לפתרון מילים דו-משמעיות מ-STOPWORDS. משמשת גם את home.js (חיפוש חופשי).
-// לא סורקת פורטים כאן (NikudEngine.isConnected בלבד) - כדי שלא תוסיף השהיה לנתיב
-// הלחיצה כשאין הנקדן פתוח; הסריקה ברקע דרך NikudEngine.watch() שהופעל למטה.
+// עוטפת את identify() עם בדיקת-ההקשר החיה מול הנקדן (ר' nikud-engine.js). משמשת
+// גם את home.js (חיפוש חופשי). לא סורקת פורטים כאן (NikudEngine.isConnected
+// בלבד) - כדי שלא תוסיף השהיה לנתיב הלחיצה כשאין הנקדן פתוח; הסריקה ברקע דרך
+// NikudEngine.watch() שהופעל למטה.
+//
+// getLiveContext עושה קריאת-רשת אחת ומזינה שתי הרחבות של identify.js:
+// allowStopwords (מילים דו-משמעיות כמו "אשר" שמותר להן לעקוף את STOPWORDS) ו-
+// vocalizedText (הטקסט הנבחר מנוקד, לפסילת התאמות-חיתוך-תחילית שגויות כמו
+// "משה"→"שה" - עוזר גם כשהטקסט המקורי לא היה מנוקד, לא רק על טקסט מנוקד).
 async function identifyWithLiveContext(text){
-  let allowStopwords = null;
+  let ctx = null;
   if (window.NikudEngine && NikudEngine.isConnected()){
-    try { allowStopwords = await NikudEngine.resolveAmbiguousStopwords(text); } catch(e){}
+    try { ctx = await NikudEngine.getLiveContext(text); } catch(e){}
   }
-  return identify(text, { allowStopwords });
+  return identify(text, { allowStopwords: ctx && ctx.allowStopwords, vocalizedText: ctx && ctx.vocalizedText });
 }
 
 // 0.9.96 הוא הסף לשתי יכולות שונות שבמקרה נכנסו יחד: plugin.openSelf (מעבר ללשונית)

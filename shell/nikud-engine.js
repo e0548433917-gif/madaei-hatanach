@@ -15,9 +15,18 @@
 // בודדת) ולבדוק אם תבנית הניקוד שחזר תואמת לצורה הספציפית של השימוש המבוקש -
 // "בא אל משה"→אֶל (יחס), "אל תעשה"→אַל (שלילה) וכו', בעקביות על פני כמה משפטים.
 //
+//
+// 2.19.7 — הרחבה שנייה: identify.js גם פוסל התאמות-חיתוך-תחילית שגויות ("מֹשֶׁה"
+// לא מחזיר "שֵׂה") על סמך ניקוד שכבר קיים בטקסט הנבחר (opts.vocalizedText -
+// ר' identify.js:applyLiveVocalization) - אבל זה עוזר רק כשהמשתמש בחר טקסט
+// שכבר מנוקד. **ברוב המקרים הטקסט המועתק אינו מנוקד כלל**, ואז אין מה להשוות
+// אליו. getLiveContext (למטה) סוגר את הפער: כשהנקדן מחובר, מנקד את המשפט
+// הנבחר *עצמו* ומעביר את התוצאה כ-opts.vocalizedText - כך שאותה בדיקת-פסילה
+// מופעלת גם על טקסט לא-מנוקד, לא רק על מילות STOPWORDS דו-משמעיות.
+//
 // שימוש לבדיקה ידנית (מתוך devtools בתוסף, כשאוצריא+הנקדן פתוחים):
 //   await NikudEngine.findActivePort()
-//   await NikudEngine.resolveAmbiguousStopwords('ובני זלפה שפחת לאה גד ואשר')
+//   await NikudEngine.getLiveContext('ובני זלפה שפחת לאה גד ואשר')
 
 window.NikudEngine = window.NikudEngine || {};
 
@@ -86,29 +95,31 @@ window.NikudEngine = window.NikudEngine || {};
     'אשר': /^אָשֵׁר$/
   };
 
-  // בודקת מול הנקדן החי, למשפט שלם (לא מילה בודדת - ר' הערת "נבדק בפועל" למעלה),
-  // אילו מילים מתוך AMBIGUOUS_WORDS מופיעות ב-text בתבנית הניקוד של השימוש-שם.
-  // מחזירה סט מילים מנורמלות (identify.js:normalizeHeb) שמותר לזרום דרכן על אף
-  // ש-STOPWORDS פוסל אותן כברירת מחדל - להזרמה כ-opts.allowStopwords ל-identify().
-  // כשל בכל שלב (אין חיבור, timeout, יישור טוקנים לא עקבי) = סט ריק בשקט גמור,
+  // בדיקה חיה יחידה מול הנקדן, למשפט שלם (לא מילה בודדת - ר' הערת "נבדק בפועל"
+  // למעלה) - קריאת רשת אחת בלבד, שמזינה את שתי ההרחבות של identify.js:
+  //   allowStopwords - סט מילים מנורמלות (identify.js:normalizeHeb) שמותר להן
+  //     לזרום דרך STOPWORDS על סמך תבנית הניקוד של השימוש-שם (AMBIGUOUS_WORDS).
+  //   vocalizedText - הטקסט הנבחר כפי שהנקדן ניקד אותו, ל-opts.vocalizedText
+  //     (applyLiveVocalization ב-identify.js פוסל עליו התאמות-חיתוך-תחילית
+  //     שגויות, גם כשהטקסט המקורי לא היה מנוקד כלל).
+  // כשל בכל שלב (אין חיבור, timeout) = allowStopwords ריק ו-vocalizedText null,
   // בדיוק כמו היום בלי הנקדן - הפיצ'ר הזה תוספת בלבד, לעולם לא מונע זיהוי קיים.
-  async function resolveAmbiguousStopwords(text) {
-    const result = new Set();
+  async function getLiveContext(text) {
+    const result = { allowStopwords: new Set(), vocalizedText: null };
     try {
       if (!isConnected()) return result; // לא סורקים פורטים בתוך נתיב הלחיצה - ר' watch()
-      const rawWords = consonantTokens(text);
-      const candidates = rawWords.filter(w => Object.prototype.hasOwnProperty.call(AMBIGUOUS_WORDS, w));
-      if (!candidates.length) return result;
       const vocalized = await vocalize(stripNikud(text));
       if (!vocalized) return result;
+      result.vocalizedText = vocalized;
+      const rawWords = consonantTokens(text);
       const vocWords = vocalizedTokens(vocalized);
-      if (vocWords.length !== rawWords.length) return result; // יישור לא עקבי - לא מנחשים
+      if (vocWords.length !== rawWords.length) return result; // יישור לא עקבי - allowStopwords נשאר ריק
       for (let i = 0; i < rawWords.length; i++) {
         const w = rawWords[i];
         const pattern = AMBIGUOUS_WORDS[w];
         if (!pattern) continue;
         if (stripNikud(vocWords[i]) !== w) return result; // אימות יישור לפני שסומכים על ה-index
-        if (pattern.test(vocWords[i])) result.add(w);
+        if (pattern.test(vocWords[i])) result.allowStopwords.add(w);
       }
     } catch (e) { /* שקט - ר' הערה למעלה */ }
     return result;
@@ -117,5 +128,5 @@ window.NikudEngine = window.NikudEngine || {};
   function isConnected() { return activePort !== null; }
   function getPort() { return activePort; }
 
-  window.NikudEngine = { findActivePort, watch, vocalize, resolveAmbiguousStopwords, isConnected, getPort };
+  window.NikudEngine = { findActivePort, watch, vocalize, getLiveContext, isConnected, getPort };
 })();

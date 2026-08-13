@@ -77,6 +77,26 @@ function tokenizeHebPairs(text){
   return toks.map(t => ({ c: t.replace(HEB_POINT_RE, ''), v: vowelForm(t) }));
 }
 
+// המקרה השכיח הוא בדיוק ההפך ממה שהאימות הסטטי (harvestVocalForms) מכסה: המשתמש
+// מסמן טקסט שאינו מנוקד כלל (הועתק ממקור אחר, או שהניקוד פשוט הוסר בדרך), ואז
+// לכל טוקן יש tok.v ריק - ואין עם מה להשוות מול הלקסיקון המנוקד. vocalizedText
+// הוא הטקסט הנבחר *עצמו* אחרי שהנקדן החי ניקד אותו (ר' nikud-engine.js:getLiveContext,
+// bridge.js:identifyWithLiveContext) - ניקוד לצורה הספציפית שבחר המשתמש, לא לכל
+// הופעה אפשרית של המילה. ממלאת tok.v רק לטוקנים חסרי-ניקוד משלהם, ורק אחרי אימות
+// מלא ששני הצדדים מתיישרים עיצור-אחר-עיצור על פני הטקסט *כולו* - לא רק בנקודה
+// הבודדת שנדרשת. יישור חלקי לא נבדק ולא נסמכים עליו; זו אותה זהירות "לא מנחשים"
+// שכבר קיימת ב-resolveAmbiguousStopwords/getLiveContext.
+function applyLiveVocalization(toks, vocalizedText){
+  if (!vocalizedText) return;
+  if (!toks.some(t => !HAS_VOWEL_RE.test(t.v))) return; // הכל כבר מנוקד - אין צורך בהנקדן
+  const vocToks = tokenizeHebPairs(vocalizedText);
+  if (vocToks.length !== toks.length) return;
+  for (let i = 0; i < toks.length; i++){ if (vocToks[i].c !== toks[i].c) return; }
+  for (let i = 0; i < toks.length; i++){
+    if (!HAS_VOWEL_RE.test(toks[i].v)) toks[i] = { c: toks[i].c, v: vocToks[i].v };
+  }
+}
+
 function candidateForms(word){
   const w = normalizeHeb(word);
   if (!w) return [];
@@ -283,6 +303,9 @@ async function identify(rawText, opts){
   // הצורה המנוקדת שנקצרה מהמאגר. tok.c הוא בדיוק מה ש-tokenizeHeb היה מחזיר.
   const toks = tokenizeHebPairs(rawText);
   if (!toks.length) return [];
+  // opts.vocalizedText (אופציונלי): הטקסט הנבחר עצמו, אחרי ניקוד חי מהנקדן - ר'
+  // applyLiveVocalization. מזרים ניקוד רק כשלטקסט המקורי אין ניקוד משלו כלל.
+  if (opts && opts.vocalizedText) applyLiveVocalization(toks, opts.vocalizedText);
   const results = []; // {catId, catLabel, name, entry, matchedVia}
 
   const catLookups = [];
