@@ -486,10 +486,40 @@ if (dailyEventLabel){
   const t = todayHebrew();
   dailyEventLabel.textContent = 'ערך היום — ' + t.dayLetters + "' " + t.monthName;
 }
+// טיימר בית המקדש - מועתק כלשונו מ-guides/beithamikdash/view.html:1024 (רק ה-DOM
+// updates זהים; שם רץ תמיד, כאן רק כשהפאנל פתוח - אין טעם ב-setInterval ברקע).
+const TEMPLE_DESTRUCTION = new Date(Date.UTC(2000, 7, 4, 0, 0, 0));
+TEMPLE_DESTRUCTION.setUTCFullYear(70); // 4 באוגוסט 70 לספירה - ר' הערת setUTCFullYear במקור
+let templeTimerInterval = null;
+function updateTempleTimer(){
+  const now = new Date();
+  let y = now.getUTCFullYear() - TEMPLE_DESTRUCTION.getUTCFullYear();
+  let m = now.getUTCMonth() - TEMPLE_DESTRUCTION.getUTCMonth();
+  let d = now.getUTCDate() - TEMPLE_DESTRUCTION.getUTCDate();
+  let h = now.getUTCHours() - TEMPLE_DESTRUCTION.getUTCHours();
+  let mi = now.getUTCMinutes() - TEMPLE_DESTRUCTION.getUTCMinutes();
+  let s = now.getUTCSeconds() - TEMPLE_DESTRUCTION.getUTCSeconds();
+  if (s < 0){ s += 60; mi--; }
+  if (mi < 0){ mi += 60; h--; }
+  if (h < 0){ h += 24; d--; }
+  if (d < 0){
+    const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+    d += prevMonth.getUTCDate();
+    m--;
+  }
+  if (m < 0){ m += 12; y--; }
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('ttYears', y); set('ttMonths', m); set('ttDays', d);
+  set('ttHours', h); set('ttMinutes', mi); set('ttSeconds', s);
+}
+
 if (dailyEventCard) dailyEventCard.addEventListener('click', () => {
   renderDailyEventBody();
   dailyEventOverlay.classList.add('open');
+  updateTempleTimer();
+  if (!templeTimerInterval) templeTimerInterval = setInterval(updateTempleTimer, 1000);
 });
 document.getElementById('dailyEventClose').addEventListener('click', () => {
   dailyEventOverlay.classList.remove('open');
+  if (templeTimerInterval){ clearInterval(templeTimerInterval); templeTimerInterval = null; }
 });
