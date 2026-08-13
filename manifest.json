@@ -6,7 +6,7 @@
   "author": "חד בדרא",
   "schemaVersion": 1,
   "sdkVersion": "1.x",
-  "stability": "beta",
+  "stability": "stable",
   "minAppVersion": "0.9.96",
   "icon": "icon/icon.png",
   "entrypoint": "index.html",
