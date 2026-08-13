@@ -47,6 +47,36 @@ function tokenizeHeb(text){
   return (text || '').replace(HEB_POINT_RE, '').match(/[א-ת]+/g) || [];
 }
 
+// ---- אימות ניקוד (2.17.2) ----
+// הטקסט המקראי שמסמנים באוצריא מגיע מנוקד, ומחצית משמות הערכים מופיעים מנוקדים
+// בתוך שדה verses של הערך עצמו. שני הצדדים האלה נזרקו עד כה (tokenizeHeb מסיר את
+// הניקוד בשורה הראשונה) - וזו בדיוק האינפורמציה שמבדילה בין "מֹשֶׁה" ל"שֵׂה"
+// (שׁ ימנית מול שׂ שמאלית) ובין "מַחֲנֶה" ל"חַנָּה". ר' ההסבר המלא ב-nikudRejects.
+//
+// להשוואה שומרים תנועות ונקודת שין/שין-שמאלית, ומסירים:
+//   * טעמי המקרא (0591-05AF) - סימני פיסוק/נגינה, משתנים בין הופעה להופעה
+//   * דגש (05BC) - נוסף/נעלם בגלל התחילית עצמה ("בַּמַּחֲנֶה" מול "מַחֲנֶה"),
+//     ולכן הכללתו הייתה פוסלת התאמות לגיטימיות. התנועות לבדן מספיקות להבחנה.
+//   * מתג/רפה (05BD/05BF) - סימני הטעמה, לא חלק מהניקוד
+const VOWEL_KEEP_SRC = '[\\u05B0-\\u05BB\\u05C1\\u05C2\\u05C7]';
+const NON_VOWEL_POINT_RE = new RegExp('(?!' + VOWEL_KEEP_SRC + ')' + HEB_POINT_SRC, 'g');
+const HAS_VOWEL_RE = new RegExp(VOWEL_KEEP_SRC);
+
+// הצורה המנוקדת המנורמלת של טוקן: אותיות + תנועות + נקודת שין בלבד.
+// ⚠️ normalize('NFC') חובה ולא קישוט: אותו רצף מקודד בשני סדרים שונים במקורות
+// שונים - "מֹשֶׁה" במאגר הפסוקים הוא שין→נקודת-שין→סגול, ובטקסט אחר שין→סגול→
+// נקודת-שין. אותם תווים בדיוק, ולכן השוואת מחרוזות נכשלה על צורות זהות לגמרי.
+// NFC ממיין את תווי הצירוף לפי ה-combining class ומיישר את שני המקורות.
+function vowelForm(s){ return String(s || '').replace(NON_VOWEL_POINT_RE, '').normalize('NFC'); }
+
+// פירוק לטוקנים ששומר את הניקוד, ומחזיר לכל טוקן גם את צורת העיצורים שלו.
+// היישור בין השניים מובטח מעצם הבנייה (אותה התאמה, הסרת ניקוד לכל טוקן בנפרד),
+// ולכן הוא לא יכול "להחליק" כמו שקורה בהשוואת שתי טוקניזציות נפרדות.
+function tokenizeHebPairs(text){
+  const toks = (text || '').match(new RegExp('[א-ת]' + HEB_POINT_SRC + '*(?:[א-ת]' + HEB_POINT_SRC + '*)*', 'g')) || [];
+  return toks.map(t => ({ c: t.replace(HEB_POINT_RE, ''), v: vowelForm(t) }));
+}
+
 function candidateForms(word){
   const w = normalizeHeb(word);
   if (!w) return [];
@@ -67,10 +97,36 @@ function candidateForms(word){
   return Array.from(all).filter(c => c.length >= 2);
 }
 
-const lookupCache = {}; // catId -> { exact: Map<string,[entry,...]>, loose: Map<string,[entry,...]> }
+const lookupCache = {}; // catId -> { exact, loose, vocal }
+
+// קוצר את הצורות המנוקדות של מילות השם מתוך הפסוקים של הערך עצמו. אין כאן רשת
+// ואין נקדן - הפסוקים כבר מנוקדים במאגר. נמדד על חמשת המדריכים: 994 מתוך 2,043
+// השמות חד-המילתיים (48.7%) נמצאים כך. אוספים *את כל* הווריאנטים ולא רק את
+// הראשון, כי אותו שם מופיע גם בצורת הֶקְשֵׁר וגם בצורת הֶפְסֵק ("חַנָּה"/"חַנָּ֑ה"
+// אחרי הסרת הטעמים זהות, אבל תנועות אחרונות כן משתנות בהפסק) - וריאנט חסר היה
+// גורם לפסילת שווא של התאמה לגיטימית.
+function harvestVocalForms(entry, vocal){
+  const verses = entry.verses || [];
+  if (!verses.length) return;
+  const wanted = new Set();
+  const collect = (phrase) => String(phrase || '').trim().split(/\s+/).forEach(w => {
+    const n = normalizeHeb(w);
+    if (n.length >= 2) wanted.add(n);
+  });
+  collect((entry.name || '').replace(/\s*\(([^)]*)\)\s*$/, ' $1'));
+  (entry.aliases || []).forEach(collect);
+  if (!wanted.size) return;
+  for (const v of verses){
+    for (const tok of tokenizeHebPairs(v.text || '')){
+      if (!wanted.has(tok.c) || !HAS_VOWEL_RE.test(tok.v)) continue;
+      if (!vocal.has(tok.c)) vocal.set(tok.c, new Set());
+      vocal.get(tok.c).add(tok.v);
+    }
+  }
+}
 
 function buildLookup(data){
-  const exact = new Map(), loose = new Map();
+  const exact = new Map(), loose = new Map(), vocal = new Map();
   function registerKey(phrase, entry){
     const norm = normalizeHeb(phrase);
     if (!norm || norm.length < 2) return;
@@ -100,8 +156,52 @@ function buildLookup(data){
     registerPhrase(nameCore, entry);
     if (nameParen) registerPhrase(nameParen, entry);
     (entry.aliases || []).forEach(a => registerPhrase(a, entry));
+    harvestVocalForms(entry, vocal);
   });
-  return { exact, loose };
+  return { exact, loose, vocal };
+}
+
+// האם הניקוד *סותר* את ההתאמה, ולכן יש לפסול אותה.
+//
+// חל **רק על התאמה שהושגה בחיתוך תחילית** ("מֹשֶׁה" -> "שה", "בַּמַּחֲנֶה" -> "חנה"),
+// שהיא מקור זיהויי-השווא העיקרי: המילה המלאה נמצאת במדריך אחד, ובמדריך אחר שאין
+// בו את המילה המלאה מנצחת דווקא הגרסה החתוכה. התאמה מדויקת אינה נבדקת כלל, ולכן
+// אין כאן שום סיכון רגרסיה לזיהויים שעובדים היום.
+//
+// שמרנית בכוונה - מחזירה false (כלומר "לא לפסול") בכל מצב של ספק:
+// כשאין צורה מנוקדת ידועה לערך (מחצית מהמקרים), כשהטקסט הנבחר אינו מנוקד,
+// או כשההתאמה לא נוצרה מחיתוך תחילית פשוט. פוסלת אך ורק כשיש עדות ניקוד חיובית
+// לשני הצדדים והן *נסתרות* זו את זו.
+// N האותיות האחרונות של מחרוזת מנוקדת, יחד עם סימני הניקוד שעליהן.
+function tailByLetters(v, n){
+  let count = 0, i = v.length;
+  while (i > 0 && count < n){ i--; if (/[א-ת]/.test(v[i])) count++; }
+  return count === n ? v.slice(i) : null;
+}
+
+// מסירה את *תנועת* האות הראשונה בלבד, ומשאירה את נקודת השין/שין-שמאלית.
+// חובה: כשנוספת תחילית, תנועת האות הראשונה של הגזע משתנה - "יְהוֹשֻׁעַ" הופך
+// ל"וִיהוֹשֻׁעַ" (השווא עובר לוו כחיריק), "כְּמֹשֶׁה", "לְמֹשֶׁה" וכן הלאה. השוואה
+// שכוללת את התנועה הזו פסלה שמות לגיטימיים לגמרי. נקודת השין דווקא כן נשמרת,
+// כי היא בדיוק מה שמבדיל בין "מֹשֶׁה" (שׁ ימנית) ל"שֵׂה" (שׂ שמאלית).
+function dropLeadVowel(s){
+  const m = String(s || '').match(/^([א-ת])([ְ-ׇֻׁׂ]*)/);
+  if (!m) return String(s || '');
+  return m[1] + m[2].replace(/[ְ-ׇֻ]/g, '') + s.slice(m[0].length);
+}
+
+function nikudRejects(tok, matchedForm, vocal){
+  const nw = normalizeHeb(tok.c);
+  if (nw === matchedForm) return false;              // התאמה מדויקת - לא נוגעים
+  if (!nw.endsWith(matchedForm)) return false;       // לא חיתוך תחילית (סיומת/כתיב חסר)
+  const known = vocal.get(matchedForm);
+  if (!known || !known.size) return false;           // אין נתוני ניקוד לערך
+  if (!HAS_VOWEL_RE.test(tok.v)) return false;       // הטקסט הנבחר אינו מנוקד
+  const tail = tailByLetters(tok.v, matchedForm.length);
+  if (!tail) return false;
+  const got = dropLeadVowel(tail);
+  for (const kv of known){ if (dropLeadVowel(kv) === got) return false; }
+  return true;                                        // יש עדות משני הצדדים, והיא סותרת
 }
 
 async function getLookup(cat){
@@ -127,20 +227,33 @@ function invalidateLookup(catId){
 // בלי DOM/רשת גם ב-Node (ר' tools/validate.js), ולכן ה-opts שקוף/אופציונלי לגמרי.
 async function identify(rawText, opts){
   const allowStopwords = (opts && opts.allowStopwords) || null;
-  const words = tokenizeHeb(rawText);
-  if (!words.length) return [];
+  // הטוקנים נשמרים מנוקדים (tokenizeHebPairs) כדי שאימות הניקוד יוכל להשוות מול
+  // הצורה המנוקדת שנקצרה מהמאגר. tok.c הוא בדיוק מה ש-tokenizeHeb היה מחזיר.
+  const toks = tokenizeHebPairs(rawText);
+  if (!toks.length) return [];
   const results = []; // {catId, catLabel, name, entry, matchedVia}
 
   for (const cat of CATEGORIES){
-    const { exact, loose } = await getLookup(cat);
+    const { exact, loose, vocal } = await getLookup(cat);
     const seen = new Set(); // entry (object identity) already added for this category
-    for (const w of words){
+    for (const tok of toks){
+      const w = tok.c;
       const normW = normalizeHeb(w);
       if (STOPWORDS.has(normW) && !(allowStopwords && allowStopwords.has(normW))) continue;
       const forms = candidateForms(w);
-      let hitEntries = null;
-      for (const f of forms){ if (exact.has(f)){ hitEntries = exact.get(f); break; } }
-      if (!hitEntries){
+      let hitEntries = null, nikudBlocked = false;
+      for (const f of forms){
+        if (!exact.has(f)) continue;
+        // הניקוד סותר את הצורה הזו. עוצרים לגמרי ולא ממשיכים לצורה הבאה: הצורות
+        // הבאות ברשימה חתוכות עוד יותר (עוד תחילית הוסרה) ולכן ספקולטיביות יותר.
+        // המשך לולאה כאן החליף בפועל התאמה נכונה שנפסלה בהתאמה גרועה ממנה
+        // ("וִיהוֹשֻׁעַ" -> נפסל "יהושע" ואז נתפס "הושע").
+        if (nikudRejects(tok, f, vocal)){ nikudBlocked = true; break; }
+        hitEntries = exact.get(f); break;
+      }
+      // גם נפילת-החזרה לכתיב חסר מדולגת אחרי פסילת ניקוד. אחרת הפסילה רק הייתה
+      // מפנה את המקום להתאמה רופפת עוד יותר, שאין עליה שום בדיקת ניקוד.
+      if (!hitEntries && !nikudBlocked){
         for (const f of forms){
           const lf = looseForm(f);
           if (lf.length >= 3 && loose.has(lf)){ hitEntries = loose.get(lf); break; }
