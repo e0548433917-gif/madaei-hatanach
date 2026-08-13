@@ -95,6 +95,11 @@ if ($bumpFlags.Count -gt 1) { throw "אפשר לבחור רק אחד מ: -Major 
 
 $manifestRaw = Get-Content $manifestPath -Raw -Encoding UTF8
 $manifest = $manifestRaw | ConvertFrom-Json
+# 2.19.4 חסמה התקנה בפועל: אוצריא דוחה description מעל 150 תווים, ולולידציה/פקג'
+# אין בדיקה כזו. נכשל כאן, לפני שמייצרים חבילה שאי-אפשר להתקין.
+if ($manifest.description.Length -gt 150) {
+  throw "תיאור המניפסט ($($manifest.description.Length) תווים) חורג מ-150 - אוצריא דוחה התקנה. קצרו לפני האריזה."
+}
 $parts = $manifest.version -split '\.'
 if ($parts.Count -ne 3) { throw "פורמט גרסה לא תקין במניפסט: $($manifest.version)" }
 $oldVersion = $manifest.version
