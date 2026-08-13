@@ -671,10 +671,39 @@ function openNotFoundModal(searchedText){
     const blob = new Blob([buildReport()], {type:'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'הצעת-תוספת-מקומות-בתנך.txt';
+    a.href = url; a.download = 'הצעת-תוספת-מקומות.txt';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url), 2000);
   });
+}
+
+// הדרכה להוספה ידנית של מפת OpenStreetMap אופליין (מפורטת יותר מה"מצוירת",
+// אבל בלי תלות ברשת) — כפתור "ℹ️" קבוע ליד המפה (addOfflineMapInfoBtn ב-map.js).
+// כברירת מחדל תיקיית tiles/ לא קיימת בכלל בחבילה (ר' .gitignore) - זו הרחבה
+// אופציונלית, "רזה למי שלא רוצה, כבד רק למי שבאמת מכניס ידנית".
+function openOfflineMapHelp(){
+  modalInner.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <h2>🌍 מפת OpenStreetMap אופליין — הוספה ידנית</h2>
+        <div class="cat-line">אופציונלי · לא כלול בחבילה כברירת מחדל</div>
+      </div>
+    </div>
+    <div class="modal-body nf-form">
+      <p class="no-src">מפת "מצוירת" (Natural Earth) מוטמעת תמיד ופועלת בלי אינטרנט.
+      למי שרוצה מפה מפורטת יותר (רחובות ושמות יישובים) בלי תלות ברשת — אפשר להוסיף
+      ידנית את תיקיית האריחים מהתוסף <b>"מקומות בתנ״ך+"</b> (com_chadbedera_placeguideplus,
+      אותו כותב), שכבר כוללת אותם מוטמעים.</p>
+      <p class="no-src"><b>שלבים:</b></p>
+      <ol style="margin:0 0 10px;padding-inline-start:22px;line-height:1.7;font-size:.85em;color:var(--ink-soft)">
+        <li>לפתוח את קובץ ה-<code>.otzplugin</code> של "מקומות+" ככלי ארכיון (הוא בפועל קובץ zip) ולחלץ ממנו את תיקיית <code>tiles/</code> בשלמותה.</li>
+        <li>לאתר את תיקיית ההתקנה של תוסף <b>"עינים למקרא"</b> עצמו במחשב (איפה שאוצריא פורסת תוספים מותקנים).</li>
+        <li>להעתיק את תיקיית <code>tiles/</code> לתוך <code>guides/places/</code> בתוך אותה תיקיית התקנה, כך שהנתיב הסופי יהיה <code>.../guides/places/tiles/…</code>.</li>
+        <li>לסגור ולפתוח מחדש את התוסף. אם ההעתקה הצליחה, כפתור "🌍 OSM אופליין" יופיע ליד המפה מעצמו.</li>
+      </ol>
+      <p class="no-src" style="font-size:.8em">⚠️ לא מצאנו עדיין תיעוד רשמי לנתיב המדויק של תיקיות תוספים מותקנים באוצריא בכל מערכת הפעלה — אם התיקייה לא נמצאת בקלות, אפשר לפנות למפתח (${REPORT_EMAIL}) לעזרה באיתור.</p>
+    </div>`;
+  overlay.classList.add('open');
 }
 
 function showLookupStatus(msg, ok){

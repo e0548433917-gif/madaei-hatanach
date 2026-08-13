@@ -18,6 +18,11 @@ js/
 data/
   places.js                       נתוני המקומות: CATS, ICONS, DATA (248 ערכים), EXTRA_TOWNS
   geo-basemap.js                  NE_DATA — שכבות המפה הווקטורית + תוויות בעברית
+tiles/                           🔧 אופציונלי, לא קיים כברירת מחדל (ב-.gitignore). מפת
+                                  OpenStreetMap אופליין, {z}/{x}/{y}.png — מי שמעתיק אותה
+                                  ידנית מהתוסף "מקומות בתנ״ך+" (מבנה זהה) מקבל כפתור
+                                  "🌍 OSM אופליין" נוסף ליד המפה. ר' openOfflineMapHelp
+                                  ב-js/app.js וההערה בראש js/map.js.
 ```
 
 סדר טעינת הסקריפטים ב-index.html מחייב: vendor ← data ← map.js ← app.js (app.js קורא בסופו ל-`render()` ול-`initWorldMap()`).

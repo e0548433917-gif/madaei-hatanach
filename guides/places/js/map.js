@@ -33,55 +33,116 @@ function addBaseLayers(map){
   return group;
 }
 
-// ---- שכבת לוויין אופציונלית (Sentinel-2) — מוצעת רק כשיש בפועל גישה לאינטרנט ----
+// ---- שכבות בסיס אופציונליות, שתיהן "רזות כברירת מחדל" — לא נטענות/מוטמעות
+// עד שבאמת זמינות, וכל אחת נבדקת בנפרד לפני שהכפתור שלה בכלל מופיע:
+//   • לוויין (Sentinel-2) — חי מהרשת בלבד, ~0MB לחבילה. זמין כשיש אינטרנט.
+//   • OpenStreetMap אופליין — לא מוטמע בחבילה כלל (guides/places/tiles/ ב-.gitignore,
+//     ר' README). למי שרוצה מפורט יותר מה"מצוירת" בלי תלות ברשת: להוריד את
+//     tiles/ מהתוסף "מקומות+" (אותו כותב, com_chadbedera_placeguideplus) ולהדביק
+//     ידנית בתוך תיקיית ההתקנה של התוסף הזה, במבנה {z}/{x}/{y}.png זהה.
+//     הדרכה מלאה מוצגת בכפתור "ℹ️" ליד המפה (openOfflineMapHelp).
 const S2_URL = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg';
 const S2_OVERLAY_URL = 'https://tiles.maps.eox.at/wmts/1.0.0/overlay_bright_3857/default/g/{z}/{y}/{x}.png';
 const S2_ATTR = 'Sentinel-2 cloudless 2024 by EOX (Contains modified Copernicus Sentinel data)';
 const SAT_MAX_ZOOM = 17;
-let satAvailable = false, satActive = false, satBase = null, satLabels = null, vectorBase = null, satToggleBtn = null;
 
-function zoomCap(){ return satActive ? SAT_MAX_ZOOM : MAP_MAX_ZOOM; }
+const OSM_LOCAL_URL = 'tiles/{z}/{x}/{y}.png';
+const OSM_ATTR = '© OpenStreetMap contributors';
+const OSM_OFFLINE_MAX_ZOOM = 13; // מוטמע עד z11, מוגדל עד z13 (כמו ב"מקומות+")
+const BLANK_TILE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+// גבולות פירמידת האריחים — חייבים להתאים בדיוק למבנה שנבנה ב"מקומות+" (osm-tiles-build)
+const OSM_WIDE_BOUNDS = [[9,17],[42.5,58]];
+const OSM_FINE_BOUNDS = [[27.4,30.3],[40.5,49.2]];
+// אריח-בדיקה ברמת עולם (z1) — כמעט תמיד קיים בכל עותק סביר של tiles/, גם חלקי
+const OSM_PROBE_URL = 'tiles/1/1/0.png';
 
-function probeSatellite(cb){
+let baseMode = 'vector'; // 'vector' | 'osm' | 'sat'
+let satAvailable = false, osmAvailable = false;
+let vectorBase = null, satBase = null, satLabels = null, osmOffline = null;
+let baseSwitchCtl = null, baseButtons = {};
+const BASE_LABELS = {vector:'🗺️ מצוירת', osm:'🌍 OSM אופליין', sat:'🛰️ לוויין'};
+
+function zoomCap(){ return baseMode === 'sat' ? SAT_MAX_ZOOM : baseMode === 'osm' ? OSM_OFFLINE_MAX_ZOOM : MAP_MAX_ZOOM; }
+
+function probeTile(url, cb){
   let done = false;
   const finish = ok => { if(done) return; done = true; cb(ok); };
   const t = setTimeout(()=>finish(false), 6000);
   const img = new Image();
   img.onload  = ()=>{ clearTimeout(t); finish(true); };
   img.onerror = ()=>{ clearTimeout(t); finish(false); };
-  img.src = S2_URL.replace('{z}','2').replace('{y}','1').replace('{x}','2') + '?t=' + Date.now();
+  img.src = url + (url.startsWith('http') ? ('?t=' + Date.now()) : '');
 }
 
-function setSatellite(on){
-  if(!worldMap || !satAvailable) return;
-  satActive = !!on;
-  if(satActive){
+function osmOfflineLayers(){
+  return [
+    L.tileLayer(OSM_LOCAL_URL, {maxNativeZoom:4,  maxZoom:OSM_OFFLINE_MAX_ZOOM, errorTileUrl:BLANK_TILE, attribution:OSM_ATTR}),
+    L.tileLayer(OSM_LOCAL_URL, {minZoom:5, maxNativeZoom:8,  maxZoom:OSM_OFFLINE_MAX_ZOOM, bounds:OSM_WIDE_BOUNDS, errorTileUrl:BLANK_TILE}),
+    L.tileLayer(OSM_LOCAL_URL, {minZoom:9, maxNativeZoom:11, maxZoom:OSM_OFFLINE_MAX_ZOOM, bounds:OSM_FINE_BOUNDS, errorTileUrl:BLANK_TILE})
+  ];
+}
+
+function setBaseMode(mode){
+  if(!worldMap) return;
+  if(mode === 'sat' && !satAvailable) mode = 'vector';
+  if(mode === 'osm' && !osmAvailable) mode = 'vector';
+  baseMode = mode;
+  [vectorBase, satBase, satLabels, osmOffline].forEach(l=>{ if(l && worldMap.hasLayer(l)) worldMap.removeLayer(l); });
+  if(mode === 'sat'){
     if(!satBase)   satBase   = L.tileLayer(S2_URL, {maxZoom:SAT_MAX_ZOOM, attribution:S2_ATTR});
     if(!satLabels) satLabels = L.tileLayer(S2_OVERLAY_URL, {maxZoom:SAT_MAX_ZOOM, opacity:.95});
-    if(vectorBase) worldMap.removeLayer(vectorBase);
-    satBase.addTo(worldMap);
-    satLabels.addTo(worldMap);
-    worldMap.setMaxZoom(SAT_MAX_ZOOM);
-  } else {
-    if(satBase)   worldMap.removeLayer(satBase);
-    if(satLabels) worldMap.removeLayer(satLabels);
-    if(vectorBase) vectorBase.addTo(worldMap);
-    worldMap.setMaxZoom(MAP_MAX_ZOOM);
+    satBase.addTo(worldMap); satLabels.addTo(worldMap);
+  } else if(mode === 'osm'){
+    if(!osmOffline) osmOffline = L.layerGroup(osmOfflineLayers());
+    osmOffline.addTo(worldMap);
+  } else if(vectorBase){
+    vectorBase.addTo(worldMap);
   }
-  if(satToggleBtn) satToggleBtn.innerHTML = satActive ? '🗺️ מפה מצוירת' : '🛰️ תצלום לוויין';
-  document.getElementById('worldMap').classList.toggle('sat-on', satActive);
+  worldMap.setMaxZoom(zoomCap());
+  if(worldMap.getZoom() > zoomCap()) worldMap.setZoom(zoomCap());
+  const el = document.getElementById('worldMap');
+  el.classList.toggle('sat-on', mode === 'sat');
+  el.classList.toggle('osm-on', mode === 'osm');
+  Object.keys(baseButtons).forEach(k=>baseButtons[k].classList.toggle('active', k === baseMode));
 }
 
-function addSatToggle(){
+function rebuildBaseSwitch(){
+  if(!worldMap) return;
+  if(baseSwitchCtl){ worldMap.removeControl(baseSwitchCtl); baseSwitchCtl = null; }
+  const modes = ['vector'].concat(osmAvailable ? ['osm'] : []).concat(satAvailable ? ['sat'] : []);
+  if(modes.length < 2) return; // אין מה להחליף — אף שכבה אופציונלית לא זמינה
+  baseButtons = {};
   const Ctl = L.Control.extend({
     options:{position:'topright'},
     onAdd(){
-      const btn = L.DomUtil.create('button', 'sat-toggle-btn');
+      const wrap = L.DomUtil.create('div', 'base-switch');
+      L.DomEvent.disableClickPropagation(wrap);
+      modes.forEach(m=>{
+        const btn = L.DomUtil.create('button', 'base-switch-btn' + (m === baseMode ? ' active' : ''), wrap);
+        btn.type = 'button';
+        btn.textContent = BASE_LABELS[m];
+        btn.addEventListener('click', ()=>setBaseMode(m));
+        baseButtons[m] = btn;
+      });
+      return wrap;
+    }
+  });
+  baseSwitchCtl = new Ctl();
+  worldMap.addControl(baseSwitchCtl);
+}
+
+// כפתור "ℹ️" קבוע (לא תלוי בזמינות) — מסביר איך להוסיף OSM אופליין למי שעדיין אין לו,
+// כדי שהאופציה תהיה גלויה גם למי שהתקנה שלו "רזה". ר' openOfflineMapHelp ב-app.js.
+function addOfflineMapInfoBtn(){
+  const Ctl = L.Control.extend({
+    options:{position:'topright'},
+    onAdd(){
+      const btn = L.DomUtil.create('button', 'map-info-btn');
       btn.type = 'button';
-      btn.innerHTML = '🛰️ תצלום לוויין';
+      btn.title = 'איך מוסיפים מפת OpenStreetMap מפורטת (אופליין)?';
+      btn.innerHTML = 'ℹ️';
       L.DomEvent.disableClickPropagation(btn);
-      btn.addEventListener('click', ()=>setSatellite(!satActive));
-      satToggleBtn = btn;
+      btn.addEventListener('click', ()=>{ if(typeof openOfflineMapHelp === 'function') openOfflineMapHelp(); });
       return btn;
     }
   });
@@ -187,7 +248,9 @@ function initWorldMap(){
   worldMap.attributionControl.setPrefix('');
   worldMap.attributionControl.addAttribution('מפה: Natural Earth · Leaflet — פועלת ללא אינטרנט');
   vectorBase = addBaseLayers(worldMap);
-  probeSatellite(ok=>{ if(ok){ satAvailable = true; addSatToggle(); } });
+  addOfflineMapInfoBtn();
+  probeTile(S2_URL.replace('{z}','2').replace('{y}','1').replace('{x}','2'), ok=>{ if(ok){ satAvailable = true; rebuildBaseSwitch(); } });
+  probeTile(OSM_PROBE_URL, ok=>{ if(ok){ osmAvailable = true; rebuildBaseSwitch(); } });
   labelMarkers = addLabels(worldMap, 1);
   markerLayer = (typeof L.markerClusterGroup === 'function')
     ? L.markerClusterGroup({maxClusterRadius:36, iconCreateFunction:clusterIcon, showCoverageOnHover:false, spiderfyOnMaxZoom:true, disableClusteringAtZoom:12})
@@ -235,11 +298,15 @@ function renderMiniMap(item, mi){
   miniMapInst = L.map(el, {minZoom:2, maxZoom:zoomCap(), scrollWheelZoom:false, zoomControl:true});
   miniMapInst.attributionControl.setPrefix('');
   miniMapInst.setView([m.geo[0], m.geo[1]], z);
-  if(satAvailable && satActive){
+  if(baseMode === 'sat' && satAvailable){
     el.classList.add('sat-on');
     miniMapInst.attributionControl.addAttribution(S2_ATTR);
     L.tileLayer(S2_URL, {maxZoom:SAT_MAX_ZOOM}).addTo(miniMapInst);
     L.tileLayer(S2_OVERLAY_URL, {maxZoom:SAT_MAX_ZOOM, opacity:.95}).addTo(miniMapInst);
+  } else if(baseMode === 'osm' && osmAvailable){
+    el.classList.add('osm-on');
+    miniMapInst.attributionControl.addAttribution(OSM_ATTR);
+    L.layerGroup(osmOfflineLayers()).addTo(miniMapInst);
   } else {
     miniMapInst.attributionControl.addAttribution('Natural Earth');
     addBaseLayers(miniMapInst);

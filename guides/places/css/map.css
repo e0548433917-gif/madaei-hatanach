@@ -787,12 +787,22 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .mini-map-btn:hover{border-color:var(--gold);}
   .leaflet-control-attribution{font-size:0.63em !important; direction:rtl;}
 
-  /* מתג לוויין — מופיע רק כשיש אינטרנט */
-  .sat-toggle-btn{border:1.5px solid var(--ink); background:var(--card); color:var(--ink);
-    font-family:var(--font-main); font-size:0.83em; font-weight:600; padding:7px 13px;
-    border-radius:var(--radius-pill); cursor:pointer; box-shadow:0 2px 6px var(--map-chip-shadow); direction:rtl;}
-  .sat-toggle-btn:hover{border-color:var(--gold); filter:brightness(1.05);}
+  /* מתג בסיס (מצוירת/OSM אופליין/לוויין) — כל כפתור מופיע רק כששכבתו זמינה בפועל */
+  .base-switch{display:flex; gap:2px; background:var(--card); border:1.5px solid var(--ink);
+    border-radius:var(--radius-pill); padding:2px; box-shadow:0 2px 6px var(--map-chip-shadow); direction:rtl;}
+  .base-switch-btn{border:none; background:transparent; color:var(--ink);
+    font-family:var(--font-main); font-size:0.8em; font-weight:600; padding:6px 11px;
+    border-radius:var(--radius-pill); cursor:pointer;}
+  .base-switch-btn:hover{filter:brightness(1.05);}
+  .base-switch-btn.active{background:var(--forest-deep); color:var(--color-on-btn);}
+  /* כפתור מידע קבוע — מסביר איך מוסיפים OSM אופליין למי שעדיין אין לו */
+  .map-info-btn{border:1.5px solid var(--ink); background:var(--card); color:var(--ink);
+    font-size:1em; line-height:1; padding:6px 9px; border-radius:50%; cursor:pointer;
+    box-shadow:0 2px 6px var(--map-chip-shadow); margin-top:6px;}
+  .map-info-btn:hover{border-color:var(--gold); filter:brightness(1.05);}
   /* תוויות עבריות על רקע תצלום לוויין */
   .sat-on .ne-label{color:var(--map-label-sat); text-shadow:0 0 3px var(--map-halo-dark), 0 0 7px var(--map-halo-dark-soft);}
   .sat-on .ne-label-water{color:var(--map-label-water-sat);}
   #worldMap.sat-on, .mini-map.sat-on{background:var(--map-sea-sat);}
+  /* OSM אופליין: רקע רגיל, ללא צביעה מיוחדת של התוויות (זו כבר מפה עם טקסט משלה) */
+  #worldMap.osm-on .ne-label, .mini-map.osm-on .ne-label{display:none;}
