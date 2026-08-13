@@ -158,10 +158,14 @@ function setPref(key, val){
 }
 
 // ---- הנקדן המקומי (2.17.2) ----
-// ⚠️ למלא את כתובת ההורדה של הנקדן. כל עוד הערך null, שורת הכפתורים מוסתרת
-// לגמרי וההסבר לבדו מוצג - עדיף כך מאשר קישור שבור. ⚠️ בעת המילוי יש להוסיף
-// את המארח גם ל-network.allowlist ב-manifest.json, אחרת app.openUrl ייחסם.
-const NAKDAN_DOWNLOAD_URL = null;
+// "הנקדן" הוא תוסף אוצריא נפרד (לא קובץ הפעלה עצמאי), מאת יוסף שלום בן שטרית -
+// מותקן מחנות התוספים של אוצריא, לא מורד מאתר חיצוני. שני הקישורים הועתקו
+// מ-index.html של "שומר השם" (תוסף אחר שכבר משתמש באותו מנוע, אותו פרוטוקול
+// מקומי) - שם זה בדיוק הצירוף שמוצג למשתמש. otzaria.org לא צריך להתווסף
+// ל-network.allowlist: app.openUrl מוסר לדפדפן המערכת ואינו fetch מתוך ה-webview
+// (שומר השם עצמו מקשר לכתובות האלה בלי otzaria.org ברשימת ה-allowlist שלו).
+const NAKDAN_STORE_URL = 'https://otzaria.org/plugins';
+const NAKDAN_FORUM_URL = 'https://otzaria.org/forum/topic/1514/בירור-תוסף-ניקוד';
 
 // מצב החיבור מתעדכן ברקע (NikudEngine.watch ב-bridge.js). הפאנל מרענן בכל פתיחה,
 // ולכן אין צורך במאזין - מספיק לקרוא את המצב האחרון בכל openSettings.
@@ -173,28 +177,28 @@ function syncNikudSettings(){
     ? '🟢 מחובר — הזיהוי ההקשרי פעיל'
     : '⚪ לא מחובר — הזיהוי פועל כרגיל, בלי ההבחנה לפי ניקוד';
   el.classList.toggle('on', connected);
-  const row = document.getElementById('setNikudLinkRow');
-  if (!row) return;
-  // הקישור מוצג רק כשיש כתובת. כפתור הפתיחה מוסתר גם כשאין רשת (אז נשארת
-  // ההעתקה בלבד, למי שיוריד ממחשב אחר) - אותו דפוס נעילת-רשת של refs.js.
-  row.style.display = NAKDAN_DOWNLOAD_URL ? '' : 'none';
-  const openBtn = document.getElementById('setNikudOpen');
-  if (openBtn) openBtn.style.display = (NAKDAN_DOWNLOAD_URL && typeof isOnline !== 'undefined' && !isOnline) ? 'none' : '';
+  // כפתורי הפתיחה מוסתרים כשאין רשת (אז נשארת ההעתקה בלבד, למי שיתקין ממחשב
+  // אחר) - אותו דפוס נעילת-רשת של refs.js. שורת הכפתורים עצמה תמיד מוצגת -
+  // הקישורים ידועים, לא תלויים בהגדרה שממתינה למילוי.
+  const offline = typeof isOnline !== 'undefined' && !isOnline;
+  ['setNikudOpen', 'setNikudForum'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.style.display = offline ? 'none' : '';
+  });
 }
 
 function wireNikudSettings(){
   const openBtn = document.getElementById('setNikudOpen');
-  if (openBtn) openBtn.addEventListener('click', () => {
-    if (NAKDAN_DOWNLOAD_URL) confirmOpenExternal(NAKDAN_DOWNLOAD_URL);
-  });
+  if (openBtn) openBtn.addEventListener('click', () => confirmOpenExternal(NAKDAN_STORE_URL));
+  const forumBtn = document.getElementById('setNikudForum');
+  if (forumBtn) forumBtn.addEventListener('click', () => confirmOpenExternal(NAKDAN_FORUM_URL));
   const copyBtn = document.getElementById('setNikudCopy');
   if (copyBtn) copyBtn.addEventListener('click', async () => {
-    if (!NAKDAN_DOWNLOAD_URL) return;
     try {
-      await navigator.clipboard.writeText(NAKDAN_DOWNLOAD_URL);
+      await navigator.clipboard.writeText(NAKDAN_STORE_URL);
       copyBtn.textContent = '✓ הועתק';
       setTimeout(() => { copyBtn.textContent = '📋 העתקת הקישור'; }, 1800);
-    } catch(e){ window.prompt('העתיקו את הקישור:', NAKDAN_DOWNLOAD_URL); }
+    } catch(e){ window.prompt('העתיקו את הקישור:', NAKDAN_STORE_URL); }
   });
 }
 

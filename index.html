@@ -51,7 +51,7 @@
   <div class="cards-sep"><span>ערכים</span></div>
   <div class="cards" id="cardsGrid">
     <div class="card" data-cat="people"><img class="icon-img" src="icon/cats/people.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;👤&lt;/span&gt;'"><span class="label">אישים בתנ״ך</span></div>
-    <div class="card" data-cat="places"><img class="icon-img" src="icon/cats/places.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📍&lt;/span&gt;'"><span class="label">מקומות בתנ״ך</span></div>
+    <div class="card" data-cat="places"><img class="icon-img" src="icon/cats/places.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📍&lt;/span&gt;'"><span class="label">מקומות</span></div>
     <div class="card" data-cat="animal"><img class="icon-img" src="icon/cats/animal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🐾&lt;/span&gt;'"><span class="label">בע״ח</span></div>
     <div class="card" data-cat="flora"><img class="icon-img" src="icon/cats/flora.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🌿&lt;/span&gt;'"><span class="label">צומח</span></div>
     <div class="card" data-cat="domem"><img class="icon-img" src="icon/cats/domem.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;💎&lt;/span&gt;'"><span class="label">דומם</span></div>
@@ -283,14 +283,15 @@
     <label class="set-title">🔤 הנקדן המקומי (אופציונלי)</label>
     <div id="setNikudStatus" class="nikud-status"></div>
     <p class="set-note" style="margin:7px 0 0;">
-      הנקדן הוא תוכנה חינמית שרצה על המחשב שלכם ומנקדת טקסט עברי. היא אינה נדרשת
-      לשום דבר — אבל כשהיא פועלת, הזיהוי משתמש בניקוד כדי להבחין בין מילים שנכתבות
-      אותו הדבר: ״בָּא <b>אֶל</b> משה״ (מילת יחס) מול ״ה<b>אֵל</b> הגדול״ (שם),
-      ו״בני <b>אָשֵׁר</b>״ (שם) מול ״כי <b>אֲשֶׁר</b> יאמר״ (מילת קישור).
-      הזיהוי עובד היטב גם בלעדיה.
+      הזיהוי משתמש בניקוד כדי להבחין בין מילים שנכתבות אותו הדבר: ״בָּא <b>אֶל</b>
+      משה״ (מילת יחס) מול ״ה<b>אֵל</b> הגדול״ (שם), ו״בני <b>אָשֵׁר</b>״ (שם) מול
+      ״כי <b>אֲשֶׁר</b> יאמר״ (מילת קישור). זה דורש תוסף אוצריא נפרד — ״הנקדן״,
+      באדיבות יוסף שלום בן שטרית — שרץ ברקע ומנקד טקסט עברי מקומית. הוא אינו
+      נדרש לשום דבר; הזיהוי עובד היטב גם בלעדיו.
     </p>
-    <div class="set-row" id="setNikudLinkRow" style="margin-top:8px;display:none;">
-      <button class="panel-btn secondary" type="button" id="setNikudOpen">🌐 להורדת הנקדן</button>
+    <div class="set-row" id="setNikudLinkRow" style="margin-top:8px;">
+      <button class="panel-btn secondary" type="button" id="setNikudOpen">🧩 חנות התוספים של אוצריא</button>
+      <button class="panel-btn secondary" type="button" id="setNikudForum">💬 דיון בפורום</button>
       <button class="panel-btn secondary" type="button" id="setNikudCopy">📋 העתקת הקישור</button>
     </div>
   </div>
