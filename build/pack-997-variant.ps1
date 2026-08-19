@@ -60,6 +60,22 @@ try {
   $newPerms = @($m.permissions) + @("reader.toolbar", "app.startup_contributions") | Select-Object -Unique
   $m.permissions = $newPerms
 
+  # ---- contributes.startup — כאן, ולא בחבילת הבסיס ----
+  # מ-2.20.3 הסעיף הזה חי רק בווריאנט. הסיבה מדויקת ומאומתת מול קוד אוצריא:
+  #   • PluginExtendedValidator._validateStartupContributions מוסיף **שגיאה
+  #     חוסמת** ("contributes.startup דורש את ההרשאה app.startup_contributions")
+  #     והוולידציה הזו רצה גם ב-PluginInstallerService.prepareInstall — כלומר
+  #     סעיף בלי ההרשאה חוסם **התקנה**, לא רק אריזה.
+  #   • ובכיוון ההפוך: בנייה ישנה של אוצריא שאינה מכירה את ההרשאה דוחה אותה
+  #     כ"הרשאה לא חוקית" (זה מה שקרה ב-2.17.1).
+  # אין מניפסט אחד שעובר בשתי הבניות, ולכן: בסיס בלי הסעיף, וריאנט אִתו.
+  $contextMenuItem = [PSCustomObject]@{
+    id       = "madaei-hatanach-identify"
+    type     = "item"
+    title    = "זיהוי בעינים למקרא"
+    icon     = "search_24_regular"
+    contexts = @("reader-selection")
+  }
   $toolbarItem = [PSCustomObject]@{
     id       = "madaei-hatanach-open"
     type     = "button"
@@ -68,7 +84,13 @@ try {
     contexts = @("reader-text", "reader-pdf")
     openPlugin = $true
   }
-  $m.contributes.startup | Add-Member -NotePropertyName toolbarItems -NotePropertyValue @($toolbarItem)
+  $startup = [PSCustomObject]@{
+    contextMenuItems = @($contextMenuItem)
+    toolbarItems     = @($toolbarItem)
+    activationEvents = @("app.startup")
+    keepAlive        = $false
+  }
+  $m.contributes | Add-Member -NotePropertyName startup -NotePropertyValue $startup -Force
 
   $json = $m | ConvertTo-Json -Depth 10
   $json = [System.Text.RegularExpressions.Regex]::Unescape($json)
@@ -80,7 +102,7 @@ try {
   [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpDir, $variantZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
 
   Write-Host "נוצר: $variantZip" -ForegroundColor Green
-  Write-Host "  minAppVersion: 0.9.97  |  + reader.toolbar, app.startup_contributions  |  + toolbarItems"
+  Write-Host "  minAppVersion: 0.9.97  |  + reader.toolbar, app.startup_contributions  |  + contributes.startup (contextMenuItems + toolbarItems + activationEvents)"
 }
 finally {
   Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
