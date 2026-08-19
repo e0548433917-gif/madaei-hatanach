@@ -110,60 +110,9 @@ async function bgHandleIdentifyClick(payload){
 }
 
 // ---- 2. "ערך היום" ליומן של אוצריא (ROADMAP 4.12) ---------------------------
-
-// הרשומות שפורסמו אתמול חייבות לרדת, אחרת היומן מצטבר בלי סוף. שומרים את
-// המפתחות שפורסמו, ומנקים אותם בהרצה הבאה לפני שמפרסמים את של היום.
-const PUBLISHED_KEYS_KEY = 'madaei_hatanach_published_event_keys_v1';
-
-async function publishTodayEvents(){
-  if (!(window.Otzaria && Otzaria.call)) return;
-  if (typeof eventsForToday !== 'function' || typeof todayHebrew !== 'function') return;
-
-  // ניקוי הקודמות
-  const prev = await storageGetJson(PUBLISHED_KEYS_KEY);
-  if (Array.isArray(prev)){
-    for (const key of prev){
-      await Otzaria.call('publishedData.remove', {
-        type: 'calendar.event', scope: 'global', key: key
-      }).catch(()=>{});
-    }
-  }
-
-  const t = todayHebrew();
-  const events = eventsForToday();
-  if (!events.length){ await storageSetJson(PUBLISHED_KEYS_KEY, []); return; }
-
-  // היום הלועזי בחצות, מקומי. אלה מאורעות של יום שלם ולא של שעה מסוימת, ולכן
-  // אין endsAt ואין שעה משמעותית.
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const tzMin = -now.getTimezoneOffset();
-  const tz = (tzMin >= 0 ? '+' : '-') + pad(Math.floor(Math.abs(tzMin) / 60)) + ':' + pad(Math.abs(tzMin) % 60);
-  const startsAt = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate())
-    + 'T00:00:00' + tz;
-
-  const keys = [];
-  for (let i = 0; i < events.length; i++){
-    const ev = events[i];
-    const key = 'madaei:dailyEvent:' + i;
-    const res = await Otzaria.call('publishedData.upsert', {
-      type: 'calendar.event',
-      scope: 'global',
-      key: key,
-      payload: {
-        title: ev.event,
-        startsAt: startsAt,
-        source: 'עינים למקרא',
-        importance: 'low',
-        description: t.dayLetters + '׳ ' + t.monthName
-          + (typeof yearsSinceChurban === 'function' ? ' · ' + yearsSinceChurban() + ' שנה לחורבן' : '')
-          + (ev.source ? ' · ' + ev.source : '')
-      }
-    }).catch(() => null);
-    if (res && res.success) keys.push(key);
-  }
-  await storageSetJson(PUBLISHED_KEYS_KEY, keys);
-}
+// הלוגיקה עצמה עברה ל-shell/daily-publish.js (נטען כאן וגם ב-index.html), כדי
+// שהפרסום יעבוד גם כשמנוע הרקע טוען את index.html — כלומר גם כשהמניפסט אינו
+// מצהיר על contributes.background.entrypoint. ר' ההערה בראש הקובץ ההוא.
 
 // ---- חיווט --------------------------------------------------------------
 

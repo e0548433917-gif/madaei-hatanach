@@ -52,13 +52,24 @@ window.NikudEngine = window.NikudEngine || {};
   // ניסיון חוזר ברקע, בתדירות נמוכה - לא רלוונטי לחוות דעת על "רשת" (זה מנוע מקומי
   // אופציונלי, לא חלק מנעילת-הרשת של refs.js), רק כדי שהחיבור יתאושש לבד אם הנקדן
   // נפתח אחרי התוסף או קורס וחוזר.
+  // ⚠️ הלולאה חייבת להיות ניתנת לעצירה: כשלשונית התוסף יוצאת מהחזית אוצריא
+  // שולחת plugin.suspended, ובמערכות שבהן ההקפאה אינה נייטיבית (macOS/Linux)
+  // התוסף אחראי לעצור בעצמו כל עבודה מתמשכת — README §"השהיה ברקע".
+  // בלי unwatch, סריקת 11 פורטים כל 3 שניות המשיכה לרוץ לנצח ברקע.
+  let watchTimer = null;
   function watch() {
     if (watching) return;
     watching = true;
     (async function loop() {
+      if (!watching) return;
       await findActivePort();
-      setTimeout(loop, activePort ? 15000 : 3000);
+      if (!watching) return;
+      watchTimer = setTimeout(loop, activePort ? 15000 : 3000);
     })();
+  }
+  function unwatch() {
+    watching = false;
+    if (watchTimer) { clearTimeout(watchTimer); watchTimer = null; }
   }
 
   async function vocalize(text) {
@@ -128,5 +139,5 @@ window.NikudEngine = window.NikudEngine || {};
   function isConnected() { return activePort !== null; }
   function getPort() { return activePort; }
 
-  window.NikudEngine = { findActivePort, watch, vocalize, getLiveContext, isConnected, getPort };
+  window.NikudEngine = { findActivePort, watch, unwatch, vocalize, getLiveContext, isConnected, getPort };
 })();
