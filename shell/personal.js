@@ -50,6 +50,10 @@ const REPORT_FIELD_KIND    = 'entry.1407711891';   // סוג
 const REPORT_FIELD_TITLE   = 'entry.261441606';    // כותרת
 const REPORT_FIELD_DETAILS = 'entry.1548335987';   // פרטים
 const REPORT_FIELD_ENV     = 'entry.932826683';    // סביבה
+// ⚠️ למלא לפני שימוש: כתובת אמיתית שמישהו/סקריפט קורא ממנה (Gmail עם טריגר
+// Apps Script מתוזמן שסורק הודעות חדשות וכותב לאותו גיליון - תשתית נפרדת,
+// לא קיימת עדיין). בלי זה הכפתור פותח מייל שלא מגיע לשום מקום.
+const REPORT_MAILTO_TARGET = 'ANSWER-HERE@example.com';
 const REPORT_OUTBOX_KEY = 'madaei_report_outbox_v1';
 const REPORT_DEBUG_KEY = 'madaei_report_debug_v1';   // 5 הניסיונות האחרונים, לאבחון
 const REPORT_DEBUG_MAX = 5;
@@ -613,6 +617,7 @@ function buildReportPanel(){
     + '</select>'
     + '<input type="text" id="reportTitle" maxlength="' + REPORT_TITLE_MAX + '" placeholder="כותרת קצרה (רשות — אם ריק, נלקחת מהשורה הראשונה שלמטה)">'
     + '<textarea id="reportDetails" placeholder="מה קרה? איפה? מה ציפיתם שיקרה? ככל שיהיה מפורט יותר — כך קל יותר לתקן.&#10;(אפשר גם להדביק כאן צילום מסך ב-Ctrl+V)"></textarea>'
+    + '<input type="email" id="reportReplyEmail" placeholder="אימייל לתשובה (רשות)">'
     + '<div class="report-upload" id="reportUpload" tabindex="0" role="button">'
     +   '🖼️ צירוף צילום מסך — לחיצה, גרירה לכאן, או הדבקה בשדה למעלה'
     +   '<span class="report-upload-sub" id="reportImagesHint"></span>'
@@ -641,6 +646,11 @@ function buildReportPanel(){
     // כתובת הגיטהאב נשארת כפתור העתקה בלבד, בכל מצב: הצגתה כקישור גלוי חושפת
     // את שם המשתמש בגיטהאב בממשק עצמו.
     +   '<button type="button" class="panel-btn secondary" id="reportCopyIssuesLink">📋 העתקת קישור לגיטהאב</button>'
+    // "📧 שליחה במייל" הוסר מה-UI זמנית: REPORT_MAILTO_TARGET הוא עדיין
+    // placeholder לא-מוגדר (ר' הערה למעלה) - כפתור שלא שולח לשום מקום מבלבל
+    // יותר משהוא עוזר. הקוד ב-#reportMailto listener למטה נשאר מוכן, רק
+    // מוסתר - להחזיר את השורה הזו כשתהיה כתובת אמיתית:
+    // + '<a href="#" class="panel-btn secondary" id="reportMailto">📧 שליחה במייל</a>'
     + '</div>'
     + '<p class="panel-hint" style="margin-top:8px;font-size:.8em;opacity:.75;">'
     +   'מנגנון השליחה כאן מבוסס על הדפוס של התוספים ״ביוגרפיות״ ו״דיווח באגים״ — תודה למפתחיהם.'
@@ -650,6 +660,22 @@ function buildReportPanel(){
   ov.addEventListener('click', ev => { if (ev.target === ov) closeReportPanel(); });
   ov.querySelector('#reportPanelClose').addEventListener('click', closeReportPanel);
   ov.querySelector('#reportSend').addEventListener('click', submitReportPanel);
+  // גל: מסלול גיבוי נוסף - מייל בדפדפן. לא קורא ל-postReportToRelay בכלל
+  // (זה ניווט mailto:, לא בקשת רשת) - לכן עובד גם אם החסימה שגרמה לכל
+  // הבעיה מלכתחילה היא ברמת fetch/iframe דווקא. שדה האימייל-לתשובה מוטמע
+  // בגוף המייל (לא ב-Form) כדי לא לדרוש entry.ID חדש שאין לי.
+  const mailtoBtn = ov.querySelector('#reportMailto'); // מוסתר כרגע - ר' הערה למעלה
+  if (mailtoBtn) mailtoBtn.addEventListener('click', ev => {
+    ev.preventDefault();
+    const kind = ov.querySelector('#reportKind').value;
+    const title = ov.querySelector('#reportTitle').value.trim() || 'דיווח מהתוסף';
+    const details = ov.querySelector('#reportDetails').value;
+    const replyEmail = ov.querySelector('#reportReplyEmail').value.trim();
+    const subject = '[' + kind + '] ' + title;
+    const body = details + '\n\n---\nאימייל לתשובה: ' + (replyEmail || '(לא הוזן)');
+    ev.target.href = 'mailto:' + encodeURIComponent(REPORT_MAILTO_TARGET)
+      + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  });
   ov.querySelector('#reportDownload').addEventListener('click', () => {
     const kind = ov.querySelector('#reportKind').value;
     const title = ov.querySelector('#reportTitle').value.trim();
@@ -740,7 +766,9 @@ async function submitReportPanel(){
   const label = btn.textContent;
   btn.textContent = 'שולח…';
   try {
-    await sendReport(ov.querySelector('#reportKind').value, effectiveTitle, details.value, reportImages);
+    const replyEmail = ov.querySelector('#reportReplyEmail').value.trim();
+    const detailsWithReply = details.value + (replyEmail ? '\n\n---\nאימייל לתשובה: ' + replyEmail : '');
+    await sendReport(ov.querySelector('#reportKind').value, effectiveTitle, detailsWithReply, reportImages);
   } finally {
     btn.disabled = false;
     btn.textContent = label;
@@ -748,6 +776,7 @@ async function submitReportPanel(){
   // גם אם רק נכנס לתור — הטופס התרוקן והפאנל נסגר, כי הדיווח כבר שמור.
   title.value = '';
   details.value = '';
+  ov.querySelector('#reportReplyEmail').value = '';
   reportImages = [];
   renderReportImages();
   closeReportPanel();

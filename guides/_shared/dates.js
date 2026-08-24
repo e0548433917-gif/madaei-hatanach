@@ -26,7 +26,7 @@ const TANAKH_DATE_EVENTS = [
   { day:"יב", month:"טבת", event:"יחזקאל מתנבא על מצרים", source:"יחזקאל כט:א" },
   { day:"א", month:"שבט", event:"הואיל משה באר את התורה הזאת לאמר", source:"דברים א:ג" },
   { day:"א", month:"אדר", event:"יחזקאל התנבא קינה על פרעה", source:"יחזקאל לב:א" },
-  { day:"ז", month:"אדר", event:"יום לידתו ופטירתו של משה רבנו", source:"תלמוד בבלי, מגילה יג ע\"ב" },
+  { day:"ז", month:"אדר", event:"יום לידתו ופטירתו של משה רבנו", source:"בבלי, מגילה יג ע\"ב" },
   { day:"כז-כה", month:"אדר", event:"נשא אויל מרודך את ראש יהויכין מבית הכלא", source:"מלכים ב כה:כז ירמיהו נב:לא" },
   // שלוש רשומות ר' עקיבא (כט אדר / כ אייר / כט אלול, למטה) ותאריך בן עזאי לפסח
   // (כט אדר) - המשנה עצמה (בכורות ט,ה) נותנת לר"ע רק לשון יחסית ("בפרוס
@@ -62,11 +62,11 @@ const TANAKH_DATE_EVENTS = [
   { day:"א", month:"סיון", event:"נבואה נגד פרעה ע\"י יחזקאל", source:"יחזקאל לא:א" },
   { day:"א", month:"סיון", event:"בני ישראל באים למדבר סיני", source:"שמות יט:א" },
   { day:"א", month:"סיון", event:"ראש גורן שני למעשר בהמה, לדעת בן עזאי", source:"משנה, בכורות ט, ה" },
-  { day:"ו", month:"סיון", event:"מתן תורה", source:"תלמוד בבלי, שבת פו ע\"ב" },
-  { day:"כג", month:"סיון", event:"התאספו סופרי אחשוורוש לכתוב אגרות שניות", source:"אסתר" },
+  { day:"ו", month:"סיון", event:"מתן תורה", source:"בבלי, שבת פו ע\"ב" },
+  { day:"כג", month:"סיון", event:"התאספו סופרי אחשוורוש לכתוב אגרות שניות", source:"אסתר ח:ט" },
   { day:"ה", month:"תמוז", event:"נפתחו השמים וראה יחזקאל מראות אלקים", source:"יחזקאל א:א" },
   { day:"א", month:"אב", event:"עזרא וחבריו מגיעים לירושלים", source:"עזרא ז:ט" },
-  { day:"ט", month:"אב", event:"ליל בכיה לדורות בעקבות חטא המרגלים", source:"תלמוד בבלי, תענית כט ע\"א" },
+  { day:"ט", month:"אב", event:"ליל בכיה לדורות בעקבות חטא המרגלים", source:"בבלי, תענית כט ע\"א" },
   { day:"י", month:"אב", event:"באו אנשים מזקני ישראל לדרוש את ה' מאת יחזקאל", source:"יחזקאל כ:א" },
   { day:"כט", month:"אב", event:"ראש גורן שלישי למעשר בהמה, לדעת בן עזאי", source:"משנה, בכורות ט, ה" },
   { day:"א", month:"אלול", event:"משה רבנו עלה להר סיני לקבל לוחות שניים", source:"חיי אדם, הלכות אלול וראש השנה" },
@@ -75,6 +75,54 @@ const TANAKH_DATE_EVENTS = [
   { day:"ה", month:"אלול", event:"נפלה על יחזקאל יד ה' וראה המלאכים", source:"יחזקאל ח:א" },
   { day:"כד", month:"אלול", event:"העם באו לעשות מלאכה לבניית בית שני", source:"חגי א:טו" },
   { day:"כט", month:"אלול", event:"ראש גורן שלישי למעשר בהמה, לדעת רבי עקיבא", source:"משנה, בכורות ט, ה" },
+  // --- גל: מקורות תלמודיים/מדרשיים ממסמך שהעלה המשתמש (docx) + הודעת המשך ---
+  { day:"א", month:"תשרי", event:"ראש השנה — בריאת האדם (לדעת ר׳ אליעזר); נפקדו שרה, רחל וחנה; יצא יוסף מבית האסורים", source:"ראש השנה יא." },
+  { day:"ג", month:"תשרי", event:"צום גדליה — הריגת גדליה בן אחיקם", source:"ראש השנה יח:" },
+  { day:"י", month:"תשרי", event:"יום הכיפורים — מחילת חטא העגל ונתינת לוחות שניים", source:"תענית כו:" },
+  { day:"כב", month:"תשרי", event:"שמיני עצרת; שלמה המלך חנך את בית המקדש הראשון", source:"מועד קטן ט." },
+  { day:"ז", month:"חשון", event:"מתחילים לשאול גשמים בארץ ישראל", source:"תענית י." },
+  { day:"יז", month:"חשון", event:"תחילת ירידת מי המבול (לדעת ר׳ אליעזר)", source:"ראש השנה יא:" },
+  { day:"כג", month:"חשון", event:"פורקו אבני המזבח שטמאו יוונים בימי החשמונאים", source:"מגילת תענית" },
+  { day:"כה", month:"כסלו", event:"תחילת חג החנוכה — נס פך השמן", source:"שבת כא:" },
+  { day:"ח", month:"טבת", event:"נכתבה התורה יוונית בימי תלמי המלך, והיה חושך בעולם ג׳ ימים", source:"מגילת תענית" },
+  { day:"ט", month:"טבת", event:"נפטר עזרא הסופר", source:"מגילת תענית" },
+  { day:"י", month:"טבת", event:"נבוכדנצר מלך בבל החל במצור על ירושלים", source:"ערכין יא:" },
+  { day:"א", month:"שבט", event:"ראש השנה לאילן לבית שמאי; משה החל לבאר את התורה", source:"ראש השנה ב." },
+  { day:"טו", month:"שבט", event:"ראש השנה לאילן לבית הלל", source:"ראש השנה ב." },
+  { day:"כח", month:"שבט", event:"בטלה גזירת שמד בימי החשמונאים", source:"מגילת תענית" },
+  { day:"ז", month:"אדר", event:"לידתו ופטירתו של משה רבינו", source:"קידושין לח." },
+  { day:"יג", month:"אדר", event:"תענית אסתר; יום ניקנור — מפלת ניקנור בימי החשמונאים", source:"תענית יח:" },
+  { day:"טז", month:"אדר", event:"התחילו לבנות חומת ירושלים בימי נחמיה", source:"מגילת תענית" },
+  { day:"כח", month:"אדר", event:"ביטול גזירות רומי — בשורה טובה ליהודים", source:"תענית יח." },
+  { day:"א", month:"ניסן", event:"הקמת המשכן במדבר; מות נדב ואביהוא; ראש השנה למלכים", source:"ראש השנה ז." },
+  { day:"ז", month:"ניסן", event:"בכה יהושע על עכן (או אבל על מות אהרן, לפי חלק מהמדרשים)", source:"סנהדרין מד." },
+  { day:"י", month:"ניסן", event:"מרים הנביאה נפטרה; בני ישראל עברו את הירדן בימי יהושע", source:"תענית ט." },
+  { day:"יד", month:"ניסן", event:"שחיטת קרבן פסח; בדיקת חמץ בלילו", source:"פסחים ב." },
+  { day:"א", month:"אייר", event:"המפקד הראשון של בני ישראל במדבר סיני", source:"יומא ז." },
+  { day:"יד", month:"אייר", event:"פסח שני", source:"פסחים צב." },
+  { day:"יח", month:"אייר", event:"ל״ג בעומר — פסיקת מות תלמידי רבי עקיבא; הילולת רשב״י", source:"יבמות סב:" },
+  { day:"ו", month:"סיון", event:"מתן תורה בהר סיני (לדעת חכמים)", source:"שבת פו." },
+  { day:"כה", month:"סיון", event:"נהרגו רבן שמעון בן גמליאל, רבי ישמעאל כהן גדול ורבי חנינא סגן הכהנים", source:"מדרש אלה אזכרה" },
+  { day:"יז", month:"תמוז", event:"הובקעה העיר בימי בית שני; נשתברו הלוחות; בטל התמיד; שרף אפוסטמוס את התורה", source:"תענית כו." },
+  { day:"א", month:"אב", event:"נפטר אהרן הכהן בהר ההר", source:"תענית כט." },
+  { day:"טו", month:"אב", event:"ט״ו באב — כלו מתי מדבר; הותר שבט לבוא בשבט; ניתנו הרוגי ביתר לקבורה", source:"תענית ל:" },
+  { day:"כה", month:"אלול", event:"יום בריאת העולם (לדעת רבי אליעזר); נשלמה חומת ירושלים בימי נחמיה", source:"ראש השנה כז." },
+  { day:"טז", month:"ניסן", event:"הקרבת קרבן העומר; תחילת ספירת העומר; משתה אסתר השני ותליית המן", source:"מגילה טו:" },
+  { day:"יז", month:"ניסן", event:"תיבת נח נחה על הרי אררט (לדעת ר׳ אליעזר)", source:"ראש השנה יא:" },
+  { day:"יח", month:"ניסן", event:"סיום טיהור בית ה׳ והמזבח בימי חזקיהו המלך", source:"דברי הימים ב ל:א" },
+  { day:"יט", month:"ניסן", event:"חזון יחזקאל בבקעת העצמות היבשות ותחייתן", source:"סנהדרין צב:" },
+  { day:"כ", month:"ניסן", event:"תחילת הקפת חומות יריחו בימי יהושע בן נון", source:"יהושע ו:א" },
+  { day:"כא", month:"ניסן", event:"קריעת ים סוף וטביעת המצרים; אמירת שירת הים", source:"סוטה ל:" },
+  { day:"ד", month:"תשרי", event:"צום גדליה לשיטת ר׳ עקיבא — נהרג גדליה בן אחיקם", source:"ראש השנה יח." },
+  { day:"יא", month:"חשון", event:"פטירת רחל אמנו בדרך אפרת (מסורת)", source:"סדר עולם רבה ג" },
+  { day:"כ", month:"כסלו", event:"כינוס עזרא הסופר בירושלים בגשמים", source:"עזרא י:ט; תענית יט:" },
+  { day:"כח", month:"טבת", event:"שמעון בן שטח וביטול הצדוקים מהסנהדרין", source:"סנהדרין נב." },
+  { day:"ג", month:"אדר", event:"סיום בניין בית המקדש השני", source:"עזרא ו:טו; ערכין יב." },
+  { day:"טז", month:"ניסן", event:"נפסק המן במדבר, למחרת אכילת עבור הארץ בגלגל", source:"קידושין לח." },
+  { day:"כ", month:"אייר", event:"נסע הענן מעל המשכן — נסיעת בני ישראל הראשונה מהר סיני", source:"שבת פז.; במדבר י:יא" },
+  { day:"א", month:"תמוז", event:"לידת יוסף הצדיק (מסורת); התחלת המצור על ביתר", source:"תענית כט." },
+  { day:"יז", month:"אב", event:"מות המרגלים במגפה (לשיטות מסוימות)", source:"סוטה לה." },
+  { day:"ז", month:"אלול", event:"מות המרגלים שהוציאו דיבת הארץ, לפי מגילת תענית", source:"מגילת תענית" },
 ];
 const HEBREW_MONTHS_ORDER = ["תשרי","חשון","כסלו","טבת","שבט","אדר","ניסן","אייר","סיון","תמוז","אב","אלול"];
 
@@ -131,11 +179,39 @@ function todayHebrew(){
 // שנות מאורעות התנ״ך/תלמוד ברשימה הן חוזרות (יום+חודש בלבד, לא שנה מסוימת),
 // ולכן "שנים מאז החורבן" מחושב תמיד מול השנה העברית הנוכחית - אותו מספר
 // לכל השורות (משתנה רק בראש השנה). מחושב פעם אחת מ-ט' באב ע' לספירה,
-// אותו תאריך יסוד כמו הטיימר בפאנל (shell/home.js:updateTempleTimer).
+// תאריך ט' באב 70 לספירה = חורבן הבית השני. gregToHebDate(70,7,4) נותן חודש 11
+// (אב) יום 9 - לא (70,8,4) כפי שהיה קודם, שנפל בטעות בחודש 12 (אלול) יום 11
+// (מרחק חודש שלם, ואפילו לא באב בכלל). אותו תאריך יסוד כמו הטיימר בפאנל
+// (shell/home.js:updateTempleTimer) - יש לתקן שם באותו אופן אם עדיין (70,8,4).
 let _churbanHebYear = null;
+let _churbanHebDate = null;
 function yearsSinceChurban(){
-  if (_churbanHebYear == null) _churbanHebYear = gregToHebDate(70, 8, 4).year;
+  if (_churbanHebYear == null) _churbanHebYear = gregToHebDate(70, 7, 4).year;
   return todayHebrew().raw.year - _churbanHebYear;
+}
+
+// גל: שנה+חודשים+ימים (לא רק שנה) - אלגוריתם "גיל" רגיל על תאריך עברי: מחסרים
+// יום/חודש/שנה ומלווים (borrow) מהחודש/שנה הקודמים לפי hebMonthLengths של אותה
+// שנה עברית - אותה פונקציה ש-gregToHebDate עצמה משתמשת בה, כדי שהאורכים תמיד יתאימו.
+// גל: שנה+חודשים+ימים ל-raw {year,month,day} עברי כלשהו (לא רק היום) - נשלפה
+// מ-elapsedSinceChurban כדי ש-publishUpcomingEvents תוכל להשתמש בה לכל יום עתידי.
+function elapsedSinceChurbanRaw(raw){
+  if (_churbanHebDate == null) _churbanHebDate = gregToHebDate(70, 7, 4);
+  const c = _churbanHebDate;
+  let years = raw.year - c.year, months = raw.month - c.month, days = raw.day - c.day;
+  if (days < 0){
+    months -= 1;
+    const bm = ((raw.month - 2 + 12) % 12) + 1;
+    days += hebMonthLengths(raw.year)[bm - 1];
+  }
+  if (months < 0){
+    years -= 1;
+    months += hebMonthLengths(raw.year - 1).length;
+  }
+  return { years, months, days };
+}
+function elapsedSinceChurban(){
+  return elapsedSinceChurbanRaw(todayHebrew().raw);
 }
 
 // אדר בשנה מעוברת הוא "אדר א׳"/"אדר ב׳" - באירועי התנ״ך תמיד "אדר" סתם, ולכן
@@ -247,4 +323,104 @@ function parseColonVerseRef(source){
   const book = DATE_EVENT_BOOK_ALIASES[m[1].trim()] || m[1].trim();
   if (TANAKH_BOOKS.indexOf(book) === -1) return null;
   return { bookId: book, ref: 'פרק ' + m[2] };
+}
+
+// ---- גל 2.20.3: "ערך היום" ליומן של אוצריא — גם מהטאב הפעיל, לא רק ממנוע הרקע ----
+// עברה הנה מ-shell/background.js. שם היא רצה *רק* דרך Otzaria.on('plugin.boot')
+// בתוך background.html, שתלוי לגמרי בהפעלת app.startup ע"י אוצריא למנוע הרקע.
+// בבדיקה מול "עיון ההלכה" (שהמאורע שלו ללוח השנה כן מגיע בפועל אצל המשתמש)
+// התברר שהוא כלל לא תלוי במנוע רקע - publishedData.upsert שם נקרא ישירות
+// מתוך הטאב הפעיל של התוסף עצמו. הפונקציה הועברה לכאן (dates.js, נטען גם
+// ב-index.html וגם ב-background.html) כדי שנוכל לקרוא לה גם מ-bridge.js
+// (ר' שם, plugin.boot) כמסלול גיבוי זהה לזה שמוכח כעובד - בלי לגעת בהרשאות
+// או בהצהרת המניפסט. מנוע הרקע נשאר כמסלול נוסף (אם וכשהוא כן רץ), לא הוחלף.
+const PUBLISHED_KEYS_KEY = 'madaei_hatanach_published_event_keys_v1';
+const PUBLISH_LAST_RUN_KEY = 'madaei_hatanach_publish_last_run_v1';
+const PUBLISH_LOOKAHEAD_DAYS = 365; // שנה מראש - כדי לא להזדקק לעדכון תכוף
+const PUBLISH_LOOKBACK_DAYS = 7; // שבוע אחורה - כדי שהלוח לא יהיה ריק כשמסתכלים אחורה
+
+// גל: מגן מפני הרצה כפולה *בו-זמנית* באותו מופע (למשל plugin.boot וטיימר גיבוי
+// שקוראים כמעט ביחד, לפני שהראשון הספיק לכתוב PUBLISH_LAST_RUN_KEY) - רעיון
+// שנלקח מ-shell/daily-publish.js (גרסה מקבילה ישנה יותר שהמשתמש העלה).
+// ה-throttle היומי למעלה מטפל בהרצות עתידיות; זה מטפל רק בחפיפה הרגעית.
+let _publishInFlight = false;
+async function publishUpcomingEvents(){
+  if (_publishInFlight) return;
+  _publishInFlight = true;
+  try { await publishUpcomingEventsInner(); }
+  finally { _publishInFlight = false; }
+}
+
+async function publishUpcomingEventsInner(){
+  if (!(window.Otzaria && Otzaria.call)) return;
+  if (typeof eventsForToday !== 'function' || typeof todayHebrew !== 'function') return;
+
+  // מריצים לכל היותר פעם ביום: פתיחת התוסף קוראת לפונקציה הזו בכל plugin.boot
+  // (גם ברקע וגם בטאב הפעיל, ר' bridge.js/background.js) - בלי המגבלה הזו כל
+  // פתיחה הייתה מוחקת ובונה מחדש את כל השנה מול היומן של אוצריא, גם כשכלום
+  // לא השתנה. הרצה נכשלת (או ראשונה אי-פעם) לא נכתבת ל-PUBLISH_LAST_RUN_KEY,
+  // כך שהיא תנסה שוב בפעם הבאה.
+  const todayIso = (() => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); })();
+  const lastRun = await storageGetJson(PUBLISH_LAST_RUN_KEY);
+  if (lastRun === todayIso) return;
+
+  if (_churbanHebYear == null) _churbanHebYear = gregToHebDate(70, 7, 4).year;
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const isoOf = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const startsAtOf = (d) => {
+    const tzMin = -d.getTimezoneOffset();
+    const tz = (tzMin >= 0 ? '+' : '-') + pad(Math.floor(Math.abs(tzMin) / 60)) + ':' + pad(Math.abs(tzMin) % 60);
+    return isoOf(d) + 'T00:00:00' + tz;
+  };
+
+  const items = []; // {key, payload}
+  const base = new Date();
+  for (let off = -PUBLISH_LOOKBACK_DAYS; off < PUBLISH_LOOKAHEAD_DAYS; off++){
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + off);
+    const raw = gregToHebDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    const isLeap = isHebrewLeapYear(raw.year);
+    const monthName = hebMonthNameOf(raw.month, isLeap);
+    const dayLetters = numToHeb(raw.day);
+    const churbanEl = elapsedSinceChurbanRaw(raw);
+    const churbanTxt = churbanEl.years + ' שנה ' + churbanEl.months + ' חודשים ' + churbanEl.days + ' ימים לחורבן';
+    const iso = isoOf(d), startsAt = startsAtOf(d);
+    const dayLabel = dayLetters + '׳ ' + monthName + ' ' + hebYearStr(raw.year) + ' (' + gregDateStr(d) + ')';
+
+    // אין קשר בין מאורעות התנ״ך/התלמוד לזמן שעבר מהחורבן - לכן churbanTxt לא
+    // מופיע בתיאור שלהם (בניגוד לגרסה קודמת). מפתח ה"חורבן" מתחיל ב-z כדי
+    // שיישאר אחרון בסדר לקסיקוגרפי אם היומן ממיין לפי key בין אירועי אותו יום.
+    const events = allDateEvents().filter(ev => monthMatchesEventMonth(monthName, ev.month) && dayMatchesEventDay(raw.day, ev.day));
+    events.forEach((ev, i) => items.push({
+      key: 'madaei:dailyEvent:' + iso + ':' + i,
+      payload: { title: ev.event, startsAt, source: 'עינים למקרא', importance: 'low',
+        description: dayLabel + (ev.source ? ' · ' + ev.source : '') }
+    }));
+    items.push({
+      key: 'madaei:zChurban:' + iso,
+      payload: { title: churbanTxt, startsAt, source: 'עינים למקרא', importance: 'low',
+        description: dayLabel }
+    });
+  }
+
+  const newKeys = items.map(it => it.key);
+  const newKeySet = new Set(newKeys);
+  const prev = await storageGetJson(PUBLISHED_KEYS_KEY);
+  if (Array.isArray(prev)){
+    for (const key of prev){
+      if (!newKeySet.has(key)){
+        await Otzaria.call('publishedData.remove', { type: 'calendar.event', scope: 'global', key }).catch(()=>{});
+      }
+    }
+  }
+
+  const kept = [];
+  for (const it of items){
+    const res = await Otzaria.call('publishedData.upsert', {
+      type: 'calendar.event', scope: 'global', key: it.key, payload: it.payload
+    }).catch(() => null);
+    if (res && res.success) kept.push(it.key);
+  }
+  await storageSetJson(PUBLISHED_KEYS_KEY, kept);
+  await storageSetJson(PUBLISH_LAST_RUN_KEY, todayIso);
 }

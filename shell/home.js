@@ -9,7 +9,28 @@
 // personal.js) - שם סוג "משוב" ב-REPORT_KINDS. הכניסה היחידה כיום היא
 // openReportPanel, והשליחה עצמה עוברת דרך sendReport.
 
-// ---- הוספת דף HTML (נשמר לצמיתות דרך storage.get/set, כמו בתוסף "צופה HTML") ----
+// ---- שורת פסוק בסרגל העליון + הבהרת AI בתחתית (נוסף ב-JS ולא ב-HTML, כדי
+// לא להסתכן בשבירת קינון ה-divים הקיים ב-index.html) ----
+(function(){
+  const tb = document.querySelector('.topbar');
+  if (tb){
+    const verse = document.createElement('div');
+    verse.className = 'mini-hint';
+    verse.style.cssText = 'text-align:center;padding:2px 8px 6px;font-size:.85em;';
+    verse.textContent = 'על דרך אמרו "כִּי עַל־כֵּן יָדַעְתָּ חֲנֹתֵנוּ בַּמִּדְבָּר וְהָיִיתָ לָּנוּ לְעֵינָיִם" (במדבר, פרק י)';
+    tb.after(verse);
+  }
+  const landing = document.getElementById('landing');
+  if (landing){
+    const foot = document.createElement('div');
+    foot.className = 'mini-hint';
+    foot.style.cssText = 'text-align:center;color:gray;font-size:.8em;padding:10px 12px;';
+    foot.textContent = 'התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.';
+    landing.appendChild(foot);
+  }
+})();
+
+
 // מ-2.16 (מפרט 4.0, ג׳): לכל דף גם מיקום (עמוד ראשי / ליד מסכת) ואיקון אופציונלי.
 const addHtmlOverlay = document.getElementById('addHtmlOverlay');
 const addHtmlName = document.getElementById('addHtmlName');
@@ -337,11 +358,8 @@ function dateEventRow(ev, monthLabel){
   // לא נעשה שימוש ב-edited-badge/✏️ הכללי (guides.js) כאן - הוא היה מתנגש חזותית
   // עם כפתור העריכה הייעודי (גם הוא ✏️) שכל שורה כבר מציגה.
   const badge = ev.__edited ? ' <span class="mini-hint">(נערך)</span>' : (ev.__custom ? ' <span class="missing-chip">מותאם אישית</span>' : '');
-  // מחושב מול השנה העברית הנוכחית - ר' yearsSinceChurban (dates.js). אותו
-  // מספר בכל השורות (יום+חודש חוזרים, לא שנה מסוימת), משתנה רק בראש השנה.
-  const churban = ` <span class="mini-hint">(${yearsSinceChurban()} שנה לחורבן)</span>`;
   return `<div class="src-item${parsed ? ' clickable' : ''}"${openAttr}>
-    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}${badge}${churban}
+    <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}${badge}
       <button type="button" class="date-ev-edit-btn"${editAttr} title="עריכת מאורע">✏️</button>
     </div>
     ${ev.source ? `<div class="src-note">${esc(ev.source)}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>` : ''}
@@ -447,7 +465,7 @@ function openDateEventForm(ev){
 function renderDailyEventBody(){
   const t = todayHebrew();
   const today = eventsForToday();
-  let html = `<p class="panel-hint">היום ${esc(t.dayLetters)}' ${esc(t.monthName)}</p>`;
+  let html = `<p class="panel-hint">היום ${esc(t.dayLetters)}' ${esc(t.monthName)} ${esc(hebYearStr(t.raw.year))} (${esc(gregDateStr())})</p>`;
   if (today.length){
     html += '<div class="field-label">מאורעות התנ״ך והתלמוד היום</div>' + today.map(ev => dateEventRow(ev, t.monthName)).join('');
   } else {
@@ -487,12 +505,14 @@ function renderDailyEventBody(){
 }
 if (dailyEventLabel){
   const t = todayHebrew();
-  dailyEventLabel.textContent = 'ערך היום — ' + t.dayLetters + "' " + t.monthName;
+  dailyEventLabel.textContent = 'ערך היום — ' + t.dayLetters + "' " + t.monthName + ' ' + hebYearStr(t.raw.year) + ' (' + gregDateStr() + ')';
 }
 // טיימר בית המקדש - מועתק כלשונו מ-guides/beithamikdash/view.html:1024 (רק ה-DOM
 // updates זהים; שם רץ תמיד, כאן רק כשהפאנל פתוח - אין טעם ב-setInterval ברקע).
-const TEMPLE_DESTRUCTION = new Date(Date.UTC(2000, 7, 4, 0, 0, 0));
-TEMPLE_DESTRUCTION.setUTCFullYear(70); // 4 באוגוסט 70 לספירה - ר' הערת setUTCFullYear במקור
+const TEMPLE_DESTRUCTION = new Date(Date.UTC(2000, 6, 4, 0, 0, 0));
+TEMPLE_DESTRUCTION.setUTCFullYear(70); // 4 ביולי 70 לספירה - תוקן בעקבות אותה שגיאה שתוקנה
+// ב-yearsSinceChurban (guides/_shared/dates.js): (2000,7,4)/gregToHebDate(70,8,4) נפלו
+// בטעות בחודש אוגוסט/אלול, לא ביולי/אב.
 let templeTimerInterval = null;
 function updateTempleTimer(){
   const now = new Date();
