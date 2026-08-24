@@ -1,0 +1,184 @@
+name: ולידציה ופרסום לחנות אוצריא
+
+# מקפל את התוסף, מריץ את אותן בדיקות כמו חנות אוצריא, מפרסם אוטומטית
+# כשגרסה חדשה נדחפת ל-main, ויוצר GitHub Release עם קובץ ה-.otzplugin.
+# גרסה שכבר קיימת בחנות לא תפורסם מחדש (אלא אם force=true), אז דחיפה
+# רגילה בטוחה.
+#
+# איך זה משתלב במסלול האריזה הקיים (build/pack.ps1):
+#   .\build\pack.ps1 -Release  →  bump מניפסט + CHANGELOG + הטמעת המוטבעים
+#                                 + commit + תג v<version> + push + GitHub Release
+# הדחיפה הזו (שנוגעת ב-manifest.json) היא מה שמפעיל את ה-workflow, והוא מוסיף
+# את החלק שחסר מקומית: **הפרסום לחנות**. אם ה-Release כבר נוצר ע״י pack.ps1,
+# השלב האחרון כאן מדלג עליו במקום להתנגש.
+#
+# ⚠️ הטריגר האוטומטי הוא על main בלבד. אריזה שנדחפה מענף אחר (למשל ypl) לא
+# תפורסם מעצמה — או למזג ל-main, או להריץ ידנית מלשונית Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # רק מה שנכנס בפועל לחבילה (ר׳ .otzignore). שינוי ב-docs/ או assets/
+      # אינו שינוי מוצר ואינו אמור להפעיל פרסום.
+      - 'manifest.json'
+      - 'index.html'
+      - 'background.html'
+      - 'guides/**'
+      - 'shell/**'
+      - 'icon/**'
+      - 'CHANGELOG.md'
+      - 'ROADMAP.md'
+      - '.otzignore'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:        # מאפשר הרצה ידנית מלשונית Actions
+    inputs:
+      publish:
+        description: 'לפרסם לחנות? (auto/true/false)'
+        default: 'auto'
+      force:
+        description: 'לפרסם גם אם הגרסה כבר קיימת'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write           # נדרש כדי ליצור GitHub Release
+
+# דחיפת הקומיט והתג של אותה אריזה עלולות להגיע כמעט יחד. תור לפי גרסה, בלי
+# ביטול באמצע: הריצה השנייה תמתין ואז תראה שהגרסה כבר בחנות ותדלג.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # שער חובה. שלושה קבצים ב-guides/_shared/ מוטבעים ע״י build/pack.ps1
+      # (שלבים 1ג/1ד/1ה) כי fetch() של קובץ מקומי מהחבילה נכשל ב-WebView של
+      # אוצריא. עריכה של CHANGELOG.md / ROADMAP.md / manifest.json בלי אריזה
+      # מחדש = חבילה שמציגה למשתמשים תוכן ישן, בשקט ובלי שגיאה. נעצרים כאן.
+      - name: בדיקת סנכרון המוטבעים
+        run: node tools/verify-embedded.js
+
+      # ולידציית הדאטה. `--strict` מחזיר 1 גם על ממצאי תוכן מוכרים שמוקפאים
+      # במכוון עד ת.1א (ר׳ ההערה בסעיף 0 של build/pack.ps1), ולכן היא מדווחת
+      # ולא חוסמת — הפלט כאן הוא כדי לראות רגרסיה, לא כדי לעצור פרסום.
+      - name: ולידציית דאטה (מדווחת בלבד)
+        continue-on-error: true
+        run: node tools/validate.js --strict
+
+      # Action רשמי של אוצריא: ולידציה, קיפול ל-.otzplugin (מכבד .otzignore),
+      # ופרסום לחנות. אין שלב build — קבצי הנתונים כבר בגיט.
+      - name: ולידציה, קיפול ופרסום
+        id: otzaria
+        uses: Otzaria/otzaria-plugin-validator@v1
+        with:
+          path: .
+          otzaria-user: ${{ secrets.OTZARIA_USER }}
+          otzaria-password: ${{ secrets.OTZARIA_PASSWORD }}
+          publish: ${{ github.event.inputs.publish || 'auto' }}
+          force: ${{ github.event.inputs.force || false }}
+          # לשחרור ראשון של תוסף חדש החנות דורשת צילומי מסך. יש חומר ב-
+          # assets/icons-store/ ו-docs/screenshots/, אבל בשמות עבריים עם
+          # רווחים — להעתיק 2-3 מהם ל-screenshots/01.png וכו׳ לפני שמפעילים:
+          # screenshots: 'screenshots/01.png,screenshots/02.png'
+
+      # שומר גודל, במקביל לסעיף 5 ב-build/pack.ps1: 2.11.2 שקלה 12.2MB, ו-
+      # 2.11.3 קפצה ל-50MB כי assets/ ו-docs/ לא היו מוחרגים. חריגה כאן היא
+      # כמעט תמיד תיקייה חדשה שחסרה ב-.otzignore.
+      - name: שומר גודל החבילה
+        env:
+          PLUGIN_FILE: ${{ steps.otzaria.outputs.plugin-file }}
+        run: |
+          if [[ -z "$PLUGIN_FILE" || ! -f "$PLUGIN_FILE" ]]; then
+            echo "::warning::קובץ החבילה לא נמצא בפלט ה-Action — מדלג על בדיקת הגודל."
+            exit 0
+          fi
+          bytes="$(stat -c%s "$PLUGIN_FILE")"
+          mb="$(awk "BEGIN{printf \"%.1f\", $bytes/1048576}")"
+          echo "גודל החבילה: $mb MB"
+          if (( bytes > 16777216 )); then
+            echo "::warning::החבילה גדולה מהצפוי ($mb MB, הרף 16MB). בדוק אם נוספה תיקייה שצריכה להיכנס ל-.otzignore."
+          fi
+
+      - name: קביעת גרסה ותג
+        id: meta
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "גרסה לא תקינה ב-manifest.json: '$version' (צפוי X.Y.Z)" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version"   >> "$GITHUB_OUTPUT"
+
+      - name: בדיקה אם ה-Release כבר קיים
+        id: release_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "ה-Release $TAG כבר קיים - מדלג על יצירה"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ה-Release $TAG עדיין לא קיים"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # גוף ה-Release = ערך ה-CHANGELOG של הגרסה הזו בלבד (עד הכותרת ## הבאה),
+      # בדיוק כמו סעיף 6 ב-build/pack.ps1, ומתחתיו הוראות התקנה ו-checksum.
+      - name: הכנת גוף ה-Release
+        if: steps.release_check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          SHA256: ${{ steps.otzaria.outputs.sha256 }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const v = process.env.VERSION;
+            // סריקת שורות ולא regex: הערך נמשך עד כותרת "## " הבאה, וב-regex
+            // עם דגל m הסימן $ נתפס בסוף *כל* שורה וקיצץ את הערך לכותרת בלבד.
+            const lines = fs.readFileSync("CHANGELOG.md", "utf8").split(/\r?\n/);
+            const start = lines.findIndex((l) => l === "## " + v || l.startsWith("## " + v + " "));
+            let end = lines.length;
+            if (start >= 0) {
+              for (let i = start + 1; i < lines.length; i++) {
+                if (lines[i].startsWith("## ")) { end = i; break; }
+              }
+            }
+            const entry = start < 0 ? "## " + v : lines.slice(start, end).join("\n").trim();
+            const out = [
+              entry,
+              "",
+              "### התקנה",
+              "הורד את קובץ ה-`.otzplugin` למטה, ובאוצריא:",
+              "**כלים → 🧩 תוספים → ⊕ התקן תוסף חדש**, ובחר את הקובץ.",
+              "",
+              "### Checksum",
+              "```",
+              "SHA-256: " + (process.env.SHA256 || "—"),
+              "```",
+              "",
+            ].join("\n");
+            fs.writeFileSync("release-notes.md", out);
+          '
+          cat release-notes.md
+
+      - name: יצירת GitHub Release
+        if: steps.release_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: עינים למקרא ${{ steps.meta.outputs.version }}
+          draft: false
+          prerelease: false
+          files: ${{ steps.otzaria.outputs.plugin-file }}
+          body_path: release-notes.md

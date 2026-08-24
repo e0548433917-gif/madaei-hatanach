@@ -227,7 +227,11 @@ async function appVersionAtLeast(min){
     _appVersionCache = null;
     try {
       const res = await Otzaria.call('app.getInfo');
-      _appVersionCache = (res && res.data && res.data.version) || null;
+      // ⚠️ app.getInfo לא תמיד עוטף את התשובה ב-data (ר' התוסף הרשמי לדיווח
+      // באגים, ששולף res?.data || res). בלי הנפילה הזו appVersionAtLeast היה
+      // מקבל null, מניח "גרסה לא ידועה" ושולח APIs חדשים גם לגרסה ישנה.
+      const info = (res && (res.data || res)) || {};
+      _appVersionCache = info.version || null;
     } catch(e){}
   }
   // גרסה לא ידועה — לא חוסמים; הקריאה עצמה תיכשל בשקט אם אינה נתמכת.

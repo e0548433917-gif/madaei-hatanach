@@ -40,7 +40,10 @@ async function isModernApp(){
   if (!(window.Otzaria && Otzaria.call)){ modernAppCache = false; return false; }
   try {
     const res = await Otzaria.call('app.getInfo');
-    const version = res && res.data && res.data.version;
+    // app.getInfo לא תמיד עוטף את התשובה ב-data (ר' com.software_bug_report.newplugin,
+    // התוסף הרשמי לדיווח באגים, ששולף גם res?.data || res). לטפל בשתי הצורות.
+    const info = (res && (res.data || res)) || {};
+    const version = info.version;
     modernAppCache = !version || cmpVersion(version, '0.9.96') >= 0;
   } catch(e){
     modernAppCache = true;
@@ -109,16 +112,43 @@ async function consumePendingIdentify(){
 // שרץ פעם אחת ב-waitForOtzaria לעולם לא יראה את הבקשה — הוא רץ דקות קודם.
 // לכן בודקים גם בכל חזרה לחזית, ובפולינג קל כרשת ביטחון (אין ודאות ש-visibilitychange
 // בכלל נדלק בתוך ה-webview של אוצריא, ולכן הפולינג הוא לא כפילות אלא הגיבוי היחיד).
+let pendingPollTimer = null;
+function startPendingIdentifyPoll(){
+  if (pendingPollTimer) return;
+  // הפולינג *לא* מגודר ב-document.hidden בכוונה. נמדד בפועל: ה-webview המוטמע מדווח
+  // document.hidden === true גם כשהלשונית בחזית, ולכן גידור כזה היה משבית את רשת
+  // הביטחון בדיוק בארכיטקטורה שהיא נועדה לה. העלות היא קריאת IPC אחת שמחזירה null.
+  // הגידור האמיתי הוא plugin.suspended/plugin.resumed של אוצריא — ר' למטה.
+  pendingPollTimer = setInterval(consumePendingIdentify, 1500);
+}
+function stopPendingIdentifyPoll(){
+  if (!pendingPollTimer) return;
+  clearInterval(pendingPollTimer);
+  pendingPollTimer = null;
+}
 function startPendingIdentifyWatch(){
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) consumePendingIdentify();
   });
   window.addEventListener('focus', () => consumePendingIdentify());
   window.addEventListener('pageshow', () => consumePendingIdentify());
-  // הפולינג *לא* מגודר ב-document.hidden בכוונה. נמדד בפועל: ה-webview המוטמע מדווח
-  // document.hidden === true גם כשהלשונית בחזית, ולכן גידור כזה היה משבית את רשת
-  // הביטחון בדיוק בארכיטקטורה שהיא נועדה לה. העלות היא קריאת IPC אחת שמחזירה null.
-  setInterval(consumePendingIdentify, 1500);
+  startPendingIdentifyPoll();
+}
+
+// ---- השהיה ברקע (README §"השהיה ברקע — plugin.suspended / plugin.resumed") ----
+// כשהמשתמש עוזב את לשונית התוסף אוצריא מקפיאה את ה-WebView, אבל ההקפאה נייטיבית
+// רק ב-Windows/Android; בשאר הפלטפורמות **התוסף אחראי לעצור בעצמו** עבודה
+// מתמשכת. שתי העבודות המתמשכות שלנו הן הפולינג של 1.5 שניות וסריקת הפורטים של
+// הנקדן (כל 3 שניות כשאינו מחובר). מופע רקע (runMode==='background') לעולם אינו
+// מושהה, ולכן ההרשמה הזו רלוונטית רק ללשונית — וגם שם היא לא מזיקה.
+function suspendBackgroundWork(){
+  stopPendingIdentifyPoll();
+  if (window.NikudEngine && typeof NikudEngine.unwatch === 'function') NikudEngine.unwatch();
+}
+function resumeBackgroundWork(){
+  startPendingIdentifyPoll();
+  consumePendingIdentify();
+  if (window.NikudEngine && typeof NikudEngine.watch === 'function') NikudEngine.watch();
 }
 
 // מעבר ללשונית התוסף + הצגה, בצורה שעמידה לטעינה מחדש של המופע.
@@ -246,13 +276,23 @@ async function handleIdentifyClick(payload){
   }
 }
 
-// מ-0.9.96 הפריט מוצהר ב-manifest.json (contributes.startup.contextMenuItems) ואוצריא
-// מציגה אותו בלי להריץ את התוסף בכלל — זו הדרישה שנאכפת מ-0.9.98. רישום נוסף בזמן
-// ריצה היה יוצר פריט כפול באותו id, ולכן כאן נשאר רק מסלול התאימות לאחור: 0.9.95,
-// שאינה מכירה את ההצהרה, עדיין צריכה את הקריאה.
-async function registerUnifiedMenuItem(){
+// רישום הפריט "זיהוי בעינים למקרא" בתפריט ההקשר — בכל גרסה, תמיד.
+//
+// ⚠️ עד 2.20.2 היה כאן `if (await isModernApp()) return;` בהנחה שמ-0.9.96 הפריט
+// מגיע מההצהרה שבמניפסט (contributes.startup.contextMenuItems). ההנחה הזאת
+// שגויה: PluginStartupContributionsService באוצריא רושם את ההצהרה **רק** אם
+// ההרשאה app.startup_contributions אושרה בפועל, וההרשאות שנשמרות הן בדיוק
+// אלה שבמניפסט (PluginInstallerService.finalizeInstall). ההרשאה הוסרה מהמניפסט
+// ב-2.17.1, ולכן מאז ההצהרה מנוטרלת לגמרי — והדילוג כאן הותיר את הפיצ׳ר
+// המרכזי של התוסף בלי שום מסלול רישום בכל אוצריא 0.9.96 ומעלה.
+//
+// רישום חוזר על אותו id אינו יוצר כפילות ואינו צורך מהמכסה (שני פריטים עליונים
+// לתוסף) — API_REFERENCE §reader.addContextMenuItem: "אם פריט עם אותו id כבר
+// קיים, הוא יוחלף". לכן בטוח לקרוא כאן גם כשגם ההצהרה פעילה (וריאנט 0.9.97).
+function registerUnifiedMenuItem(){
   if (!(window.Otzaria && Otzaria.call)) return;
-  if (await isModernApp()) return;
+  // בלי contexts בכוונה: פריט שאינו מגדיר אותם מופיע בשני ההקשרים, וזו גם
+  // ההתנהגות היחידה שקיימת בגרסאות ישנות (ר' 2.19.1 — contexts לא חוקי חסם התקנה).
   Otzaria.call('reader.addContextMenuItem', {
     id: MENU_ITEM_ID,
     label: 'זיהוי בעינים למקרא',
@@ -287,7 +327,18 @@ function waitForOtzaria(elapsed){
       runMode = (p && p.app && p.app.runMode) || 'foreground';
       hasBackgroundPerm = !!(p && p.permissions && p.permissions.indexOf('app.run_on_startup') !== -1);
     });
+    // ״ערך היום״ ליומן של אוצריא. עד 2.20.2 זה רץ רק ב-shell/background.js,
+    // שאינו נטען כלל כל עוד contributes.background.entrypoint אינו מוצהר — ולכן
+    // הפיצ׳ר היה מת. הקריאה יושבת ב-plugin.boot כדרישת ה-SDK ("כל הלוגיקה
+    // הראשונית בתוך callback של plugin.boot"), עם טיימר גיבוי למקרה שה-boot
+    // כבר ירה לפני שהספקנו להירשם. הפונקציה עצמה חסינה לריצה כפולה.
+    Otzaria.on('plugin.boot', () => { if (typeof publishTodayEvents === 'function') publishTodayEvents().catch(()=>{}); });
+    setTimeout(() => { if (typeof publishTodayEvents === 'function') publishTodayEvents().catch(()=>{}); }, 5000);
     Otzaria.on('theme.changed', onOtzariaTheme);
+    // עצירה/חידוש של עבודה מתמשכת ביציאה מהלשונית ובחזרה אליה. שני האירועים
+    // אינם דורשים הרשאת events.subscribe (README §אירועי מחזור חיים).
+    Otzaria.on('plugin.suspended', suspendBackgroundWork);
+    Otzaria.on('plugin.resumed', resumeBackgroundWork);
     // גם משיכה יזומה — plugin.boot כבר עשוי היה לרוץ לפני שנרשמנו
     Otzaria.call('app.getTheme').then(res => { if (res && res.data) onOtzariaTheme(res.data); }).catch(()=>{});
     restorePrefsFromOtzaria();
