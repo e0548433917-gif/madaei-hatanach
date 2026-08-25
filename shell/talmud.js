@@ -33,12 +33,14 @@ const talmudView = document.getElementById('talmudView');
 const talmudMasechtotGrid = document.getElementById('talmudMasechtotGrid');
 let talmudRendered = false;
 
-// גל 25/08: פותח PDF/קישור חיצוני בדפדפן של המכשיר, לא בתוך אוצריא -
-// app.open_url כבר מוצהרת ב-manifest.json אך לא הייתה בשימוש עד כה בקוד
-// הזה. ⚠️ לא אומת בפועל שהקריאה עובדת (אין דוגמה קיימת להעתיק ממנה).
+// גל 25/08: פותח PDF/קישור חיצוני. ⚠️ תוקן 25/08 מאוחר יותר: Otzaria.call('app.open_url', ...)
+// **נדחה בפועל ע"י ולידציית החנות הרשמית** - "קריאה ל-API לא מוכר: app.open_url"
+// (למרות שההרשאה מוצהרת ב-manifest.json!) - כלומר שם ה-API הזה פשוט לא קיים
+// ב-SDK הרשמי. הוסר הניסיון ל-Otzaria.call; נשאר רק window.open הרגיל, שהוא
+// DOM API סטנדרטי ולא קריאת Otzaria - לא אמור להיתקל באותה בעיה, אבל גם הוא
+// לא אומת בפועל בתוך ה-WebView.
 function openExternalPdf(url){
-  if (!(window.Otzaria && Otzaria.call)) { window.open(url, '_blank'); return; }
-  Otzaria.call('app.open_url', { url }).catch(() => window.open(url, '_blank'));
+  window.open(url, '_blank');
 }
 function openExternalGuide(path, title){
   guideFrame.removeAttribute('srcdoc');
