@@ -86,5 +86,11 @@ async function publishTodayEventsInner(){
     if (res && res.success) keys.push(key);
   }
   await storageSetJson(PUBLISHED_KEYS_KEY, keys);
-  await storageSetJson(PUBLISHED_DAY_KEY, dayStamp);
+  // גל: אם כל ה-upsert-ים נכשלו (0 מתוך events.length הצליחו) - לא מסמנים את
+  // היום כ"פורסם". בלי זה, כישלון חד-פעמי (הרשאה/רשת) היה ננעל עד מחר: השורה
+  // הבאה מונעת ריצה חוזרת באותו יום (dayStamp תואם), אז בלי החריג הזה שגיאה
+  // שקטה הייתה נשארת בלתי-מטופלת עד שהתאריך העברי מתחלף.
+  if (keys.length > 0 || events.length === 0) {
+    await storageSetJson(PUBLISHED_DAY_KEY, dayStamp);
+  }
 }
