@@ -104,6 +104,19 @@ function numToHeb(n){
   return out;
 }
 
+// גל: שנה עברית מלאה לתצוגה ("תשפ״ו") - אלפים מושמטים כמקובל, גרשיים לפני
+// האות האחרונה. משמש להוספת התאריך המלא ל"ערך היום" (shell/home.js).
+function hebYearStr(year){
+  const s = numToHeb(year % 1000);
+  if (s.length <= 1) return s + '׳';
+  return s.slice(0, -1) + '״' + s.slice(-1);
+}
+// תאריך לועזי לתצוגה, כמו ב-personal.js/print.js.
+function gregDateStr(d){
+  try { return (d || new Date()).toLocaleDateString('he-IL', { year:'numeric', month:'2-digit', day:'2-digit' }); }
+  catch(e){ return ''; }
+}
+
 // זיהוי מודרני בקצרה - לשורת הפופאפ ולרשימת התוצאות, לפי איזה שדה קיים בערך:
 // identification (דומם), methods[0].modern (מקומות), methods[0].latin (חי/צומח).
 // יושב כאן ולא ב-entry-detail.js כי גם background.html בונה את שורות הפופאפ,
