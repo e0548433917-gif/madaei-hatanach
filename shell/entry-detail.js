@@ -429,7 +429,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
       const parsed = parseAnyRef(v.ref);
       html += `<div class="verse-card${parsed?' clickable':''}" data-vref="${i}">
         <div class="verse-ref">${esc(v.ref)}${parsed?' <span class="open-hint">↗ פתח בספרייה</span>':''}</div>
-        ${v.text ? `<div class="verse-text">${v.text}</div>` : ''}
+        ${v.text ? `<div class="verse-text">${guardHolyNames(v.text)}</div>` : ''}
       </div>`;
     });
   }

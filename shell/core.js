@@ -117,6 +117,15 @@ function gregDateStr(d){
   catch(e){ return ''; }
 }
 
+// גל: המרת שמות קדושים לכינויים בציטוטי פסוקים, לפי מוסכמת התוסף "שומר
+// השם" (shell/holy-names-lib.js, מועתק כלשונו משם - ר' הערה בראש הקובץ).
+// נכשל בשקט לטקסט המקורי אם הספרייה לא נטענה או זרקה שגיאה.
+function guardHolyNames(text){
+  if (!text || !(window.ShemShomrer && typeof ShemShomrer.replaceHolyNames === 'function')) return text;
+  try { return ShemShomrer.replaceHolyNames(text, {}).result; }
+  catch(e){ return text; }
+}
+
 // זיהוי מודרני בקצרה - לשורת הפופאפ ולרשימת התוצאות, לפי איזה שדה קיים בערך:
 // identification (דומם), methods[0].modern (מקומות), methods[0].latin (חי/צומח).
 // יושב כאן ולא ב-entry-detail.js כי גם background.html בונה את שורות הפופאפ,
