@@ -20,13 +20,26 @@ const MASECHTOT_SEDARIM = SEDER_ORDER.map(seder => ({
 const MASECHET_TOOLS = {
   'חולין': { title: 'חולין', guideId: 'chullin', icon: 'icon/masechtot/chullin.png' },
   'בכורות': { title: 'מומים — מסכת בכורות', guideId: 'mumim', icon: 'icon/masechtot/bechorot.png' },
-  'סוכה': { title: 'סוכה ולולב', guideId: 'sukkah', icon: 'icon/masechtot/sukkah.png' },
+  'סוכה': { title: 'סוכה ולולב', guideId: 'sukkah', icon: 'icon/masechtot/sukkah.png',
+    // גל 25/08: PDF חיצוני נוסף, *לצד* הכרטסת הילידית - לא במקומה. נפתח
+    // בדפדפן החיצוני (app.open_url) ולא ב-iframe: קובץ PDF מרוחק ב-iframe
+    // לא אומת שעובד ב-WebView של אוצריא, וניווט חיצוני לא תלוי בכך.
+    // ⚠️ לא נבדק בפועל על מכשיר - אם לא ייפתח, אין נזק לכרטסת עצמה.
+    extraPdf: { label: 'המחזור המבואר — סוכה (PDF)',
+      url: 'https://taamu.co.il/wp-content/uploads/2021/07/hamahor-hamevohar-suka-kal2.pdf' } },
 };
 
 const talmudView = document.getElementById('talmudView');
 const talmudMasechtotGrid = document.getElementById('talmudMasechtotGrid');
 let talmudRendered = false;
 
+// גל 25/08: פותח PDF/קישור חיצוני בדפדפן של המכשיר, לא בתוך אוצריא -
+// app.open_url כבר מוצהרת ב-manifest.json אך לא הייתה בשימוש עד כה בקוד
+// הזה. ⚠️ לא אומת בפועל שהקריאה עובדת (אין דוגמה קיימת להעתיק ממנה).
+function openExternalPdf(url){
+  if (!(window.Otzaria && Otzaria.call)) { window.open(url, '_blank'); return; }
+  Otzaria.call('app.open_url', { url }).catch(() => window.open(url, '_blank'));
+}
 function openExternalGuide(path, title){
   guideFrame.removeAttribute('srcdoc');
   guideFrame.src = path;
@@ -63,7 +76,16 @@ async function renderMasechtot(){
   talmudMasechtotGrid.innerHTML = MASECHTOT_SEDARIM.map(s => `
       <h3 class="masechet-seder-head">סדר ${esc(s.seder)}</h3>
       <div class="cards masechtot-grid">
-        ${s.list.map(name => masechetCardHtml(name, masechetPages[name])).join('')}
+        ${s.list.map(name => {
+          const tool = MASECHET_TOOLS[name];
+          let html = masechetCardHtml(name, masechetPages[name]);
+          if (tool && tool.extraPdf){
+            html += `<div class="card tool-has-content" data-pdf-url="${esc(tool.extraPdf.url)}">` +
+              `<img class="icon-img" src="${esc(tool.icon || 'icon/icon.png')}" alt="" onerror="this.src='icon/icon.png'">` +
+              `<span class="label">${esc(tool.extraPdf.label)}</span></div>`;
+          }
+          return html;
+        }).join('')}
       </div>
     `).join('');
   talmudMasechtotGrid.querySelectorAll('.card').forEach(el => {
@@ -71,7 +93,8 @@ async function renderMasechtot(){
       const name = el.dataset.masechet;
       const tool = MASECHET_TOOLS[name];
       const page = masechetPages[name];
-      if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
+      if (el.dataset.pdfUrl){ openExternalPdf(el.dataset.pdfUrl); }
+      else if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
       else if (tool) openExternalGuide(tool.path, tool.title);
       else if (page) openCustomHtmlPage(page.name);
       else window.alert('מסכת ' + name + ' — אין עדיין מדריך למסכת זו. אי״ה ייבנה בעתיד, ומי שרוצה לעזור להגדיל תורה מוזמן להצטרף.');
