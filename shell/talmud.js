@@ -22,8 +22,7 @@ const MASECHET_TOOLS = {
   'בכורות': { title: 'מומים — מסכת בכורות', guideId: 'mumim', icon: 'icon/masechtot/bechorot.png' },
   'סוכה': { title: 'סוכה ולולב', guideId: 'sukkah', icon: 'icon/masechtot/sukkah.png',
     // גל 25/08: PDF חיצוני נוסף, *לצד* הכרטסת הילידית - לא במקומה. נפתח
-    // בדפדפן החיצוני (app.open_url) ולא ב-iframe: קובץ PDF מרוחק ב-iframe
-    // לא אומת שעובד ב-WebView של אוצריא, וניווט חיצוני לא תלוי בכך.
+    // בדפדפן החיצוני (ר' openExternalPdf למטה) ולא ב-iframe.
     // ⚠️ לא נבדק בפועל על מכשיר - אם לא ייפתח, אין נזק לכרטסת עצמה.
     extraPdf: { label: 'המחזור המבואר — סוכה (PDF)',
       url: 'https://taamu.co.il/wp-content/uploads/2021/07/hamahor-hamevohar-suka-kal2.pdf' } },
@@ -33,12 +32,10 @@ const talmudView = document.getElementById('talmudView');
 const talmudMasechtotGrid = document.getElementById('talmudMasechtotGrid');
 let talmudRendered = false;
 
-// גל 25/08: פותח PDF/קישור חיצוני. ⚠️ תוקן 25/08 מאוחר יותר: Otzaria.call('app.open_url', ...)
-// **נדחה בפועל ע"י ולידציית החנות הרשמית** - "קריאה ל-API לא מוכר: app.open_url"
-// (למרות שההרשאה מוצהרת ב-manifest.json!) - כלומר שם ה-API הזה פשוט לא קיים
-// ב-SDK הרשמי. הוסר הניסיון ל-Otzaria.call; נשאר רק window.open הרגיל, שהוא
-// DOM API סטנדרטי ולא קריאת Otzaria - לא אמור להיתקל באותה בעיה, אבל גם הוא
-// לא אומת בפועל בתוך ה-WebView.
+// גל 25/08: פותח PDF/קישור חיצוני. ⚠️ ניסיון קודם קרא ל-Otzaria באמצעות שם
+// API שהתברר כלא-קיים ב-SDK הרשמי, ונדחה בוולידציית החנות. הוסר לגמרי;
+// נשאר רק window.open הרגיל (DOM API סטנדרטי, לא קריאת Otzaria) - לא אמור
+// להיתקל באותה בעיה, אבל גם הוא לא אומת בפועל בתוך ה-WebView.
 function openExternalPdf(url){
   window.open(url, '_blank');
 }
