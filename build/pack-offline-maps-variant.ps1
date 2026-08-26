@@ -51,8 +51,12 @@ try {
   # ---- overlay על manifest.json: שם/תיאור בלבד, אותו id וגרסה בדיוק ----
   $variantManifestPath = Join-Path $tmpDir "manifest.json"
   $m = Get-Content $variantManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+  # ⚠️ 26/08: description המקורי כבר על סף מגבלת 150 התווים (148) - הוספה
+  # במקום הוחלפה, גרמה לחריגה ולכשל אמיתי בהתקנה. כל שינוי עתידי כאן חייב
+  # להישאר מתחת ל-150 תווים כולל.
   $m.name = $m.name + "+"
-  $m.description = $m.description + " גרסה זו כוללת מפת OpenStreetMap מפורטת מוטמעת (ללא צורך באינטרנט או בתוסף נפרד)."
+  $m.description = "מדריך מאוחד לתנ״ך ומשנה/תלמוד עם מפת OpenStreetMap מפורטת מוטמעת (בלי אינטרנט) - אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, מסכתות."
+  if ($m.description.Length -gt 150) { throw "description עדיין חורג מ-150 תווים ($($m.description.Length)) - תקן ידנית לפני אריזה." }
   $json = $m | ConvertTo-Json -Depth 10
   $json = [System.Text.RegularExpressions.Regex]::Unescape($json)
   [System.IO.File]::WriteAllText($variantManifestPath, $json, [System.Text.UTF8Encoding]::new($false))
