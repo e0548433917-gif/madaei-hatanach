@@ -21,9 +21,13 @@ const MASECHET_TOOLS = {
   'חולין': { title: 'חולין', guideId: 'chullin', icon: 'icon/masechtot/chullin.png' },
   'בכורות': { title: 'מומים — מסכת בכורות', guideId: 'mumim', icon: 'icon/masechtot/bechorot.png' },
   'סוכה': { title: 'סוכה ולולב', guideId: 'sukkah', icon: 'icon/masechtot/sukkah.png',
-    // גל 25/08: PDF חיצוני נוסף, *לצד* הכרטסת הילידית - לא במקומה. נפתח
-    // בדפדפן החיצוני (ר' openExternalPdf למטה) ולא ב-iframe.
-    // ⚠️ לא נבדק בפועל על מכשיר - אם לא ייפתח, אין נזק לכרטסת עצמה.
+    // גל 25/08: PDF חיצוני נוסף, *לצד* הכרטסת הילידית - לא במקומה.
+    // ⚠️ תוקן אחרי בדיקה בפועל: ניסיון ראשון (window.open) לא נפתח בכלל
+    // בתוך ה-WebView. הדפוס הנכון כבר קיים בקוד - data-external-link +
+    // data-requires-net, מטופל ע"י confirmOpenExternal (shell/refs.js) שקורא
+    // ל-Otzaria.call('app.openUrl', ...) *עם camelCase* - זו הקריאה שאומתה
+    // כבר עובדת בפועל (למשל בקישורי GitHub ב-personal.js). app.open_url
+    // (snake_case, מה שניסיתי בהתחלה) פשוט לא קיים ב-SDK.
     extraPdf: { label: 'המחזור המבואר — סוכה (PDF)',
       url: 'https://taamu.co.il/wp-content/uploads/2021/07/hamahor-hamevohar-suka-kal2.pdf' } },
 };
@@ -32,13 +36,6 @@ const talmudView = document.getElementById('talmudView');
 const talmudMasechtotGrid = document.getElementById('talmudMasechtotGrid');
 let talmudRendered = false;
 
-// גל 25/08: פותח PDF/קישור חיצוני. ⚠️ ניסיון קודם קרא ל-Otzaria באמצעות שם
-// API שהתברר כלא-קיים ב-SDK הרשמי, ונדחה בוולידציית החנות. הוסר לגמרי;
-// נשאר רק window.open הרגיל (DOM API סטנדרטי, לא קריאת Otzaria) - לא אמור
-// להיתקל באותה בעיה, אבל גם הוא לא אומת בפועל בתוך ה-WebView.
-function openExternalPdf(url){
-  window.open(url, '_blank');
-}
 function openExternalGuide(path, title){
   guideFrame.removeAttribute('srcdoc');
   guideFrame.src = path;
@@ -79,21 +76,26 @@ async function renderMasechtot(){
           const tool = MASECHET_TOOLS[name];
           let html = masechetCardHtml(name, masechetPages[name]);
           if (tool && tool.extraPdf){
-            html += `<div class="card tool-has-content" data-pdf-url="${esc(tool.extraPdf.url)}">` +
+            // data-external-link/data-requires-net = הדפוס הקיים לקישור חיצוני
+            // (shell/refs.js, confirmOpenExternal) - מטופל ע"י מאזין click גלובלי
+            // בשלב ה-capture, לא ע"י הקוד כאן (ר' querySelectorAll('.card') למטה).
+            html += `<a href="#" class="card tool-has-content" data-external-link="${esc(tool.extraPdf.url)}" data-requires-net>` +
               `<img class="icon-img" src="${esc(tool.icon || 'icon/icon.png')}" alt="" onerror="this.src='icon/icon.png'">` +
-              `<span class="label">${esc(tool.extraPdf.label)}</span></div>`;
+              `<span class="label">${esc(tool.extraPdf.label)}</span></a>`;
           }
           return html;
         }).join('')}
       </div>
     `).join('');
-  talmudMasechtotGrid.querySelectorAll('.card').forEach(el => {
+  // הכרטיס עם data-external-link (extraPdf למעלה) מטופל ע"י מאזין ה-capture
+  // הגלובלי ב-refs.js לפני שהוא מגיע לכאן בכלל (stopPropagation) - אין צורך
+  // לסנן אותו כאן במפורש, .card:not([data-external-link]) רק לניקיון.
+  talmudMasechtotGrid.querySelectorAll('.card:not([data-external-link])').forEach(el => {
     el.addEventListener('click', () => {
       const name = el.dataset.masechet;
       const tool = MASECHET_TOOLS[name];
       const page = masechetPages[name];
-      if (el.dataset.pdfUrl){ openExternalPdf(el.dataset.pdfUrl); }
-      else if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
+      if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
       else if (tool) openExternalGuide(tool.path, tool.title);
       else if (page) openCustomHtmlPage(page.name);
       else window.alert('מסכת ' + name + ' — אין עדיין מדריך למסכת זו. אי״ה ייבנה בעתיד, ומי שרוצה לעזור להגדיל תורה מוזמן להצטרף.');
