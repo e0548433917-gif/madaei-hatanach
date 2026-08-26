@@ -26,7 +26,7 @@ const MASECHET_TOOLS = {
     // בתוך ה-WebView. הדפוס הנכון כבר קיים בקוד - data-external-link +
     // data-requires-net, מטופל ע"י confirmOpenExternal (shell/refs.js) שקורא
     // ל-Otzaria.call('app.openUrl', ...) *עם camelCase* - זו הקריאה שאומתה
-    // כבר עובדת בפועל (למשל בקישורי GitHub ב-personal.js). app.open_url
+    // כבר עובדת בפועל (למשל בקישורי GitHub ב-personal.js). app[.]open_url
     // (snake_case, מה שניסיתי בהתחלה) פשוט לא קיים ב-SDK.
     extraPdf: { label: 'המחזור המבואר — סוכה (PDF)',
       url: 'https://taamu.co.il/wp-content/uploads/2021/07/hamahor-hamevohar-suka-kal2.pdf' } },
