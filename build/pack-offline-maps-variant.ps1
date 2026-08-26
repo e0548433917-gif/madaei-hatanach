@@ -54,9 +54,15 @@ try {
   # ⚠️ 26/08: description המקורי כבר על סף מגבלת 150 התווים (148) - הוספה
   # במקום הוחלפה, גרמה לחריגה ולכשל אמיתי בהתקנה. כל שינוי עתידי כאן חייב
   # להישאר מתחת ל-150 תווים כולל.
-  $m.name = $m.name + "+"
+  # ⚠️ 26/08 (סבב ב'): name ו-contributes.toolTab.title חייבים להיות זהים
+  # מילה-במילה - אוצריא דוחה התקנה אם הם שונים ("שם התוסף שונה מכותרת
+  # הטאב"). כל שינוי ל-name כאן חייב תמיד להתלוות בעדכון זהה ל-toolTab.title.
+  $newName = $m.name + "+"
+  $m.name = $newName
+  if ($m.contributes -and $m.contributes.toolTab) { $m.contributes.toolTab.title = $newName }
   $m.description = "מדריך מאוחד לתנ״ך ומשנה/תלמוד עם מפת OpenStreetMap מפורטת מוטמעת (בלי אינטרנט) - אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, מסכתות."
   if ($m.description.Length -gt 150) { throw "description עדיין חורג מ-150 תווים ($($m.description.Length)) - תקן ידנית לפני אריזה." }
+  if ($m.contributes.toolTab.title -ne $m.name) { throw "name/toolTab.title לא זהים - זו בדיוק התקלה שתוקנה, תקן ידנית." }
   $json = $m | ConvertTo-Json -Depth 10
   $json = [System.Text.RegularExpressions.Regex]::Unescape($json)
   [System.IO.File]::WriteAllText($variantManifestPath, $json, [System.Text.UTF8Encoding]::new($false))
