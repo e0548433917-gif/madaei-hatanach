@@ -30,8 +30,9 @@
      בלי שום תלות ב-DOM -->
 <script src="guides/_shared/dates.js"></script>
 
-<!-- פרסום ״ערך היום״ ליומן אוצריא — משותף לעמוד הרקע ולעמוד המלא -->
-<script src="shell/daily-publish.js"></script>
+<!-- פרסום ״ערך היום״: publishUpcomingEvents ב-dates.js למעלה, מופעל מ-
+     background.js. shell/daily-publish.js הוסר (25/08) - הצהיר const זהה
+     ל-dates.js, גרם ל-SyntaxError redeclare ששבר אותו בשקט בכל טעינה. -->
 
 <script src="shell/background.js"></script>
 </body>

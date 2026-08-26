@@ -110,9 +110,9 @@ async function bgHandleIdentifyClick(payload){
 }
 
 // ---- 2. "ערך היום" ליומן של אוצריא (ROADMAP 4.12) ---------------------------
-// הלוגיקה עצמה עברה ל-shell/daily-publish.js (נטען כאן וגם ב-index.html), כדי
-// שהפרסום יעבוד גם כשמנוע הרקע טוען את index.html — כלומר גם כשהמניפסט אינו
-// מצהיר על contributes.background.entrypoint. ר' ההערה בראש הקובץ ההוא.
+// הלוגיקה עצמה יושבת ב-publishUpcomingEvents (guides/_shared/dates.js, נטען
+// כאן וגם ב-index.html), כדי שהפרסום יעבוד גם כשמנוע הרקע טוען את index.html
+// — כלומר גם כשהמניפסט אינו מצהיר על contributes.background.entrypoint.
 
 // ---- חיווט --------------------------------------------------------------
 
@@ -124,7 +124,9 @@ function bgWait(elapsed){
 
   Otzaria.on('plugin.boot', () => {
     bgStart();
-    publishTodayEvents().catch(()=>{}).then(bgEnd, bgEnd);
+    // publishUpcomingEvents (guides/_shared/dates.js) - ר' הערה מפורטת ב-
+    // bridge.js למה זה הוחלף מ-publishTodayEvents (daily-publish.js הוסר).
+    publishUpcomingEvents().catch(()=>{}).then(bgEnd, bgEnd);
   });
 
   Otzaria.on('reader.context_menu_item_clicked', (payload) => {

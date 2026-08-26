@@ -332,8 +332,16 @@ function waitForOtzaria(elapsed){
     // הפיצ׳ר היה מת. הקריאה יושבת ב-plugin.boot כדרישת ה-SDK ("כל הלוגיקה
     // הראשונית בתוך callback של plugin.boot"), עם טיימר גיבוי למקרה שה-boot
     // כבר ירה לפני שהספקנו להירשם. הפונקציה עצמה חסינה לריצה כפולה.
-    Otzaria.on('plugin.boot', () => { if (typeof publishTodayEvents === 'function') publishTodayEvents().catch(()=>{}); });
-    setTimeout(() => { if (typeof publishTodayEvents === 'function') publishTodayEvents().catch(()=>{}); }, 5000);
+    // גל 25/08 מאוחר: הוחלף מ-publishTodayEvents (shell/daily-publish.js) ל-
+    // publishUpcomingEvents (guides/_shared/dates.js) - שתי סיבות: (1) המשתמש
+    // ביקש פרסום לכל השנה קדימה/אחורה, לא רק ליום הנוכחי; (2) שני הקבצים
+    // הצהירו את אותו const PUBLISHED_KEYS_KEY ברמה עליונה, וכששניהם נטענים
+    // (index.html/background.html) זו הייתה שגיאת redeclare ששברה את כל
+    // shell/daily-publish.js בשקט - publishTodayEvents מעולם לא היה מוגדר,
+    // ולכן שום פרסום לא קרה בכלל, לא רק "אין מאורע היום". daily-publish.js
+    // הוסר לגמרי (ר' git log) כדי שהקונפליקט לא יחזור.
+    Otzaria.on('plugin.boot', () => { if (typeof publishUpcomingEvents === 'function') publishUpcomingEvents().catch(()=>{}); });
+    setTimeout(() => { if (typeof publishUpcomingEvents === 'function') publishUpcomingEvents().catch(()=>{}); }, 5000);
     Otzaria.on('theme.changed', onOtzariaTheme);
     // עצירה/חידוש של עבודה מתמשכת ביציאה מהלשונית ובחזרה אליה. שני האירועים
     // אינם דורשים הרשאת events.subscribe (README §אירועי מחזור חיים).
