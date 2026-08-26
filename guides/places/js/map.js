@@ -46,7 +46,12 @@ const S2_OVERLAY_URL = 'https://tiles.maps.eox.at/wmts/1.0.0/overlay_bright_3857
 const S2_ATTR = 'Sentinel-2 cloudless 2024 by EOX (Contains modified Copernicus Sentinel data)';
 const SAT_MAX_ZOOM = 17;
 
-const OSM_LOCAL_URL = 'tiles/{z}/{x}/{y}.png';
+// 26/08: היה 'tiles/...' (יחסי לשורש החבילה) - לא תאם בפועל למקום שההוראה
+// למשתמש (openOfflineMapHelp) ולוריאנט "עינים למקרא+" מציבים את האריחים
+// (guides/places/tiles/), כי map.js נטען ישירות מ-index.html (לא מ-iframe
+// נפרד) ולכן נתיב יחסי בו נפתר מול שורש החבילה, לא מול js/. המתג "OSM
+// אופליין" מעולם לא הופיע כי probeTile תמיד קיבל 404. אומת ותוקן ע"י המשתמש.
+const OSM_LOCAL_URL = 'guides/places/tiles/{z}/{x}/{y}.png';
 const OSM_ATTR = '© OpenStreetMap contributors';
 const OSM_OFFLINE_MAX_ZOOM = 13; // מוטמע עד z11, מוגדל עד z13 (כמו ב"מקומות+")
 const BLANK_TILE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -54,7 +59,7 @@ const BLANK_TILE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAA
 const OSM_WIDE_BOUNDS = [[9,17],[42.5,58]];
 const OSM_FINE_BOUNDS = [[27.4,30.3],[40.5,49.2]];
 // אריח-בדיקה ברמת עולם (z1) — כמעט תמיד קיים בכל עותק סביר של tiles/, גם חלקי
-const OSM_PROBE_URL = 'tiles/1/1/0.png';
+const OSM_PROBE_URL = 'guides/places/tiles/1/1/0.png';
 
 let baseMode = 'vector'; // 'vector' | 'osm' | 'sat'
 let satAvailable = false, osmAvailable = false;
