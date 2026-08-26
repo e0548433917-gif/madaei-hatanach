@@ -146,6 +146,11 @@ function openOfflineMapHelp(){
     content: 'התוסף "מקומות+" (com_chadbedera_placeguideplus) כולל את אריחי המפה המפורטת. יש להתקינו ולהעתיק את תיקיית ה-tiles/ ממנו אל guides/places/tiles/ בתוסף זה.'
   }).catch(()=>{});
 }
+let offlineMapInfoCtl = null;
+// 26/08: הכפתור נוסף תמיד, בלי קשר אם האריחים כבר זמינים בפועל - כך שמי
+// שכן התקין "עינים למקרא+" (או העתיק tiles/ ידנית) עדיין רואה הוראה
+// שכבר לא רלוונטית לו. probeTile של OSM (ב-initWorldMap) מסיר אותו אם
+// osmAvailable מתברר כ-true.
 function addOfflineMapInfoBtn(){
   const Ctl = L.Control.extend({
     options:{position:'topright'},
@@ -159,7 +164,11 @@ function addOfflineMapInfoBtn(){
       return btn;
     }
   });
-  worldMap.addControl(new Ctl());
+  offlineMapInfoCtl = new Ctl();
+  worldMap.addControl(offlineMapInfoCtl);
+}
+function removeOfflineMapInfoBtn(){
+  if(offlineMapInfoCtl && worldMap){ worldMap.removeControl(offlineMapInfoCtl); offlineMapInfoCtl = null; }
 }
 
 function addLabels(map, sizeFactor){
@@ -263,7 +272,7 @@ function initWorldMap(){
   vectorBase = addBaseLayers(worldMap);
   addOfflineMapInfoBtn();
   probeTile(S2_URL.replace('{z}','2').replace('{y}','1').replace('{x}','2'), ok=>{ if(ok){ satAvailable = true; rebuildBaseSwitch(); } });
-  probeTile(OSM_PROBE_URL, ok=>{ if(ok){ osmAvailable = true; rebuildBaseSwitch(); } });
+  probeTile(OSM_PROBE_URL, ok=>{ if(ok){ osmAvailable = true; rebuildBaseSwitch(); removeOfflineMapInfoBtn(); } });
   labelMarkers = addLabels(worldMap, 1);
   markerLayer = (typeof L.markerClusterGroup === 'function')
     ? L.markerClusterGroup({maxClusterRadius:36, iconCreateFunction:clusterIcon, showCoverageOnHover:false, spiderfyOnMaxZoom:true, disableClusteringAtZoom:12})
