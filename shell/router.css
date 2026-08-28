@@ -22,6 +22,11 @@
   /* --- נגזרים --- */
   --color-primary-subtle:     #f4ecd9;  /* primary בשקיפות נמוכה */
   --color-secondary-subtle:   #efe8d6;
+  /* תפקידי M3 שאוצריא מזריקה ולא היו ממופים אצלנו (3.1.0). DESIGN_GUIDE
+     מונה אותם במפורש; הם מה שנותן ל"חלונית בתוך חלונית" את שני הגוונים
+     במקום משטח אחיד — ר' .book-choice. */
+  --color-secondary-container:    #f0e6d2;
+  --color-on-secondary-container: #4a3d28;
   --color-bg:                 #faf7f0;  /* רקע העמוד (מאחורי הכרטיסים) */
   --color-surface-2:          #f7f2e6;  /* רקע משני עדין */
   --color-surface-3:          #f9f5ea;  /* תיבות פסוק/מקור */
@@ -74,6 +79,8 @@
   --color-outline:            #4a4032;
   --color-primary-subtle:     #33291a;
   --color-secondary-subtle:   #2f2820;
+  --color-secondary-container:    #2e2519;
+  --color-on-secondary-container: #ecdfc6;
   --color-bg:                 #16130f;
   --color-surface-2:          #262119;
   --color-surface-3:          #2b251c;
@@ -201,7 +208,8 @@ html, body {
 }
 /* רווח בין שורת שלושת שערי הלימוד לשורת פרשה/ערך היום/ציורים - שתיהן .cards
    נפרדות בלי .cards-sep ביניהן, ובלעדי זה הן נדבקות זו לזו */
-#studyGatesGrid { margin-bottom: clamp(10px, 1.6vw, 16px); }
+/* #studyGatesGrid בוטל ב-3.1.0 — שתי שורות הלימוד אוחדו לשורה אחת (#studyGrid)
+   מאחורי כרטיס "בחירת ספר", ולכן אין יותר שתי רשתות שצריך להפריד ביניהן. */
 /* מפריד עדין בין שורת המדריכים לשורה של המשתמש עצמו */
 .cards-sep {
   display: flex; align-items: center; gap: 10px;
@@ -277,13 +285,17 @@ html, body {
   opacity: .8;
 }
 
-/* ==================== שורת חיפוש ראשית (עמוד השער) ==================== */
+/* ==================== שורת חיפוש ראשית (בתוך .topbar, רק בדף הבית) ==================== */
 #homeSearchWrap {
   position: relative;
   display: flex; align-items: center; gap: 8px;
-  max-width: 640px;   /* יישור לרוחב רשת הכרטיסים */
-  margin: 0 auto 20px;
-  padding: 6px 14px 6px 6px;
+  /* יושבת בתוך .topbar לצד ה-h1 (שמתכווץ עם ellipsis כברירת מחדל) - ממלאת
+     את הרוחב שנשאר, עם תקרה כדי לא להימתח לרוחב מלא במסך רחב */
+  flex: 1 1 160px;
+  min-width: 0;
+  max-width: 480px;
+  margin: 0;
+  padding: 5px 14px 5px 6px;
   background: var(--color-surface);
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-pill);
@@ -1187,3 +1199,34 @@ html, body {
 .temple-timer .tt-value { font-size: 20px; font-weight: 700; color: var(--color-primary); }
 .temple-timer .tt-label { font-size: 11px; color: var(--color-on-surface-faint); }
 .temple-timer .tt-verse { font-size: 12px; color: var(--color-on-surface-dim); margin-top: 8px; }
+
+/* ==================== בורר הספר (3.1.0, סעיף 2) ====================
+   ארבע אפשרויות במקום ארבעה כרטיסים נפרדים בעמוד השער. הסגנון לפי
+   DESIGN_GUIDE של אוצריא: secondary-container לגוון הפנימי (מה שנותן את
+   מראה ה"חלונית בתוך חלונית" של סידורון במקום משטח אחיד), radius-md,
+   ו-elevation 0 במנוחה — הצל מופיע רק בריחוף, כמו ב-.card. */
+.book-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+.book-choice {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 14px 10px;
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  border: 1px solid var(--color-outline-faint);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: box-shadow .15s, transform .15s, border-color .15s;
+}
+.book-choice:hover {
+  box-shadow: 0 4px 14px var(--color-shadow);
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+}
+.book-choice .bc-icon { font-size: calc(1.7em * var(--ui-scale)); line-height: 1; }
+.book-choice .bc-label { font-weight: 600; font-size: .98em; }
+.book-choice .bc-sub { font-size: .78em; opacity: .72; }
