@@ -1366,3 +1366,7 @@ html, body {
 .lib-row { display: flex; flex-direction: column; gap: 1px; }
 .lib-row .lib-title { font-weight: 600; }
 .lib-row .lib-path { font-size: .78em; color: var(--color-on-surface-faint); }
+
+/* [hidden] חייב גבר מפורש: .book-choice-row מגדיר display:flex, שגובר על
+   ברירת המחדל display:none של [hidden] ולכן הכפתור המוסתר עדיין הוצג. */
+.book-choice-row[hidden] { display: none !important; }
