@@ -459,3 +459,152 @@ async function openRandomBook(){
 }
 
 if (randomBookCard) randomBookCard.addEventListener('click', openRandomBook);
+
+// ============================================================
+//  זיהוי בכל ספר מהספרייה (3.1.3)
+//  ⚠️ הבדל מהותי משלושת השערים שמעליו: הם מסתמכים על מראי מקום שתויגו מראש
+//  בדאטה שלנו (entry.verses / entry.makorot), ולכן מוגבלים למה שתייגנו.
+//  כאן נשלף הטקסט עצמו מהספר ומורץ עליו מנוע הזיהוי החי — אותו מנוע של
+//  תפריט ההקשר ושורת החיפוש — ולכן זה עובד על *כל* ספר שמותקן אצל המשתמש.
+//
+//  APIs (מול API_REFERENCE.md הרשמי):
+//    • library.getTree        — library.books.read,   0.9.93  (רשימת הספרים)
+//    • library.getBookToc     — library.content.read, 0.9.93  (מבנה/קטעים)
+//    • library.getBookContent — library.content.read, 0.9.93  (הטקסט עצמו)
+//  ⚠️ מבנה התשובה של getBookToc אינו מאומת מול מכשיר — הקוד מקבל כמה צורות
+//  סבירות ונופל ל"תחילת הספר" אם לא זוהתה אף אחת מהן.
+// ============================================================
+const libraryBookOverlay = document.getElementById('libraryBookOverlay');
+const libBookSearch = document.getElementById('libBookSearch');
+const libBookResults = document.getElementById('libBookResults');
+const libSectionWrap = document.getElementById('libSectionWrap');
+const libSectionSelect = document.getElementById('libSectionSelect');
+const libChosenBook = document.getElementById('libChosenBook');
+const libBookStatus = document.getElementById('libBookStatus');
+const libBookGoBtn = document.getElementById('libBookGoBtn');
+let libPickedBook = null;
+
+const LIB_CHUNK = 12000;   // תווים לקטע — מספיק לפרק/דף, ולא מציף את הזיהוי
+
+function libStatus(msg){ if (libBookStatus) libBookStatus.textContent = msg || ''; }
+function unwrapOtz(res){ return (res && (res.data !== undefined ? res.data : res)); }
+
+async function openLibraryBookPicker(){
+  if (!hasOtzaria()){
+    window.alert('זיהוי בספר מהספרייה דורש הרצה בתוך אוצריא.');
+    return;
+  }
+  closeBookChooser();
+  libPickedBook = null;
+  if (libBookSearch) libBookSearch.value = '';
+  if (libBookResults) libBookResults.innerHTML = '';
+  if (libSectionWrap) libSectionWrap.style.display = 'none';
+  if (libBookGoBtn) libBookGoBtn.disabled = true;
+  libraryBookOverlay.classList.add('open');
+  libStatus('טוען את רשימת הספרים…');
+  try {
+    const books = await loadLibraryBooks();
+    libStatus(books.length ? ('בספרייה שלכם ' + books.length + ' ספרים. הקלידו כדי לסנן.') : 'לא נמצאו ספרים.');
+    renderLibBookList('');
+  } catch(e){
+    libStatus('לא הצלחנו לטעון את רשימת הספרים.');
+  }
+  if (libBookSearch) libBookSearch.focus();
+}
+
+function renderLibBookList(q){
+  if (!libBookResults || !libraryBooksCache) return;
+  const norm = normalizeHeb(q || '');
+  const hits = (norm.length < 1 ? libraryBooksCache
+    : libraryBooksCache.filter(b => normalizeHeb(b.title).indexOf(norm) !== -1)).slice(0, 40);
+  if (!hits.length){ libBookResults.innerHTML = '<div class="mini-note">לא נמצא ספר בשם הזה.</div>'; return; }
+  libBookResults.innerHTML = hits.map((b, i) =>
+    '<div class="lib-row" data-i="' + i + '">' + esc(b.title) + '</div>').join('');
+  libBookResults.querySelectorAll('.lib-row').forEach(row => {
+    row.addEventListener('click', () => pickLibBook(hits[parseInt(row.dataset.i, 10)]));
+  });
+}
+
+async function pickLibBook(book){
+  if (!book) return;
+  libPickedBook = book;
+  libBookResults.innerHTML = '';
+  if (libBookSearch) libBookSearch.value = book.title;
+  libChosenBook.textContent = book.title;
+  libSectionWrap.style.display = '';
+  libSectionSelect.innerHTML = '<option value="0">תחילת הספר</option>';
+  libBookGoBtn.disabled = false;
+  libStatus('טוען את מבנה הספר…');
+  try {
+    const toc = unwrapOtz(await Otzaria.call('library.getBookToc', { bookId: book.bookId, type: book.type }));
+    const flat = [];
+    (function walk(nodes, depth){
+      if (!Array.isArray(nodes)) return;
+      for (const n of nodes){
+        if (!n) continue;
+        const title = n.title || n.text || n.name;
+        const idx = (n.index !== undefined ? n.index : n.offset);
+        if (title && Number.isFinite(Number(idx))){
+          flat.push({ label: '　'.repeat(depth) + title, index: Number(idx) });
+        }
+        walk(n.children || n.sections || n.categories, depth + 1);
+      }
+    })(Array.isArray(toc) ? toc : (toc && (toc.toc || toc.sections || toc.children)), 0);
+    if (flat.length){
+      libSectionSelect.innerHTML = flat.slice(0, 500)
+        .map(s => '<option value="' + s.index + '">' + esc(s.label) + '</option>').join('');
+      libStatus('בחרו קטע מתוך ' + flat.length + ' קטעים.');
+    } else {
+      libStatus('לא נמצא מבנה פרקים לספר זה — נזהה מתחילתו.');
+    }
+  } catch(e){
+    libStatus('לא נמצא מבנה פרקים לספר זה — נזהה מתחילתו.');
+  }
+}
+
+async function runLibraryIdentify(){
+  if (!libPickedBook) return;
+  const offset = parseInt(libSectionSelect.value, 10) || 0;
+  libBookGoBtn.disabled = true;
+  const orig = libBookGoBtn.textContent;
+  libBookGoBtn.textContent = '…';
+  libStatus('שולף את הטקסט ומזהה…');
+  try {
+    const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
+      bookId: libPickedBook.bookId, type: libPickedBook.type, offset: offset, limit: LIB_CHUNK
+    }));
+    // התשובה עשויה להיות מחרוזת, מערך קטעים, או אובייקט עם text/content
+    let text = '';
+    if (typeof res === 'string') text = res;
+    else if (Array.isArray(res)) text = res.map(x => (typeof x === 'string' ? x : ((x && (x.text || x.content)) || ''))).join('\n');
+    else if (res) text = res.text || res.content || '';
+    text = String(text || '').replace(/<[^>]*>/g, ' ');   // הטקסט מגיע לעתים כ-HTML
+    if (!text.trim()){
+      libStatus('לא הצלחנו לשלוף טקסט מהקטע הזה.');
+      return;
+    }
+    if (!parashaDataReady()) await ensureAllGuidesLoaded();
+    const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
+    libraryBookOverlay.classList.remove('open');
+    const secLabel = libSectionSelect.selectedOptions[0] ? libSectionSelect.selectedOptions[0].textContent.trim() : '';
+    showResults(matches, libPickedBook.title + (secLabel && secLabel !== 'תחילת הספר' ? ' — ' + secLabel : ''));
+  } catch(e){
+    libStatus('הזיהוי נכשל. ' + ((e && e.message) || ''));
+  } finally {
+    libBookGoBtn.disabled = false;
+    libBookGoBtn.textContent = orig;
+  }
+}
+
+const libraryBookRow = document.getElementById('libraryBookRow');
+if (libraryBookRow) libraryBookRow.addEventListener('click', openLibraryBookPicker);
+if (libBookSearch){
+  let libTimer = null;
+  libBookSearch.addEventListener('input', () => {
+    clearTimeout(libTimer);
+    libTimer = setTimeout(() => renderLibBookList(libBookSearch.value.trim()), 140);
+  });
+}
+if (libBookGoBtn) libBookGoBtn.addEventListener('click', runLibraryIdentify);
+const libBookCloseBtn = document.getElementById('libBookClose');
+if (libBookCloseBtn) libBookCloseBtn.addEventListener('click', () => libraryBookOverlay.classList.remove('open'));

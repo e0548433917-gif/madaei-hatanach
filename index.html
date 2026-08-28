@@ -86,8 +86,15 @@
   </div><!-- /#landingMain -->
   </div><!-- /#landingLayout -->
 
-  <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
-  <div id="aiDisclaimer">התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.</div>
+  </div>
+
+  <!-- פוטר קבוע (3.1.3): יצא מתוך #landingBody אל #landing עצמו, ולכן אינו
+       נגלל עם התוכן ואינו יושב מתחת לאיקונים — הוא נעוץ לתחתית המסך.
+       #landing הוא flex column ו-#landingBody הוא flex:1, ולכן אח שלו נצמד
+       לתחתית מאליו בלי position:fixed. שתי השורות אוחדו לשורה אחת דחוסה. -->
+  <div id="landingFooter">
+    <span id="copyrightFooter">כל הזכויות שמורות לחד בדרא</span>
+    <span id="aiDisclaimer">התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.</span>
   </div>
 </div>
 
@@ -213,10 +220,17 @@
          המשתמש מהתוסף. אותה שאלה ("באיזה ספר?"), תוצאה אחרת — ולכן קו מפריד
          ותווית ↗ ולא אריח חמישי שווה-ערך ברשת. -->
     <div class="book-choice-alt">
+      <button type="button" class="book-choice-row" id="libraryBookRow">
+        <span class="bc-icon">🔎</span>
+        <span class="bcr-text">
+          <span class="bc-label">או: ספר אחר מהספרייה</span>
+          <span class="bc-sub">בחרו כל ספר שמותקן אצלכם — נזהה מה שכתוב בו</span>
+        </span>
+      </button>
       <button type="button" class="book-choice-row" id="randomBookRow">
         <span class="bc-icon">🎲</span>
         <span class="bcr-text">
-          <span class="bc-label">או: ספר אקראי מכל הספרייה</span>
+          <span class="bc-label">או: הפתיעו אותי — ספר אקראי</span>
           <span class="bc-sub">נפתח בקורא של אוצריא ↗</span>
         </span>
       </button>
@@ -224,6 +238,32 @@
 
     <div class="panel-actions">
       <button class="panel-btn secondary" id="bookChooserClose">סגירה</button>
+    </div>
+  </div>
+</div>
+
+<!-- זיהוי בכל ספר מהספרייה (3.1.3). בשונה משלושת השערים, שמסתמכים על מראי
+     מקום שתויגו מראש בדאטה שלנו, כאן נשלף הטקסט עצמו מהספר (library.getBookContent)
+     ומורץ עליו מנוע הזיהוי החי — ולכן זה עובד על כל ספר שמותקן אצל המשתמש.
+     ר׳ openLibraryBookPicker ב-shell/shas.js -->
+<div class="panel-overlay" id="libraryBookOverlay">
+  <div class="panel-box">
+    <h2>🔎 זיהוי בספר מהספרייה</h2>
+    <p class="panel-hint">בחרו ספר מהספרייה שלכם ואת הקטע שבו אתם לומדים — ונזהה בתוכו את כל האישים, המקומות, בעלי החיים, הצומח והדומם שמופיעים בו.</p>
+
+    <input type="search" id="libBookSearch" class="f-input" autocomplete="off" spellcheck="false" placeholder="שם הספר…">
+    <div id="libBookResults" class="lib-results"></div>
+
+    <div id="libSectionWrap" style="display:none;">
+      <div class="field-label" id="libChosenBook"></div>
+      <select id="libSectionSelect" aria-label="בחירת קטע"></select>
+    </div>
+
+    <div id="libBookStatus" class="mini-note"></div>
+
+    <div class="panel-actions">
+      <button class="panel-btn" id="libBookGoBtn" disabled>זהה</button>
+      <button class="panel-btn secondary" id="libBookClose">סגירה</button>
     </div>
   </div>
 </div>

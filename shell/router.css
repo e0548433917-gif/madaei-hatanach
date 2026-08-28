@@ -1254,8 +1254,11 @@ html, body {
      של הרשת. מכיוון שהקבוצה ממורכזת, הגדלת הרווח גם דוחפת את הסרגל החוצה
      לכיוון שולי המסך — שתי הבקשות באותו פרמטר. */
   gap: clamp(28px, 5.5vw, 80px);
+  /* 3.1.3 — הסרגל נצמד לשוליים הימניים (תחילת ה-RTL); התוכן נדחף אליו
+     משמאל עם margin auto, במקום ששניהם יהיו ממורכזים כקבוצה אחת. */
+  justify-content: flex-start;
 }
-#landingMain { flex: 0 1 640px; min-width: 0; }
+#landingMain { flex: 0 1 640px; min-width: 0; margin-inline-start: auto; }
 #sideRail {
   flex: 0 0 auto;
   width: clamp(150px, 15vw, 200px);
@@ -1310,4 +1313,53 @@ html, body {
 
 /* שורת "שלי" מתרוקנת כשאין דפי HTML מותאמים — מוסתרת ב-toggleExtraSection
    (shell/home.js) כדי לא להשאיר כותרת מעל אזור ריק. */
-#extraSep.is-empty, #extraGrid.is-empty { display: none; }
+/* (בוטל ב-3.1.3 — השורה הריקה מציגה עכשיו ריבועי הוספה במקום להיעלם) */
+
+/* פוטר קבוע (3.1.3): שורה אחת דחוסה ונעוצה לתחתית, מחוץ לאזור הנגלל, כדי
+   שהיא לא תופיע מתחת לאיקונים בתוך התוכן. */
+#landingFooter {
+  flex: 0 0 auto;
+  padding: 8px 16px 10px;
+  text-align: center;
+  border-top: 1px solid var(--color-outline-faint);
+  background: var(--color-surface-container-high);
+  font-size: .7em;
+  line-height: 1.45;
+  color: var(--color-on-surface-ghost);
+}
+#landingFooter #copyrightFooter {
+  display: block;
+  margin: 0 0 2px;
+  font-size: 1em;
+  color: var(--color-on-surface-ghost);
+}
+#landingFooter #aiDisclaimer {
+  display: block;
+  max-width: 620px; margin: 0 auto; padding: 0;
+  font-size: 1em; opacity: .85;
+}
+
+/* ריבועי "הוספת דף אישי" בשורת "שלי" — אפרוריים למחצה, אותו גודל ככרטיס
+   רגיל, מסגרת מקווקוות כדי שייקראו כמקום פנוי ולא ככרטיס פעיל (3.1.3). */
+.card.card-placeholder {
+  border-style: dashed;
+  border-color: var(--color-outline);
+  background: transparent;
+  opacity: .45;
+  font-family: var(--font-main);
+  color: var(--color-on-surface-dim);
+}
+.card.card-placeholder:hover {
+  opacity: .8;
+  background: var(--color-primary-subtle);
+  border-style: solid;
+}
+.card.card-placeholder .icon { font-weight: 300; }
+
+/* רשימת הספרים בפאנל הזיהוי מהספרייה (3.1.3) */
+.lib-results { max-height: 220px; overflow-y: auto; margin: 6px 0 10px; }
+.lib-results:empty { margin: 0; }
+.lib-row { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--color-outline-faint); }
+.lib-row:last-child { border-bottom: none; }
+.lib-row:hover { background: var(--color-primary-subtle); }
+#libSectionSelect { width: 100%; }

@@ -90,7 +90,7 @@ try {
     id       = "madaei-hatanach-open"
     type     = "button"
     title    = "עינים למקרא"
-    icon     = "book_24_regular"
+    icon     = "eye_24_regular"
     contexts = @("reader-text", "reader-pdf")
     openPlugin = $true
   }
