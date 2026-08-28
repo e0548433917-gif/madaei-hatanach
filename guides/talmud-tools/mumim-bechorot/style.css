@@ -16,6 +16,10 @@
     --line-height:1.5;
     --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
     --shadow:0 8px 24px rgba(var(--color-on-surface-rgb),.18);
+  
+    --radius-xs:3px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+    --font-main:'Heebo',sans-serif; --font-display:'Frank Ruhl Libre',serif;
+
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth; height:100%; overflow-y:auto; overflow-x:hidden;}

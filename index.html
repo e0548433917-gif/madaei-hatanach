@@ -76,12 +76,12 @@
        "בית המקדש" עלה מכאן לשורת "לימוד" ב-3.1.0 (סעיף 5). "ספר אקראי" נוסף כאן
        ולא בשורת הלימוד, כי הוא היחיד שתלוי בספריית אוצריא החיה (library.getTree)
        ולכן גם היחיד שעשוי להיות מושבת מחוץ לאוצריא. -->
-  <!-- "האזור האישי" עבר לסרגל הצד ב-3.1.1; כאן נשאר "ספר אקראי" ודפי ה-HTML
-       שהמשתמש הוסיף (renderCustomPageCards, shell/home.js). -->
-  <div class="cards-sep"><span>שלי</span></div>
-  <div class="cards" id="extraGrid">
-    <div class="card" id="randomBookCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🎲&lt;/span&gt;'"><span class="label">ספר אקראי מהספרייה</span></div>
-  </div>
+  <!-- "האזור האישי" עבר לסרגל הצד ב-3.1.1, ו"ספר אקראי" נכנס לתוך בורר הספר
+       ב-3.1.2. כאן נשארים רק דפי ה-HTML שהמשתמש הוסיף בעצמו
+       (renderCustomPageCards, shell/home.js) — הרשת ריקה עד שיוסיף אחד,
+       ולכן גם הכותרת "שלי" מוסתרת כשאין בה כלום (ר' toggleExtraSection). -->
+  <div class="cards-sep" id="extraSep"><span>שלי</span></div>
+  <div class="cards" id="extraGrid"></div>
 
   </div><!-- /#landingMain -->
   </div><!-- /#landingLayout -->
@@ -207,6 +207,21 @@
       <button type="button" class="book-choice" data-gate="bavli"><span class="bc-icon">📚</span><span class="bc-label">בבלי</span><span class="bc-sub">לפי מסכת ודף</span></button>
       <button type="button" class="book-choice" data-gate="parasha"><span class="bc-icon">🕮</span><span class="bc-label">פרשת השבוע</span><span class="bc-sub">לפי פרשה</span></button>
     </div>
+
+    <!-- מופרד בכוונה מארבע האפשרויות שמעליו (3.1.2): הן מציגות ערכים מהמדריכים
+         שיש להם מקור בפרק/בדף שנבחר, וזה פותח ספר בקורא של אוצריא ומוציא את
+         המשתמש מהתוסף. אותה שאלה ("באיזה ספר?"), תוצאה אחרת — ולכן קו מפריד
+         ותווית ↗ ולא אריח חמישי שווה-ערך ברשת. -->
+    <div class="book-choice-alt">
+      <button type="button" class="book-choice-row" id="randomBookRow">
+        <span class="bc-icon">🎲</span>
+        <span class="bcr-text">
+          <span class="bc-label">או: ספר אקראי מכל הספרייה</span>
+          <span class="bc-sub">נפתח בקורא של אוצריא ↗</span>
+        </span>
+      </button>
+    </div>
+
     <div class="panel-actions">
       <button class="panel-btn secondary" id="bookChooserClose">סגירה</button>
     </div>

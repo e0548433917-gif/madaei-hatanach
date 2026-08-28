@@ -139,11 +139,23 @@ function rebuildBaseSwitch(){
 // כפתור "ℹ️" קבוע (לא תלוי בזמינות) — מסביר איך להוסיף OSM אופליין למי שעדיין אין לו,
 // כדי שהאופציה תהיה גלויה גם למי שהתקנה שלו "רזה". openOfflineMapHelp הוגדרה כאן —
 // לא הייתה קיימת בכלל (הערה ישנה הפנתה ל-app.js שלא קיים), ולכן הכפתור לא עשה כלום.
+// 3.1.2 — ההודעה שינתה כיוון. עד כה היא ביקשה מהמשתמש להתקין תוסף אחר
+// ולהעתיק ידנית תיקיית tiles/ — פעולה שרוב המשתמשים לא יבצעו. עכשיו היא
+// מפנה להורדת החבילה המלאה (הווריאנט שכולל את האריחים, נבנה ע"י
+// build/pack-offline-maps-variant.ps1) ישירות מדף ה-Releases.
+// 📌 כשתצא חבילת המפות ל"עינים למקרא פלוס" כתוסף נפרד בחנות — להחליף כאן
+//    את הקישור בקישור לדף שלו בחנות, ולעדכן את נוסח ההודעה בהתאם.
+const FULL_MAPS_URL = 'https://github.com/e0548433917-gif/madaei-hatanach/releases';
+
 function openOfflineMapHelp(){
   if (!(window.Otzaria && Otzaria.call)) return;
   Otzaria.call('ui.showConfirm', {
-    title: 'מפת OpenStreetMap מפורטת (אופליין)',
-    content: 'התוסף "מקומות+" (com_chadbedera_placeguideplus) כולל את אריחי המפה המפורטת. יש להתקינו ולהעתיק את תיקיית ה-tiles/ ממנו אל guides/places/tiles/ בתוסף זה.'
+    title: 'מפה מפורטת',
+    content: 'ניתן לראות מפה מפורטת (OpenStreetMap אופליין). לשם כך יש להוריד את הגרסה המלאה של התוסף, הכוללת את אריחי המפה.\n\nלפתוח את דף ההורדות?'
+  }).then(res => {
+    const ok = (res && (res.data !== undefined ? res.data : res));
+    if (ok === false) return;
+    return Otzaria.call('app.openUrl', { url: FULL_MAPS_URL });
   }).catch(()=>{});
 }
 let offlineMapInfoCtl = null;
