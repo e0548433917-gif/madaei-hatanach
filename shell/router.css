@@ -51,6 +51,9 @@
   --print-fg:                 #000000;
   --print-bg:                 #ffffff;
   --print-muted:              #444444;
+  --print-rule:               #999999;  /* קווי הפרדה בהדפסה */
+  --print-rule-soft:          #bbbbbb;
+  --print-rule-faint:         #cccccc;
 
   /* --- Typography --- */
   --font-main: 'Heebo', Arial, sans-serif;
@@ -1151,7 +1154,7 @@ html, body {
     columns: 2; column-gap: 10mm;
     margin: 0 0 6mm; padding-inline-start: 6mm;
     font-size: 10pt; line-height: 1.6;
-    border-bottom: 1px solid #999; padding-bottom: 3mm;
+    border-bottom: 1px solid var(--print-rule); padding-bottom: 3mm;
   }
   .print-toc li { break-inside: avoid; }
 
@@ -1159,7 +1162,7 @@ html, body {
   .print-entry {
     break-inside: avoid; page-break-inside: avoid;
     margin: 0 0 7mm; padding-bottom: 4mm;
-    border-bottom: 1px solid #bbb;
+    border-bottom: 1px solid var(--print-rule-soft);
   }
   .print-entry:last-child { border-bottom: none; }
   #printRoot h2 {
@@ -1171,19 +1174,19 @@ html, body {
   #printRoot .entry-sub { font-size: 9.5pt; margin-bottom: 3mm; }
   #printRoot .field-label {
     font-weight: 700; font-size: 10.5pt;
-    margin: 3mm 0 1mm; border-bottom: 1px solid #ccc;
+    margin: 3mm 0 1mm; border-bottom: 1px solid var(--print-rule-faint);
     break-after: avoid; page-break-after: avoid;
   }
   #printRoot p { margin: 0 0 1.5mm; font-size: 10.5pt; line-height: 1.55; orphans: 2; widows: 2; }
   #printRoot .verse-card, #printRoot .src-item, #printRoot .method-block {
-    border: 1px solid #ccc; border-radius: 0;
+    border: 1px solid var(--print-rule-faint); border-radius: 0;
     padding: 2mm 3mm; margin: 0 0 2mm;
     break-inside: avoid; page-break-inside: avoid;
   }
   #printRoot .verse-ref, #printRoot .src-source { font-weight: 700; font-size: 10pt; }
   #printRoot .verse-text { font-size: 11pt; line-height: 1.8; }
   #printRoot .latin { font-style: italic; }
-  #printRoot .conf-tag { border: 1px solid #999; padding: 0 2mm; font-size: 9pt; }
+  #printRoot .conf-tag { border: 1px solid var(--print-rule); padding: 0 2mm; font-size: 9pt; }
   #printRoot .person-link, #printRoot .place-link, #printRoot .co-link {
     text-decoration: none; border: none; padding: 0;
   }
