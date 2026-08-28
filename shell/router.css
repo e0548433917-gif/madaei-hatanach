@@ -1231,3 +1231,39 @@ html, body {
 .book-choice .bc-icon { font-size: calc(1.7em * var(--ui-scale)); line-height: 1; }
 .book-choice .bc-label { font-weight: 600; font-size: .98em; }
 .book-choice .bc-sub { font-size: .78em; opacity: .72; }
+
+/* ==================== פריסת סרגל צד (3.1.1) ====================
+   היעד הוא מחשב נייד 13.3" ומעלה: רשת הכרטיסים נעולה ב-640px, ולכן תמיד
+   נשאר רוחב פנוי משני צדיה. שני כרטיסי הכניסה (האזור האישי · בחירת ספר)
+   יושבים בסרגל צמוד במקום בתוך הרשת, כך שהרשת הממורכזת נשארת תוכן בלבד.
+   בסרגל הם נערמים אנכית, ולכן .cards לא חל עליהם — הם .card בודדים. */
+#landingLayout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(14px, 2.2vw, 28px);
+}
+#landingMain { flex: 0 1 640px; min-width: 0; }
+#sideRail {
+  flex: 0 0 auto;
+  width: clamp(150px, 15vw, 200px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(calc(var(--card-pad) * .83), 1.6vw, calc(var(--card-pad) * 1.33));
+  /* מיושר לגובה שורת הכרטיסים הראשונה, לא לראש ה-cards-sep שמעליה */
+  margin-top: 36px;
+  position: sticky;
+  top: 0;
+}
+/* מתחת ל-900px (מסך צר / חלון מפוצל) אין באמת רוחב פנוי בצדדים — הסרגל
+   חוזר להיות שורת כרטיסים רגילה מעל התוכן, במקום לגזול מהרשת. */
+@media (max-width: 900px){
+  #landingLayout { flex-direction: column; align-items: stretch; }
+  #landingMain { flex: 1 1 auto; }
+  #sideRail {
+    width: auto; max-width: 640px; margin: 0 auto;
+    position: static;
+    flex-direction: row;
+  }
+  #sideRail .card { flex: 1 1 0; min-width: 0; }
+}
