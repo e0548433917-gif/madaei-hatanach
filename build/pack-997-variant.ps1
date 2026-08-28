@@ -57,7 +57,13 @@ try {
   # תחום ל-toolbarItems) ולפי שגיאת התקנה אמיתית על מכשיר 0.9.97 (13.8.26).
   # ⚠️ לא מאומתות מול otzaria pack-plugin המקומי — הוא עצמו 0.9.95 ודוחה כל
   # הרשאה שהוא לא מכיר, כולל את שתי אלה. ר' otzaria_dev_docs_vs_shipped.md.
-  $newPerms = @($m.permissions) + @("reader.toolbar", "app.startup_contributions") | Select-Object -Unique
+  #
+  # feedback.report (3.1.0): מסלול הדיווח הרשמי של אוצריא, 0.9.97 ומעלה.
+  # מוצהר **רק כאן** ולא בחבילת הבסיס — הרשאה שאינה מוכרת ל-0.9.96 שוברת שם
+  # את ההתקנה כולה. הקוד עצמו משותף לשתי החבילות וקורא דרך callIfSupported
+  # (shell/core.js), כך שב-0.9.96 הקריאה פשוט לא נשלחת והדיווח נופל חזרה
+  # לממסר הישן. ר' postViaOtzariaFeedback ב-shell/personal.js.
+  $newPerms = @($m.permissions) + @("reader.toolbar", "app.startup_contributions", "feedback.report") | Select-Object -Unique
   $m.permissions = $newPerms
 
   # ---- contributes.startup — כאן, ולא בחבילת הבסיס ----
@@ -102,7 +108,7 @@ try {
   [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpDir, $variantZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
 
   Write-Host "נוצר: $variantZip" -ForegroundColor Green
-  Write-Host "  minAppVersion: 0.9.97  |  + reader.toolbar, app.startup_contributions  |  + contributes.startup (contextMenuItems + toolbarItems + activationEvents)"
+  Write-Host "  minAppVersion: 0.9.97  |  + reader.toolbar, app.startup_contributions, feedback.report  |  + contributes.startup (contextMenuItems + toolbarItems + activationEvents)"
 }
 finally {
   Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue

@@ -347,3 +347,113 @@ Object.keys(STUDY_GATES).forEach(key => {
 if (studySelectA) studySelectA.addEventListener('change', () => studyFillSelectB(studyActiveGate, studySelectA.value));
 if (studyGoBtn) studyGoBtn.addEventListener('click', runStudyGate);
 if (studyPanelClose) studyPanelClose.addEventListener('click', () => studyPanelOverlay.classList.remove('open'));
+
+// ============================================================
+//  בורר הספר (3.1.0, סעיף 2)
+//  עד 3.0.2 היו בעמוד השער ארבעה כרטיסים נפרדים — תנ״ך · משנה · בבלי ·
+//  פרשת השבוע — בשתי שורות. הם אוחדו לכרטיס אחד שפותח את הבורר הזה, והבורר
+//  רק *מנתב* לפאנל שכבר קיים: שלושת השערים ל-openStudyGate (אותו
+//  studyPanelOverlay), והפרשה ל-parashaPanelOverlay (shell/parasha.js).
+//  שום לוגיקת לימוד לא שוכפלה כאן — זו שכבת ניווט בלבד.
+// ============================================================
+const bookChooserOverlay = document.getElementById('bookChooserOverlay');
+const bookChooserCard = document.getElementById('bookChooserCard');
+
+function openBookChooser(){
+  if (bookChooserOverlay) bookChooserOverlay.classList.add('open');
+}
+function closeBookChooser(){
+  if (bookChooserOverlay) bookChooserOverlay.classList.remove('open');
+}
+
+if (bookChooserCard) bookChooserCard.addEventListener('click', openBookChooser);
+const bookChooserCloseBtn = document.getElementById('bookChooserClose');
+if (bookChooserCloseBtn) bookChooserCloseBtn.addEventListener('click', closeBookChooser);
+
+if (bookChooserOverlay) bookChooserOverlay.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('.book-choice');
+  if (!btn) return;
+  const gate = btn.dataset.gate;
+  closeBookChooser();   // תמיד לסגור קודם, אחרת שני panel-overlay פתוחים זה על זה
+  if (gate === 'parasha'){
+    // parasha.js מחזיק את הפאנל שלו; כאן רק פותחים אותו, בדיוק כמו שהכרטיס
+    // הישן #parashaCard עשה (הכרטיס עצמו כבר לא קיים ב-index.html).
+    const po = document.getElementById('parashaPanelOverlay');
+    if (po) po.classList.add('open');
+    return;
+  }
+  if (STUDY_GATES[gate]) openStudyGate(gate);
+});
+
+// ============================================================
+//  ספר אקראי מכל ספריית אוצריא (3.1.0, סעיף 3)
+//  ⚠️ אומת מול API_REFERENCE.md הרשמי (Otzaria/otzaria, ענף dev) לפני מימוש,
+//  ולא נוחש — זו הייתה דרישה מפורשת אחרי תקלת app.open_url/app.openUrl:
+//    • library.getTree  — הרשאה library.books.read, קיים מ-0.9.93.
+//      פרמטרים: { path?, includeBooks? }. מחזיר { success, data } כאשר data =
+//      { title, path, categories: [...], books: [...] }, וכל קטגוריה מכילה
+//      categories[] ו-books[] משלה. ספר = { bookId, title, type, author, topics }.
+//    • reader.openBook — הרשאה reader.open (כבר מוצהרת), { bookId, type }.
+//  שתי הגרסאות (0.9.96 ו-0.9.97) תומכות, ולכן זה נכנס לחבילת הבסיס ולא רק
+//  לווריאנט — בשונה מ-feedback.report שהוא 0.9.97 בלבד.
+// ============================================================
+const randomBookCard = document.getElementById('randomBookCard');
+
+// עץ הספרייה נקרא פעם אחת לכל פתיחת התוסף ונשמר בזיכרון: הוא גדול, ואין טעם
+// למשוך אותו מחדש בכל לחיצה. אין כאן storage בכוונה — הספרייה של המשתמש
+// משתנה (הורדת ספרים חדשים), וקאש על הדיסק היה מתיישן בשקט.
+let libraryBooksCache = null;
+
+function flattenLibraryBooks(node, out){
+  if (!node) return out;
+  if (Array.isArray(node.books)){
+    for (const b of node.books){
+      if (b && b.bookId && b.title) out.push({ bookId: b.bookId, title: b.title, type: b.type || 'text' });
+    }
+  }
+  if (Array.isArray(node.categories)){
+    for (const c of node.categories) flattenLibraryBooks(c, out);
+  }
+  return out;
+}
+
+async function loadLibraryBooks(){
+  if (libraryBooksCache) return libraryBooksCache;
+  const res = await Otzaria.call('library.getTree', { includeBooks: true });
+  // אותה זהירות כמו ב-app.getInfo (ר' CLAUDE.md): לא להניח עטיפת .data.
+  const data = (res && (res.data !== undefined ? res.data : res)) || null;
+  const list = flattenLibraryBooks(data, []);
+  if (list.length) libraryBooksCache = list;
+  return list;
+}
+
+async function openRandomBook(){
+  if (!hasOtzaria()){
+    window.alert('פתיחת ספר אקראי דורשת הרצה בתוך אוצריא — כאן אין ספרייה לשלוף ממנה.');
+    return;
+  }
+  const card = randomBookCard;
+  const label = card && card.querySelector('.label');
+  const orig = label ? label.textContent : null;
+  if (label) label.textContent = 'טוען…';
+  try {
+    const books = await loadLibraryBooks();
+    if (!books.length){
+      await Otzaria.call('ui.showError', { message: 'לא נמצאו ספרים בספרייה.' }).catch(()=>{});
+      return;
+    }
+    const pick = books[Math.floor(Math.random() * books.length)];
+    const ok = await Otzaria.call('reader.openBook', { bookId: pick.bookId, type: pick.type });
+    const opened = (ok && (ok.data !== undefined ? ok.data : ok));
+    if (opened === false) throw new Error('reader.openBook החזיר false');
+    await Otzaria.call('notifications.showInApp', { message: 'נפתח: ' + pick.title, type: 'success' }).catch(()=>{});
+  } catch(e){
+    await Otzaria.call('ui.showError', {
+      message: 'לא הצלחנו לפתוח ספר אקראי. ' + ((e && e.message) || '')
+    }).catch(() => window.alert('לא הצלחנו לפתוח ספר אקראי.'));
+  } finally {
+    if (label && orig != null) label.textContent = orig;
+  }
+}
+
+if (randomBookCard) randomBookCard.addEventListener('click', openRandomBook);

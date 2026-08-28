@@ -27,6 +27,7 @@ const DENSITY = { compact: ['170px','9px'], normal: ['200px','12px'], roomy: ['2
 const OTZ_VARS = ['--color-primary','--color-on-primary','--color-secondary','--color-on-secondary',
   '--color-surface','--color-on-surface','--color-surface-container-highest','--color-error',
   '--color-on-error','--color-outline','--color-primary-subtle','--color-secondary-subtle',
+  '--color-secondary-container','--color-on-secondary-container',
   '--color-bg','--color-surface-2','--color-surface-3','--color-outline-faint',
   '--color-on-surface-dim','--color-on-surface-faint','--color-on-surface-ghost','--color-link',
   '--color-btn','--color-on-btn','--color-btn-hover','--color-hover','--color-scrim',
@@ -91,6 +92,12 @@ function applyPrefs(){
     // נגזרים (M3 מגדיר צבעי Container שאינם ב-API — מקרבים אותם בשקיפות)
     set('--color-primary-subtle',   hexToRgba(cs.primary, .12));
     set('--color-secondary-subtle', hexToRgba(cs.secondary || cs.primary, .16));
+    // 3.1.0 — תפקידי M3 אמיתיים כשהם מגיעים מה-API; אחרת נגזרת בשקיפות, כמו
+    // שאר ה-Container שאוצריא אינה מוסרת. משמשים את .book-choice (בורר הספר).
+    set('--color-secondary-container',
+      cs.secondaryContainer ? normHex(cs.secondaryContainer) : hexToRgba(cs.secondary || cs.primary, dark ? .22 : .18));
+    set('--color-on-secondary-container',
+      cs.onSecondaryContainer ? normHex(cs.onSecondaryContainer) : normHex(cs.onSurface));
     set('--color-bg',               normHex(cs.surface));
     set('--color-surface-2',        normHex(cs.surfaceContainerHighest || cs.surface));
     set('--color-surface-3',        hexToRgba(cs.surfaceContainerHighest || cs.surface, .55));

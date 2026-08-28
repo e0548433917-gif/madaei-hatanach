@@ -18,34 +18,35 @@
   <!-- סרגל עליון קבוע לפי DESIGN_GUIDE של אוצריא: שם התוסף בגובה 56px (44 בנייד),
        רקע surface-container-high, נעול ב-16px ולא נגלל עם התוכן. שאר התצוגות
        (#guideViewBar / #talmudViewBar / #personalBar) הן אותו סרגל עם כפתור חזרה. -->
-  <div class="topbar"><h1>עינים למקרא</h1></div>
+  <!-- שורת חיפוש ראשית בתוך הסרגל הקבוע (רק בדף הבית - .topbar קיים כאן בלבד, לא
+       ב-#guideViewBar/#talmudViewBar/#personalBar/#frameBar). אותו מנוע זיהוי של
+       תפריט ההקשר בספרייה: הקלדה = השלמה חיה משמות הערכים; Enter = זיהוי מלא של
+       הטקסט (גם פסוק מודבק). -->
+  <div class="topbar">
+    <h1>עינים למקרא</h1>
+    <div id="homeSearchWrap">
+      <span id="homeSearchIcon">🔍</span>
+      <input type="search" id="homeSearch" autocomplete="off" spellcheck="false"
+             placeholder="חיפוש ערך בכל המדריכים — או הדביקו פסוק שלם לזיהוי…">
+      <button id="homeSearchBtn" type="button" title="זיהוי">זיהוי</button>
+      <div id="homeSearchDrop" class="hs-drop"></div>
+    </div>
+  </div>
 
   <div id="landingBody">
 
-  <!-- שורת חיפוש ראשית: מריצה את אותו מנוע הזיהוי של תפריט ההקשר בספרייה.
-       הקלדה = השלמה חיה משמות הערכים; Enter = זיהוי מלא של הטקסט (גם פסוק מודבק). -->
-  <div id="homeSearchWrap">
-    <span id="homeSearchIcon">🔍</span>
-    <input type="search" id="homeSearch" autocomplete="off" spellcheck="false"
-           placeholder="חיפוש ערך בכל המדריכים — או הדביקו פסוק שלם לזיהוי…">
-    <button id="homeSearchBtn" type="button" title="זיהוי">זיהוי</button>
-    <div id="homeSearchDrop" class="hs-drop"></div>
-  </div>
-
-  <!-- שורת "לימוד". למעלה שלושת שערי הלימוד (מפרט 4.0 ב.1 — shell/shas.js), כולם
-       באיקון ה"ספרים"; ירושלמי ייכנס כרביעי. למטה (ב.2): פרשת השבוע · ערך היום ·
-       ציורים וכלי עזר (shell/talmud.js — לשעבר "משנה ותלמוד", ר' ב.3). -->
+  <!-- שורת "לימוד" (3.1.0). ארבעת שערי הלימוד (תנ״ך · משנה · בבלי · פרשת השבוע)
+       אוחדו לכרטיס אחד — "בחר ספר" — שפותח בורר פנימי (#bookChooserOverlay,
+       shell/shas.js), במקום ארבעה כרטיסים נפרדים בשתי שורות. "בית המקדש" עלה
+       לכאן מתוך שורת "שלי" (סעיף 5): שתי השורות הישנות של 3+3 הפכו לשורה אחת
+       של 4, וזה מה שמקצר את הגלילה בטלפון. -->
   <div class="cards-sep"><span>לימוד</span></div>
-  <div class="cards" id="studyGatesGrid">
-    <div class="card" id="tanakhCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">תנ״ך</span></div>
-    <div class="card" id="mishnaCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📕&lt;/span&gt;'"><span class="label">משנה</span></div>
-    <div class="card" id="bavliCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">בבלי</span></div>
-  </div>
   <div class="cards" id="studyGrid">
-    <div class="card" id="parashaCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">פרשת השבוע</span></div>
+    <div class="card" id="bookChooserCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">בחירת ספר</span></div>
     <!-- ערך היום (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום -->
     <div class="card" id="dailyEventCard"><img class="icon-img" src="icon/cats/dailyevent.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📅&lt;/span&gt;'"><span class="label" id="dailyEventLabel">ערך היום</span></div>
     <div class="card" id="talmudCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">ציורים וכלי עזר</span></div>
+    <div class="card" data-cat="beithamikdash"><img class="icon-img" src="icon/cats/beithamikdash.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🏛️&lt;/span&gt;'"><span class="label">בית המקדש</span></div>
   </div>
 
   <div class="cards-sep"><span>ערכים</span></div>
@@ -58,12 +59,13 @@
     <div class="card" data-cat="amoraim"><img class="icon-img" src="icon/cats/amoraim.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📖&lt;/span&gt;'"><span class="label">אנשים מהתלמוד</span></div>
   </div>
 
-  <!-- שורה שנייה: מה ששייך למשתמש עצמו (האזור האישי + דפי HTML שהוא הוסיף).
-       "בית המקדש" הועבר לכאן ב-4.0 כדי לפנות מקום ל"אנשים מהתלמוד" בשורת
-       ששת המדריכים, כך שהיא נשארת 3+3 מלאה. -->
+  <!-- שורה אחרונה: מה ששייך למשתמש עצמו (האזור האישי + דפי HTML שהוא הוסיף).
+       "בית המקדש" עלה מכאן לשורת "לימוד" ב-3.1.0 (סעיף 5). "ספר אקראי" נוסף כאן
+       ולא בשורת הלימוד, כי הוא היחיד שתלוי בספריית אוצריא החיה (library.getTree)
+       ולכן גם היחיד שעשוי להיות מושבת מחוץ לאוצריא. -->
   <div class="cards-sep"><span>שלי</span></div>
   <div class="cards" id="extraGrid">
-    <div class="card" data-cat="beithamikdash"><img class="icon-img" src="icon/cats/beithamikdash.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🏛️&lt;/span&gt;'"><span class="label">בית המקדש</span></div>
+    <div class="card" id="randomBookCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🎲&lt;/span&gt;'"><span class="label">ספר אקראי מהספרייה</span></div>
     <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
   </div>
   <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
@@ -170,6 +172,25 @@
     <div class="panel-actions">
       <button class="panel-btn" id="parashaGoBtn">הצג</button>
       <button class="panel-btn secondary" id="parashaPanelClose">סגירה</button>
+    </div>
+  </div>
+</div>
+
+<!-- בורר הספר (3.1.0, סעיף 2): שכבה אחת מעל ארבעת השערים שהיו כרטיסים נפרדים.
+     בחירה כאן רק *מנתבת* לפאנל הקיים (studyPanelOverlay / parashaPanelOverlay) —
+     שום לוגיקת לימוד לא שוכפלה. ר׳ openBookChooser ב-shell/shas.js -->
+<div class="panel-overlay" id="bookChooserOverlay">
+  <div class="panel-box">
+    <h2>📚 בחירת ספר</h2>
+    <p class="panel-hint">במה לומדים עכשיו? נציג את כל הערכים (אישים, מקומות, בע״ח, צומח, דומם ובית המקדש) שיש להם מקור במה שתבחרו.</p>
+    <div class="book-choice-grid">
+      <button type="button" class="book-choice" data-gate="tanakh"><span class="bc-icon">📖</span><span class="bc-label">תנ״ך</span><span class="bc-sub">לפי ספר ופרק</span></button>
+      <button type="button" class="book-choice" data-gate="mishna"><span class="bc-icon">📕</span><span class="bc-label">משנה</span><span class="bc-sub">לפי מסכת ופרק</span></button>
+      <button type="button" class="book-choice" data-gate="bavli"><span class="bc-icon">📚</span><span class="bc-label">בבלי</span><span class="bc-sub">לפי מסכת ודף</span></button>
+      <button type="button" class="book-choice" data-gate="parasha"><span class="bc-icon">🕮</span><span class="bc-label">פרשת השבוע</span><span class="bc-sub">לפי פרשה</span></button>
+    </div>
+    <div class="panel-actions">
+      <button class="panel-btn secondary" id="bookChooserClose">סגירה</button>
     </div>
   </div>
 </div>

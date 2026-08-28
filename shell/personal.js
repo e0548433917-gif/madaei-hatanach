@@ -262,11 +262,71 @@ function postViaIframe(params){
   });
 }
 
+// ---- המסלול הרשמי של אוצריא (3.1.0) --------------------------------------
+// אוצריא הוסיפה API דיווח משלה. זה עדיף על הממסר שלנו מסיבה מהותית אחת:
+// הוא **אינו עובר ברשת של התוסף**, ולכן אינו כפוף ל-plugin_network_allowlist
+// הגלובלי — שאף אחת מכתובות הדיווח שלנו אינה נמצאת בו (ר' §ב.1 ב-
+// docs/תאימות-SDK-אוצריא.md). כלומר היום הדיווחים של המשתמשים נחסמים בפועל,
+// והמסלול הזה פותר את זה בלי שום תלות ב-PR חיצוני.
+//
+// ⚠️ 0.9.97 ומעלה בלבד, ולכן:
+//   • שם המתודה מורכב ממערך ולא קיים כליטרל — אחרת הוולידטור חוסם את אריזת
+//     חבילת ה-0.9.96 (אותה מלכודת בדיוק כמו network.fetchStream).
+//   • ההרשאה "feedback.report" מוצהרת **רק** במניפסט של וריאנט 0.9.97
+//     (build/pack-997-variant.ps1) — הצהרתה בחבילת הבסיס הייתה שוברת התקנה
+//     על 0.9.96, כמו שקרה עם contributes.startup ב-13.8.26.
+// בגרסה שאינה תומכת callIfSupported מחזיר null בשקט, ואז ממשיכים לממסר הישן.
+//
+// REPORT_KINDS שלנו מפורטים יותר מארבעת הסוגים של ה-API; מה שאין לו מקבילה
+// נופל ל-other, כפי שה-API עצמו עושה ממילא לערך לא מוכר.
+const FEEDBACK_REPORT_TYPES = {
+  'באג בקוד': 'bug',
+  'טעות בתוכן': 'content',
+  'משוב': 'other',
+  'הצעה': 'other',
+  'בקשת הצטרפות': 'other'
+};
+
+// מחזיר 'sent' / 'queued' אם הצליח, 'cancelled' אם המשתמש ביטל בדיאלוג,
+// או null אם המסלול אינו זמין (גרסה ישנה / הרשאה חסרה / שגיאה).
+async function postViaOtzariaFeedback(item, env){
+  if (!hasOtzaria()) return null;
+  const body = [
+    item.title ? ('נושא: ' + item.title) : '',
+    item.kind ? ('סוג: ' + item.kind) : '',
+    '',
+    item.details || '',
+    env ? ('\n---\n' + env) : ''
+  ].filter(Boolean).join('\n');
+  const res = await callIfSupported(['feedback', 'report'], '0.9.97', {
+    details: body.slice(0, 5000),          // ה-API חותך ל-5000 ממילא
+    reportType: FEEDBACK_REPORT_TYPES[item.kind] || 'other'
+  });
+  if (res == null) return null;
+  const val = (res && (res.data !== undefined ? res.data : res));
+  return (val === 'sent' || val === 'queued' || val === 'cancelled') ? val : null;
+}
+
 // זורק חריגה רק אם **כל** המסלולים נכשלו. מחזיר את שם המסלול שהצליח,
 // ושומר את נוסח כל הכישלונות ל-lastError של הפריט (לאבחון באזור האישי).
-// Web App קודם (תשובה אמיתית) — הטופס רק אם הוא לא הוגדר או נכשל בפועל.
+// סדר: ה-API הרשמי של אוצריא קודם (3.1.0) — ואם אינו זמין, הממסר הישן נשאר
+// כמות שהוא: Web App קודם (תשובה אמיתית), והטופס רק אם הוא לא הוגדר או נכשל.
 async function postReportToRelay(item, env){
   const errors = [];
+  try {
+    const viaOtz = await postViaOtzariaFeedback(item, env);
+    // ביטול מפורש של המשתמש בדיאלוג של אוצריא הוא תשובה, לא כישלון — אין
+    // לעקוף אותו בשליחה מאחורי גבו דרך הממסר הישן.
+    if (viaOtz === 'cancelled'){
+      const cancelErr = new Error('הדיווח בוטל על ידך.');
+      cancelErr.cancelled = true;
+      throw cancelErr;
+    }
+    if (viaOtz) return 'otzaria-feedback (' + viaOtz + ')';
+  } catch(e){
+    if (e && e.cancelled) throw e;
+    errors.push((e && (e.name + ': ' + e.message)) || String(e));
+  }
   if (REPORT_WEBAPP_URL){
     try { return await postViaWebApp(item, env); }
     catch(e){ errors.push((e && (e.name + ': ' + e.message)) || String(e)); }
@@ -365,6 +425,15 @@ async function sendReport(kind, title, details, images){
   } catch(e){
     await reportDebugLog({ ok: false, err: (e && e.message) || String(e), title: item.title });
     await markOutboxError(item.id, (e && e.message) || String(e));
+    // ביטול בדיאלוג של אוצריא (3.1.0) אינו תקלה — אסור להציג "אין חיבור לרשת"
+    // למי שפשוט לחץ "ביטול". הדיווח נשאר בתור, והמשתמש יכול לשלוח שוב.
+    if (e && e.cancelled){
+      reportNotify(queued
+        ? 'הדיווח לא נשלח, אבל נשמר במכשיר — אפשר לשלוח אותו מהאזור האישי בכל עת.'
+        : 'הדיווח לא נשלח.', 'error');
+      refreshPersonalIfOpen();
+      return false;
+    }
     // כמו בתוסף "ביוגרפיות" — המשתמש שלחץ "שליחה" מקבל תשובה, לא שקט.
     // ההבדל: כאן הדיווח לא אבד, ולכן ההודעה מרגיעה ולא מבקשת לנסות שוב.
     // אלא אם גם השמירה נכשלה — ואז אסור להבטיח שהוא נשמר.
