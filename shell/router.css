@@ -1250,15 +1250,17 @@ html, body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  /* רווח רחב בכוונה (3.1.2): הסרגל נועד להיקרא כאזור נפרד ולא כעמודה רביעית
-     של הרשת. מכיוון שהקבוצה ממורכזת, הגדלת הרווח גם דוחפת את הסרגל החוצה
-     לכיוון שולי המסך — שתי הבקשות באותו פרמטר. */
   gap: clamp(28px, 5.5vw, 80px);
-  /* 3.1.3 — הסרגל נצמד לשוליים הימניים (תחילת ה-RTL); התוכן נדחף אליו
-     משמאל עם margin auto, במקום ששניהם יהיו ממורכזים כקבוצה אחת. */
-  justify-content: flex-start;
 }
-#landingMain { flex: 0 1 640px; min-width: 0; margin-inline-start: auto; }
+/* משקל-נגד ברוחב הסרגל בצד השני, כדי ש-#landingMain יישאר ממורכז במסך
+   ולא ייגרר שמאלה בגללו. order:1 שולח אותו לסוף השורה (=שמאל ב-RTL). */
+#landingLayout::before {
+  content: "";
+  flex: 0 0 clamp(150px, 15vw, 200px);
+  order: 1;
+  align-self: stretch;
+}
+#landingMain { flex: 0 1 640px; min-width: 0; }
 #sideRail {
   flex: 0 0 auto;
   width: clamp(150px, 15vw, 200px);
@@ -1274,6 +1276,8 @@ html, body {
    חוזר להיות שורת כרטיסים רגילה מעל התוכן, במקום לגזול מהרשת. */
 @media (max-width: 900px){
   #landingLayout { flex-direction: column; align-items: stretch; }
+  /* משקל-הנגד מיותר בפריסה מוערמת, והיה מוסיף רצועה ריקה בתחתית */
+  #landingLayout::before { display: none; }
   #landingMain { flex: 1 1 auto; }
   #sideRail {
     width: auto; max-width: 640px; margin: 0 auto;
@@ -1319,25 +1323,18 @@ html, body {
    שהיא לא תופיע מתחת לאיקונים בתוך התוכן. */
 #landingFooter {
   flex: 0 0 auto;
-  padding: 8px 16px 10px;
-  text-align: center;
+  display: flex; flex-wrap: wrap;
+  align-items: baseline; justify-content: center;
+  gap: 0 10px;
+  padding: 6px 16px 7px;
   border-top: 1px solid var(--color-outline-faint);
   background: var(--color-surface-container-high);
-  font-size: .7em;
-  line-height: 1.45;
+  font-size: .68em;
+  line-height: 1.4;
   color: var(--color-on-surface-ghost);
 }
-#landingFooter #copyrightFooter {
-  display: block;
-  margin: 0 0 2px;
-  font-size: 1em;
-  color: var(--color-on-surface-ghost);
-}
-#landingFooter #aiDisclaimer {
-  display: block;
-  max-width: 620px; margin: 0 auto; padding: 0;
-  font-size: 1em; opacity: .85;
-}
+#landingFooter #copyrightFooter { display: inline; margin: 0; font-size: 1em; color: var(--color-on-surface-ghost); }
+#landingFooter #aiDisclaimer { display: inline; max-width: none; margin: 0; padding: 0; font-size: 1em; opacity: .85; }
 
 /* ריבועי "הוספת דף אישי" בשורת "שלי" — אפרוריים למחצה, אותו גודל ככרטיס
    רגיל, מסגרת מקווקוות כדי שייקראו כמקום פנוי ולא ככרטיס פעיל (3.1.3). */
