@@ -34,15 +34,28 @@
   </div>
 
   <div id="landingBody">
+  <!-- פריסת שתי עמודות (3.1.1): סרגל צד קבוע + העמודה הראשית הממורכזת.
+       היעד הוא מחשב נייד 13.3" ומעלה, שם תמיד יש רוחב פנוי משני צדי רשת
+       הכרטיסים (max-width 640px). מתחת ל-900px הסרגל חוזר להיות שורת כרטיסים
+       רגילה מעל התוכן — ר' #landingLayout ב-shell/router.css. -->
+  <div id="landingLayout">
+
+  <!-- סרגל הצד: שני הכרטיסים שאינם "תוכן" אלא נקודות כניסה — האזור האישי
+       ובחירת ספר. הוצאו מהרשת המרכזית לבקשת המשתמש, כדי שהרשת הממורכזת
+       תישאר תוכן בלבד. -->
+  <aside id="sideRail">
+    <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
+    <div class="card" id="bookChooserCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">בחירת ספר</span></div>
+  </aside>
+
+  <div id="landingMain">
 
   <!-- שורת "לימוד" (3.1.0). ארבעת שערי הלימוד (תנ״ך · משנה · בבלי · פרשת השבוע)
-       אוחדו לכרטיס אחד — "בחר ספר" — שפותח בורר פנימי (#bookChooserOverlay,
-       shell/shas.js), במקום ארבעה כרטיסים נפרדים בשתי שורות. "בית המקדש" עלה
-       לכאן מתוך שורת "שלי" (סעיף 5): שתי השורות הישנות של 3+3 הפכו לשורה אחת
-       של 4, וזה מה שמקצר את הגלילה בטלפון. -->
+       אוחדו לכרטיס אחד — "בחירת ספר" — שפותח בורר פנימי (#bookChooserOverlay,
+       shell/shas.js), במקום ארבעה כרטיסים נפרדים בשתי שורות; ב-3.1.1 הוא עבר
+       לסרגל הצד. "בית המקדש" עלה לכאן מתוך שורת "שלי" (סעיף 5). -->
   <div class="cards-sep"><span>לימוד</span></div>
   <div class="cards" id="studyGrid">
-    <div class="card" id="bookChooserCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">בחירת ספר</span></div>
     <!-- ערך היום (2.10א): מאורעות התנ״ך לפי התאריך העברי של היום -->
     <div class="card" id="dailyEventCard"><img class="icon-img" src="icon/cats/dailyevent.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📅&lt;/span&gt;'"><span class="label" id="dailyEventLabel">ערך היום</span></div>
     <div class="card" id="talmudCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;📚&lt;/span&gt;'"><span class="label">ציורים וכלי עזר</span></div>
@@ -63,11 +76,16 @@
        "בית המקדש" עלה מכאן לשורת "לימוד" ב-3.1.0 (סעיף 5). "ספר אקראי" נוסף כאן
        ולא בשורת הלימוד, כי הוא היחיד שתלוי בספריית אוצריא החיה (library.getTree)
        ולכן גם היחיד שעשוי להיות מושבת מחוץ לאוצריא. -->
+  <!-- "האזור האישי" עבר לסרגל הצד ב-3.1.1; כאן נשאר "ספר אקראי" ודפי ה-HTML
+       שהמשתמש הוסיף (renderCustomPageCards, shell/home.js). -->
   <div class="cards-sep"><span>שלי</span></div>
   <div class="cards" id="extraGrid">
     <div class="card" id="randomBookCard"><img class="icon-img" src="icon/cats/study.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🎲&lt;/span&gt;'"><span class="label">ספר אקראי מהספרייה</span></div>
-    <div class="card" id="personalCard"><img class="icon-img" src="icon/cats/personal.png" alt="" onerror="this.outerHTML='&lt;span class=\'icon\'&gt;🗂️&lt;/span&gt;'"><span class="label">האזור האישי שלי</span></div>
   </div>
+
+  </div><!-- /#landingMain -->
+  </div><!-- /#landingLayout -->
+
   <div id="copyrightFooter">כל הזכויות שמורות לחד בדרא</div>
   <div id="aiDisclaimer">התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.</div>
   </div>

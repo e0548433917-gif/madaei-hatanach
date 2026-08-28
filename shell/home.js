@@ -174,7 +174,10 @@ const extraGrid = document.getElementById('extraGrid');
 async function renderCustomPageCards(){
   extraGrid.querySelectorAll('.card[data-custom-page]').forEach(el => el.remove());
   const index = await getHtmlPagesIndex();
-  const anchor = document.getElementById('personalCard');   // הכרטיסים נכנסים לפני "האזור האישי"
+  // עד 3.1.0 הכרטיסים נכנסו לפני "האזור האישי". ב-3.1.1 הוא עבר לסרגל הצד
+  // (#sideRail) ואינו ילד של extraGrid — insertBefore עם עוגן זר זורק
+  // NotFoundError, ולכן נופלים ל-append כשהעוגן אינו כאן.
+  const anchor = extraGrid.querySelector('#personalCard');
   // דף שהוצמד למסכת (placement:'masechet') מקבל כרטיס בעמוד המסכתות במקום כאן - ר' talmud.js.
   index.filter(page => page.placement !== 'masechet').forEach(page => {
     const card = document.createElement('div');
@@ -185,7 +188,7 @@ async function renderCustomPageCards(){
       : '<span class="icon">📄</span>';
     card.innerHTML = iconHtml + `<span class="label">${esc(page.name)}</span>`;
     card.addEventListener('click', () => openCustomHtmlPage(page.name));
-    extraGrid.insertBefore(card, anchor);
+    if (anchor) extraGrid.insertBefore(card, anchor); else extraGrid.appendChild(card);
   });
 }
 

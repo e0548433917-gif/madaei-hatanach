@@ -58,12 +58,16 @@ try {
   # ⚠️ לא מאומתות מול otzaria pack-plugin המקומי — הוא עצמו 0.9.95 ודוחה כל
   # הרשאה שהוא לא מכיר, כולל את שתי אלה. ר' otzaria_dev_docs_vs_shipped.md.
   #
-  # feedback.report (3.1.0): מסלול הדיווח הרשמי של אוצריא, 0.9.97 ומעלה.
-  # מוצהר **רק כאן** ולא בחבילת הבסיס — הרשאה שאינה מוכרת ל-0.9.96 שוברת שם
-  # את ההתקנה כולה. הקוד עצמו משותף לשתי החבילות וקורא דרך callIfSupported
-  # (shell/core.js), כך שב-0.9.96 הקריאה פשוט לא נשלחת והדיווח נופל חזרה
-  # לממסר הישן. ר' postViaOtzariaFeedback ב-shell/personal.js.
-  $newPerms = @($m.permissions) + @("reader.toolbar", "app.startup_contributions", "feedback.report") | Select-Object -Unique
+  # ⚠️ feedback.report — **אין להצהיר עליה כהרשאה.** ב-3.1.0 היא נוספה כאן,
+  # וההתקנה על מכשיר אמיתי (0.9.97-קדם, 28.8.26) נכשלה עם:
+  #   "Exception: הרשאה לא חוקית שנדרשת על ידי התוסף: feedback.report"
+  # התיעוד הרשמי סותר את עצמו בנקודה הזו: §feedback.report אומר במפורש
+  # "Permission Required: None (user consent dialog governs access)", אבל
+  # §Manifest Declaration שבסוף אותו קובץ מציע להוסיף אותה לרשימה. המכשיר
+  # מכריע — היא אינה ב-plugin_valid_permissions.dart, ודיאלוג האישור למשתמש
+  # הוא מנגנון ההגנה במקום הרשאה. הקריאה עצמה עובדת בלי שום הצהרה.
+  # (אותה מלכודת בדיוק כמו contributes.startup ב-13.8.26 — ר' ראש הקובץ.)
+  $newPerms = @($m.permissions) + @("reader.toolbar", "app.startup_contributions") | Select-Object -Unique
   $m.permissions = $newPerms
 
   # ---- contributes.startup — כאן, ולא בחבילת הבסיס ----
@@ -108,7 +112,7 @@ try {
   [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpDir, $variantZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
 
   Write-Host "נוצר: $variantZip" -ForegroundColor Green
-  Write-Host "  minAppVersion: 0.9.97  |  + reader.toolbar, app.startup_contributions, feedback.report  |  + contributes.startup (contextMenuItems + toolbarItems + activationEvents)"
+  Write-Host "  minAppVersion: 0.9.97  |  + reader.toolbar, app.startup_contributions  |  + contributes.startup (contextMenuItems + toolbarItems + activationEvents)"
 }
 finally {
   Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
