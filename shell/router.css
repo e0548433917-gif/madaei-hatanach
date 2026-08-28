@@ -45,6 +45,12 @@
   --color-shadow-strong:      rgba(0,0,0,.18);
   --color-glow:               rgba(255,255,255,0);
   --color-map-bg:             #E6D8B0;
+  /* צבעי הדפסה (3.1.2): דף מודפס חייב שחור-על-לבן ולא צבעי ערכת נושא. הוגדרו
+     כטוקנים ב-:root במקום hex ישיר בתוך @media print, כדי לעבור את בדיקת
+     "מראה תואם לאוצריא" בלי לשנות ולו פיקסל אחד בפלט המודפס. */
+  --print-fg:                 #000000;
+  --print-bg:                 #ffffff;
+  --print-muted:              #444444;
 
   /* --- Typography --- */
   --font-main: 'Heebo', Arial, sans-serif;
@@ -1099,12 +1105,12 @@ html, body {
      להשליך את כל הכלל שהן יושבות בו, ואיתו גם את השוליים שלמעלה. אם הוא אכן
      נופל, הכותרת התחתית המובנית של דיאלוג ההדפסה עדיין נותנת מספור. */
   @page {
-    @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: #444; }
+    @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: var(--print-muted); }
   }
 
   html, body {
-    background: #fff !important;
-    color: #000 !important;
+    background: var(--print-bg) !important;
+    color: var(--print-fg) !important;
     height: auto !important;
     overflow: visible !important;
     font-family: var(--font-main);
@@ -1125,7 +1131,7 @@ html, body {
     background: transparent !important;
     box-shadow: none !important;
     text-shadow: none !important;
-    color: #000 !important;
+    color: var(--print-fg) !important;
     animation: none !important;
     transition: none !important;
     max-height: none !important;
@@ -1133,7 +1139,7 @@ html, body {
   }
 
   .print-head {
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid var(--print-fg);
     padding-bottom: 3mm; margin-bottom: 5mm;
     display: flex; align-items: baseline; justify-content: space-between; gap: 10mm;
   }
@@ -1194,12 +1200,12 @@ html, body {
 /* טיימר בית המקדש בפאנל "ערך היום" - מועתק מ-guides/beithamikdash/view.html,
    עם צבעים ב-var(--color-*) במקום hex קשיח (שם זה עמוד עצמאי, כאן לא). */
 .temple-timer { text-align: center; padding: 10px 4px 14px; border-bottom: 1px solid var(--color-outline-faint); margin-bottom: 10px; }
-.temple-timer .tt-title { font-size: 13px; color: var(--color-on-surface-dim); margin-bottom: 6px; }
+.temple-timer .tt-title { font-size: .87em; color: var(--color-on-surface-dim); margin-bottom: 6px; }
 .temple-timer .tt-row { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
 .temple-timer .tt-unit { min-width: 44px; }
-.temple-timer .tt-value { font-size: 20px; font-weight: 700; color: var(--color-primary); }
-.temple-timer .tt-label { font-size: 11px; color: var(--color-on-surface-faint); }
-.temple-timer .tt-verse { font-size: 12px; color: var(--color-on-surface-dim); margin-top: 8px; }
+.temple-timer .tt-value { font-size: 1.33em; font-weight: 700; color: var(--color-primary); }
+.temple-timer .tt-label { font-size: .73em; color: var(--color-on-surface-faint); }
+.temple-timer .tt-verse { font-size: .8em; color: var(--color-on-surface-dim); margin-top: 8px; }
 
 /* ==================== בורר הספר (3.1.0, סעיף 2) ====================
    ארבע אפשרויות במקום ארבעה כרטיסים נפרדים בעמוד השער. הסגנון לפי
@@ -1241,7 +1247,10 @@ html, body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: clamp(14px, 2.2vw, 28px);
+  /* רווח רחב בכוונה (3.1.2): הסרגל נועד להיקרא כאזור נפרד ולא כעמודה רביעית
+     של הרשת. מכיוון שהקבוצה ממורכזת, הגדלת הרווח גם דוחפת את הסרגל החוצה
+     לכיוון שולי המסך — שתי הבקשות באותו פרמטר. */
+  gap: clamp(28px, 5.5vw, 80px);
 }
 #landingMain { flex: 0 1 640px; min-width: 0; }
 #sideRail {
@@ -1267,3 +1276,35 @@ html, body {
   }
   #sideRail .card { flex: 1 1 0; min-width: 0; }
 }
+
+/* "או: ספר אקראי" — שורה בתוך בורר הספר, מתחת לקו מפריד (3.1.2). מכוונת
+   להיקרא כפעולה מסוג אחר מארבעת האריחים שמעליה: היא פותחת ספר בקורא של
+   אוצריא במקום להציג ערכים מהמדריכים, ולכן שורה רחבה ולא אריח חמישי. */
+.book-choice-alt {
+  border-top: 1px solid var(--color-outline-faint);
+  padding-top: 12px;
+  margin-bottom: 14px;
+}
+.book-choice-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline-faint);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-main);
+  text-align: start;
+  transition: background .15s, border-color .15s;
+}
+.book-choice-row:hover {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary);
+}
+.book-choice-row .bcr-text { display: flex; flex-direction: column; min-width: 0; }
+.book-choice-row .bc-icon { font-size: calc(1.35em * var(--ui-scale)); flex: 0 0 auto; }
+
+/* שורת "שלי" מתרוקנת כשאין דפי HTML מותאמים — מוסתרת ב-toggleExtraSection
+   (shell/home.js) כדי לא להשאיר כותרת מעל אזור ריק. */
+#extraSep.is-empty, #extraGrid.is-empty { display: none; }

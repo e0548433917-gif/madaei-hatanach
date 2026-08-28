@@ -13,38 +13,52 @@
     --ink:#2B2318; --ink-soft:#5B4E39; --forest:#3F5B44; --forest-deep:#2C4131;
     --rust:#9C4A2E; --rust-deep:#7A3821; --gold:#A9812F; --gold-light:#C9A24E;
     --teal:#3D6B6B; --line:#c9b98a; --shadow:0 10px 30px rgba(43,35,24,.28);
+  
+    --radius-xs:3px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+    --font-main:'Heebo',sans-serif; --font-display:'Frank Ruhl Libre',serif;
+    --gen-1:rgba(255,255,255,0.25);
+    --gen-2:rgba(0,0,0,0.05);
+    --gen-3:rgba(0,0,0,0.015);
+    --gen-4:rgba(169,129,47,0.08);
+    --gen-5:rgba(237,227,200,0.96);
+    --gen-6:rgba(0,0,0,0.04);
+    --gen-7:rgba(0,0,0,0.5);
+    --gen-8:rgba(20,16,10,.6);
+    --gen-9:rgba(10,8,5,.88);
+    --gen-10:#EAF2E9;
+    --gen-11:#FBEDE6;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{
     margin:0;
     background:
-      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.25), transparent 60%),
-      radial-gradient(ellipse at 80% 100%, rgba(0,0,0,0.05), transparent 60%),
-      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at 20% 0%, var(--gen-1), transparent 60%),
+      radial-gradient(ellipse at 80% 100%, var(--gen-2), transparent 60%),
+      repeating-linear-gradient(0deg, var(--gen-3) 0px, transparent 1px, transparent 3px),
       var(--parchment);
-    color:var(--ink); font-family:'Heebo',sans-serif; line-height:1.6;
+    color:var(--ink); font-family:var(--font-main); line-height:1.6;
   }
-  h1,h2,h3,.display{font-family:'Frank Ruhl Libre',serif;}
+  h1,h2,h3,.display{font-family:var(--font-display);}
 
   .hero{position:relative; padding:56px 24px 34px; text-align:center; border-bottom:3px double var(--gold);
-    background:linear-gradient(180deg, rgba(169,129,47,0.08), transparent 70%); overflow:hidden;}
-  .eyebrow{letter-spacing:.35em; font-size:12px; color:var(--gold); font-weight:700; margin-bottom:14px;}
+    background:linear-gradient(180deg, var(--gen-4), transparent 70%); overflow:hidden;}
+  .eyebrow{letter-spacing:.35em; font-size:0.75em; color:var(--gold); font-weight:700; margin-bottom:14px;}
   .hero h1{font-size:clamp(28px,5vw,48px); font-weight:900; margin:0 0 10px; color:var(--ink);}
-  .hero p.sub{max-width:680px; margin:0 auto; color:var(--ink-soft); font-size:15px;}
-  .disclosure-line{display:block; margin-top:8px; font-size:11px; color:var(--ink-soft); opacity:.75;}
+  .hero p.sub{max-width:680px; margin:0 auto; color:var(--ink-soft); font-size:0.9375em;}
+  .disclosure-line{display:block; margin-top:8px; font-size:0.6875em; color:var(--ink-soft); opacity:.75;}
 
-  .controls{position:sticky; top:0; z-index:50; background:rgba(237,227,200,0.96); backdrop-filter:blur(6px);
+  .controls{position:sticky; top:0; z-index:50; background:var(--gen-5); backdrop-filter:blur(6px);
     border-bottom:1px solid var(--line); padding:14px 20px;}
   .controls-inner{max-width:1180px;margin:0 auto; display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
   .search-wrap{position:relative; flex:1 1 240px; min-width:200px;}
   .search-wrap svg{position:absolute; right:14px; top:50%; transform:translateY(-50%); opacity:.5;}
-  #search{width:100%; padding:10px 40px 10px 14px; border:1px solid var(--line); border-radius:3px;
-    background:var(--card); color:var(--ink); font-family:'Heebo',sans-serif; font-size:14px;}
+  #search{width:100%; padding:10px 40px 10px 14px; border:1px solid var(--line); border-radius:var(--radius-xs);
+    background:var(--card); color:var(--ink); font-family:var(--font-main); font-size:0.875em;}
   #search:focus{outline:2px solid var(--gold-light); outline-offset:1px;}
   .chips{display:flex; flex-wrap:wrap; gap:8px;}
   .chip{border:1px solid var(--line); background:var(--card); color:var(--ink-soft); padding:7px 14px;
-    border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; transition:.15s; white-space:nowrap;}
+    border-radius:var(--radius-pill); font-size:0.8125em; font-weight:500; cursor:pointer; transition:.15s; white-space:nowrap;}
   .chip:hover{border-color:var(--gold);}
   .chip.active{background:var(--ink); color:var(--parchment); border-color:var(--ink);}
 
@@ -52,12 +66,12 @@
   .category-section{margin-bottom:56px; scroll-margin-top:90px;}
   .cat-head{display:flex; align-items:baseline; gap:14px; border-bottom:2px solid var(--gold); padding-bottom:10px; margin-bottom:6px;}
   .cat-head h2{font-size:clamp(20px,3vw,28px); margin:0; font-weight:700;}
-  .cat-num{font-family:'Frank Ruhl Libre',serif; font-size:15px; color:var(--gold); border:1px solid var(--gold);
+  .cat-num{font-family:var(--font-display); font-size:0.9375em; color:var(--gold); border:1px solid var(--gold);
     border-radius:50%; width:30px;height:30px; display:flex;align-items:center;justify-content:center; flex-shrink:0;}
   .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:16px;}
 
-  .card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:3px;
-    box-shadow:0 1px 0 rgba(0,0,0,0.04), 0 8px 18px -14px rgba(0,0,0,0.5); overflow:hidden;
+  .card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-xs);
+    box-shadow:0 1px 0 var(--gen-6), 0 8px 18px -14px var(--gen-7); overflow:hidden;
     display:flex; flex-direction:column; cursor:pointer; transition:.18s ease;}
   .card:hover{transform:translateY(-3px); border-color:var(--gold); box-shadow:var(--shadow);}
   .card.hidden{display:none;}
@@ -66,56 +80,56 @@
   .card-media img{width:100%; height:100%; object-fit:cover; cursor:zoom-in;}
   .placeholder-icon{width:52px; height:52px;}
   .card-body{padding:12px 14px 14px; display:flex; flex-direction:column; gap:4px;}
-  .card-name{margin:0; font-size:16px; font-weight:700;}
-  .card-source{font-size:11px; color:var(--gold); font-weight:500;}
-  .card-desc{margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); line-height:1.5;
+  .card-name{margin:0; font-size:1em; font-weight:700;}
+  .card-source{font-size:0.6875em; color:var(--gold); font-weight:500;}
+  .card-desc{margin:2px 0 0; font-size:0.7813em; color:var(--ink-soft); line-height:1.5;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
 
   .empty-msg{text-align:center; color:var(--ink-soft); padding:50px 0;}
   .empty-msg.hidden, .category-section.hidden{display:none;}
 
-  .overlay{position:fixed; inset:0; background:rgba(20,16,10,.6); backdrop-filter:blur(2px);
+  .overlay{position:fixed; inset:0; background:var(--gen-8); backdrop-filter:blur(2px);
     display:none; align-items:flex-start; justify-content:center; z-index:200; padding:30px 16px; overflow-y:auto;}
   .overlay.open{display:flex;}
-  .modal{background:var(--parchment); max-width:760px; width:100%; border:2px solid var(--ink); border-radius:4px;
+  .modal{background:var(--parchment); max-width:760px; width:100%; border:2px solid var(--ink); border-radius:var(--radius-xs);
     box-shadow:var(--shadow); position:relative; margin-bottom:40px;}
   .modal-close{position:absolute; top:12px; left:12px; width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
-    background:var(--card); color:var(--ink); font-size:16px; cursor:pointer; z-index:3;}
+    background:var(--card); color:var(--ink); font-size:1em; cursor:pointer; z-index:3;}
   .modal-head{padding:26px 26px 14px; border-bottom:2px solid var(--gold); display:flex; align-items:center; gap:14px;}
-  .modal-lead-img{width:72px; height:72px; object-fit:cover; border-radius:4px; border:1px solid var(--line); flex-shrink:0; cursor:zoom-in;}
-  .modal-head h2{margin:0 0 4px; font-size:26px;}
-  .modal-head .cat-line{font-size:12.5px; color:var(--ink-soft);}
+  .modal-lead-img{width:72px; height:72px; object-fit:cover; border-radius:var(--radius-xs); border:1px solid var(--line); flex-shrink:0; cursor:zoom-in;}
+  .modal-head h2{margin:0 0 4px; font-size:1.625em;}
+  .modal-head .cat-line{font-size:0.7813em; color:var(--ink-soft);}
   .modal-body{padding:20px 26px 28px;}
-  .field-label{font-family:'Frank Ruhl Libre',serif; font-size:13px; font-weight:700; color:var(--gold-light);
+  .field-label{font-family:var(--font-display); font-size:0.8125em; font-weight:700; color:var(--gold-light);
     letter-spacing:.04em; margin:22px 0 8px; text-transform:none;}
   .field-label:first-child{margin-top:0;}
-  .method-text{margin:0 0 12px; font-size:14.5px;}
+  .method-text{margin:0 0 12px; font-size:0.9063em;}
 
-  .lightbox{position:fixed; inset:0; background:rgba(10,8,5,.88); display:none; align-items:center; justify-content:center;
+  .lightbox{position:fixed; inset:0; background:var(--gen-9); display:none; align-items:center; justify-content:center;
     z-index:300; padding:40px 20px; cursor:zoom-out;}
   .lightbox.open{display:flex;}
-  .lightbox img{max-width:min(92vw,1100px); max-height:88vh; object-fit:contain; border:2px solid var(--gold-light); border-radius:3px; box-shadow:var(--shadow);}
+  .lightbox img{max-width:min(92vw,1100px); max-height:88vh; object-fit:contain; border:2px solid var(--gold-light); border-radius:var(--radius-xs); box-shadow:var(--shadow);}
   .lightbox-close{position:fixed; top:16px; left:16px; width:38px; height:38px; border-radius:50%; border:1px solid var(--line);
-    background:var(--card); color:var(--ink); font-size:18px; cursor:pointer; z-index:301;}
+    background:var(--card); color:var(--ink); font-size:1.125em; cursor:pointer; z-index:301;}
 
-  .src-item{background:var(--card); border-right:3px solid var(--gold); border-radius:2px; padding:10px 14px; margin-bottom:8px; font-size:13.5px;}
+  .src-item{background:var(--card); border-right:3px solid var(--gold); border-radius:var(--radius-xs); padding:10px 14px; margin-bottom:8px; font-size:0.8438em;}
   .src-item.clickable{cursor:pointer; transition:.15s;}
   .src-item.clickable:hover{border-color:var(--teal); box-shadow:var(--shadow); transform:translateY(-1px);}
-  .open-hint{font-size:10.5px; color:var(--teal); font-weight:600;}
-  .src-ref{font-weight:700; margin-bottom:3px; color:var(--gold-light); font-size:12px;}
-  .src-text{font-family:'Frank Ruhl Libre',serif; font-size:14.5px; line-height:1.8;}
+  .open-hint{font-size:0.6563em; color:var(--teal); font-weight:600;}
+  .src-ref{font-weight:700; margin-bottom:3px; color:var(--gold-light); font-size:0.75em;}
+  .src-text{font-family:var(--font-display); font-size:0.9063em; line-height:1.8;}
   .gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-top:10px;}
-  .gallery img{width:100%; height:82px; object-fit:cover; border-radius:2px; border:1px solid var(--line); cursor:zoom-in;}
-  .wiki-note{background:var(--parchment-deep); border-right:3px solid var(--teal); border-radius:3px; padding:9px 12px; font-size:12px; margin-top:14px;}
+  .gallery img{width:100%; height:82px; object-fit:cover; border-radius:var(--radius-xs); border:1px solid var(--line); cursor:zoom-in;}
+  .wiki-note{background:var(--parchment-deep); border-right:3px solid var(--teal); border-radius:var(--radius-xs); padding:9px 12px; font-size:0.75em; margin-top:14px;}
 
   #lightbulb-btn{position:fixed; top:14px; left:14px; z-index:999; border:1px solid var(--line); background:var(--card);
-    color:var(--ink); font-size:13px; padding:7px 12px; border-radius:20px; cursor:pointer; box-shadow:var(--shadow);}
+    color:var(--ink); font-size:0.8125em; padding:7px 12px; border-radius:var(--radius-pill); cursor:pointer; box-shadow:var(--shadow);}
   #lightbulb-btn:hover{border-color:var(--gold);}
   #copyright-badge{position:fixed; top:14px; right:14px; z-index:999; border:1px solid var(--line); background:var(--card);
-    color:var(--ink-soft); font-size:11px; padding:6px 12px; border-radius:20px; box-shadow:var(--shadow); cursor:default;}
-  .lookup-status{display:inline-block; margin-top:10px; font-size:11.5px; padding:4px 10px; border-radius:12px;}
-  .lookup-status.ok{background:var(--forest); color:#EAF2E9;}
-  .lookup-status.err{background:var(--rust); color:#FBEDE6;}
+    color:var(--ink-soft); font-size:0.6875em; padding:6px 12px; border-radius:var(--radius-pill); box-shadow:var(--shadow); cursor:default;}
+  .lookup-status{display:inline-block; margin-top:10px; font-size:0.7188em; padding:4px 10px; border-radius:var(--radius-md);}
+  .lookup-status.ok{background:var(--forest); color:var(--gen-10);}
+  .lookup-status.err{background:var(--rust); color:var(--gen-11);}
 </style>
 </head>
 <body>
@@ -200,7 +214,7 @@ function render(){
         <span class="cat-num">${cat.num}</span>
         <h2>${cat.label}</h2>
       </div>
-      <p style="color:var(--ink-soft);font-size:13.5px;max-width:760px;margin:8px 0 20px;">${cat.blurb}</p>
+      <p style="color:var(--ink-soft);font-size:0.8438em;max-width:760px;margin:8px 0 20px;">${cat.blurb}</p>
       <div class="grid">${items.map(it=>cardHTML(it, it.idx)).join('')}</div>
     </section>`;
   }).join('') + `<p class="empty-msg hidden" id="emptyMsg">לא נמצאו תוצאות התואמות את החיפוש.</p>`;

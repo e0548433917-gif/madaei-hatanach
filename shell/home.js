@@ -20,14 +20,9 @@
     verse.textContent = 'על דרך אמרו "כִּי עַל־כֵּן יָדַעְתָּ חֲנֹתֵנוּ בַּמִּדְבָּר וְהָיִיתָ לָּנוּ לְעֵינָיִם" (במדבר, פרק י)';
     tb.after(verse);
   }
-  const landing = document.getElementById('landing');
-  if (landing){
-    const foot = document.createElement('div');
-    foot.className = 'mini-hint';
-    foot.style.cssText = 'text-align:center;color:gray;font-size:.8em;padding:10px 12px;';
-    foot.textContent = 'התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.';
-    landing.appendChild(foot);
-  }
+  // ⚠️ כאן היה מוזרק פתק שני, זהה במילה למה שכבר יושב ב-index.html כ-#aiDisclaimer,
+  // כך שההודעה הופיעה פעמיים בעמוד השער. ההזרקה הוסרה ב-3.1.2 — הפתק ב-HTML הוא
+  // המקור היחיד. אין להחזיר אותה: כל שינוי בנוסח צריך לקרות בקובץ ה-HTML בלבד.
 })();
 
 
@@ -190,7 +185,19 @@ async function renderCustomPageCards(){
     card.addEventListener('click', () => openCustomHtmlPage(page.name));
     if (anchor) extraGrid.insertBefore(card, anchor); else extraGrid.appendChild(card);
   });
+  toggleExtraSection();
 }
+
+// מ-3.1.2 שורת "שלי" מכילה רק דפי HTML שהמשתמש הוסיף בעצמו (האזור האישי עבר
+// לסרגל הצד, וספר אקראי לבורר הספר). אצל רוב המשתמשים היא ריקה לגמרי, ולכן
+// גם הכותרת נעלמת — אחרת נשארת כותרת מרחפת מעל אזור ריק.
+function toggleExtraSection(){
+  const sep = document.getElementById('extraSep');
+  const empty = !extraGrid.querySelector('.card');
+  extraGrid.classList.toggle('is-empty', empty);
+  if (sep) sep.classList.toggle('is-empty', empty);
+}
+toggleExtraSection();
 
 // ============================================================
 //  שורת החיפוש בעמוד השער

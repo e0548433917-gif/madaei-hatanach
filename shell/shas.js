@@ -397,7 +397,8 @@ if (bookChooserOverlay) bookChooserOverlay.addEventListener('click', (ev) => {
 //  שתי הגרסאות (0.9.96 ו-0.9.97) תומכות, ולכן זה נכנס לחבילת הבסיס ולא רק
 //  לווריאנט — בשונה מ-feedback.report שהוא 0.9.97 בלבד.
 // ============================================================
-const randomBookCard = document.getElementById('randomBookCard');
+// ב-3.1.2 עבר מכרטיס בעמוד השער לשורה בתוך בורר הספר (#bookChooserOverlay).
+const randomBookCard = document.getElementById('randomBookRow');
 
 // עץ הספרייה נקרא פעם אחת לכל פתיחת התוסף ונשמר בזיכרון: הוא גדול, ואין טעם
 // למשוך אותו מחדש בכל לחיצה. אין כאן storage בכוונה — הספרייה של המשתמש
@@ -433,7 +434,7 @@ async function openRandomBook(){
     return;
   }
   const card = randomBookCard;
-  const label = card && card.querySelector('.label');
+  const label = card && card.querySelector('.bc-label');
   const orig = label ? label.textContent : null;
   if (label) label.textContent = 'טוען…';
   try {
@@ -447,6 +448,7 @@ async function openRandomBook(){
     const opened = (ok && (ok.data !== undefined ? ok.data : ok));
     if (opened === false) throw new Error('reader.openBook החזיר false');
     await Otzaria.call('notifications.showInApp', { message: 'נפתח: ' + pick.title, type: 'success' }).catch(()=>{});
+    closeBookChooser();   // רק בהצלחה — בכישלון הבורר נשאר פתוח כדי לבחור אחרת
   } catch(e){
     await Otzaria.call('ui.showError', {
       message: 'לא הצלחנו לפתוח ספר אקראי. ' + ((e && e.message) || '')
