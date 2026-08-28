@@ -289,12 +289,13 @@ html, body {
 #homeSearchWrap {
   position: relative;
   display: flex; align-items: center; gap: 8px;
-  /* יושבת בתוך .topbar לצד ה-h1 (שמתכווץ עם ellipsis כברירת מחדל) - ממלאת
-     את הרוחב שנשאר, עם תקרה כדי לא להימתח לרוחב מלא במסך רחב */
+  /* יושבת בתוך .topbar לצד ה-h1 (שמתכווץ עם ellipsis כברירת מחדל).
+     margin-inline:auto ממרכז אותה ברוחב שנשאר אחרי הכותרת, במקום להצמיד
+     אותה אליה - הכותרת קצרה, ובלי זה השורה נראתה תלויה בצד אחד. */
   flex: 1 1 160px;
   min-width: 0;
   max-width: 480px;
-  margin: 0;
+  margin: 0 auto;
   padding: 5px 14px 5px 6px;
   background: var(--color-surface);
   border: 2px solid var(--color-primary);
