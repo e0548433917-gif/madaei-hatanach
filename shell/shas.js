@@ -405,15 +405,21 @@ const randomBookCard = document.getElementById('randomBookRow');
 // משתנה (הורדת ספרים חדשים), וקאש על הדיסק היה מתיישן בשקט.
 let libraryBooksCache = null;
 
-function flattenLibraryBooks(node, out){
+// נתיב הקטגוריה נשמר יחד עם כל ספר, ולא נזרק: בספרייה יש שמות זהים בכמה
+// מקומות ("עירובין" קיים בבבלי, בירושלמי ובמשנה), ובלי הנתיב אי אפשר להבחין
+// ביניהם ברשימה. הנתיב גם נכנס לחיפוש, כך ש"בבלי עירובין" מוצא את הנכון.
+function flattenLibraryBooks(node, out, path){
   if (!node) return out;
+  const here = node.title ? (path ? path + ' › ' + node.title : node.title) : (path || '');
   if (Array.isArray(node.books)){
     for (const b of node.books){
-      if (b && b.bookId && b.title) out.push({ bookId: b.bookId, title: b.title, type: b.type || 'text' });
+      if (b && b.bookId && b.title){
+        out.push({ bookId: b.bookId, title: b.title, type: b.type || 'text', path: here });
+      }
     }
   }
   if (Array.isArray(node.categories)){
-    for (const c of node.categories) flattenLibraryBooks(c, out);
+    for (const c of node.categories) flattenLibraryBooks(c, out, here);
   }
   return out;
 }
@@ -423,7 +429,7 @@ async function loadLibraryBooks(){
   const res = await Otzaria.call('library.getTree', { includeBooks: true });
   // אותה זהירות כמו ב-app.getInfo (ר' CLAUDE.md): לא להניח עטיפת .data.
   const data = (res && (res.data !== undefined ? res.data : res)) || null;
-  const list = flattenLibraryBooks(data, []);
+  const list = flattenLibraryBooks(data, [], '');
   if (list.length) libraryBooksCache = list;
   return list;
 }
@@ -515,11 +521,18 @@ async function openLibraryBookPicker(){
 function renderLibBookList(q){
   if (!libBookResults || !libraryBooksCache) return;
   const norm = normalizeHeb(q || '');
+  // החיפוש רץ על הכותרת *ועל נתיב הקטגוריה*, כך ש"בבלי עירובין" או
+  // "ירושלמי עירובין" מגיעים ישירות לספר הנכון מבין השמות הזהים.
   const hits = (norm.length < 1 ? libraryBooksCache
-    : libraryBooksCache.filter(b => normalizeHeb(b.title).indexOf(norm) !== -1)).slice(0, 40);
+    : libraryBooksCache.filter(b =>
+        normalizeHeb(b.title).indexOf(norm) !== -1 ||
+        normalizeHeb((b.path || '') + ' ' + b.title).indexOf(norm) !== -1)).slice(0, 40);
   if (!hits.length){ libBookResults.innerHTML = '<div class="mini-note">לא נמצא ספר בשם הזה.</div>'; return; }
   libBookResults.innerHTML = hits.map((b, i) =>
-    '<div class="lib-row" data-i="' + i + '">' + esc(b.title) + '</div>').join('');
+    '<div class="lib-row" data-i="' + i + '">' +
+      '<span class="lib-title">' + esc(b.title) + '</span>' +
+      (b.path ? '<span class="lib-path">' + esc(b.path) + '</span>' : '') +
+    '</div>').join('');
   libBookResults.querySelectorAll('.lib-row').forEach(row => {
     row.addEventListener('click', () => pickLibBook(hits[parseInt(row.dataset.i, 10)]));
   });
@@ -530,7 +543,7 @@ async function pickLibBook(book){
   libPickedBook = book;
   libBookResults.innerHTML = '';
   if (libBookSearch) libBookSearch.value = book.title;
-  libChosenBook.textContent = book.title;
+  libChosenBook.textContent = book.title + (book.path ? '  —  ' + book.path : '');
   libSectionWrap.style.display = '';
   libSectionSelect.innerHTML = '<option value="0">תחילת הספר</option>';
   libBookGoBtn.disabled = false;
@@ -587,7 +600,7 @@ async function runLibraryIdentify(){
     const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
     libraryBookOverlay.classList.remove('open');
     const secLabel = libSectionSelect.selectedOptions[0] ? libSectionSelect.selectedOptions[0].textContent.trim() : '';
-    showResults(matches, libPickedBook.title + (secLabel && secLabel !== 'תחילת הספר' ? ' — ' + secLabel : ''));
+    showResults(matches, libPickedBook.title + (secLabel && secLabel !== 'תחילת הספר' ? ' — ' + secLabel : '') + (libPickedBook.path ? '  (' + libPickedBook.path + ')' : ''));
   } catch(e){
     libStatus('הזיהוי נכשל. ' + ((e && e.message) || ''));
   } finally {

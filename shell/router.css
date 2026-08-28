@@ -1360,3 +1360,9 @@ html, body {
 .lib-row:last-child { border-bottom: none; }
 .lib-row:hover { background: var(--color-primary-subtle); }
 #libSectionSelect { width: 100%; }
+
+/* שורת ספר ברשימת הספרייה: כותרת + נתיב הקטגוריה מתחתיה, כדי להבחין בין
+   שמות זהים (עירובין בבלי / ירושלמי / משנה). */
+.lib-row { display: flex; flex-direction: column; gap: 1px; }
+.lib-row .lib-title { font-weight: 600; }
+.lib-row .lib-path { font-size: .78em; color: var(--color-on-surface-faint); }
