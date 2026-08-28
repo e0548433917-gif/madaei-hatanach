@@ -220,6 +220,14 @@
          המשתמש מהתוסף. אותה שאלה ("באיזה ספר?"), תוצאה אחרת — ולכן קו מפריד
          ותווית ↗ ולא אריח חמישי שווה-ערך ברשת. -->
     <div class="book-choice-alt">
+      <!-- מוצג רק כשבאמת פתוח ספר בקורא (refreshOpenPageRow, shell/shas.js) -->
+      <button type="button" class="book-choice-row" id="openPageRow" hidden>
+        <span class="bc-icon">📖</span>
+        <span class="bcr-text">
+          <span class="bc-label" id="openPageLabel">זהה את מה שפתוח בקורא</span>
+          <span class="bc-sub">בלי לסמן כלום — ישר מהדף שאתם לומדים</span>
+        </span>
+      </button>
       <button type="button" class="book-choice-row" id="libraryBookRow">
         <span class="bc-icon">🔎</span>
         <span class="bcr-text">

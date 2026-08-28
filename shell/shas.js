@@ -361,6 +361,8 @@ const bookChooserCard = document.getElementById('bookChooserCard');
 
 function openBookChooser(){
   if (bookChooserOverlay) bookChooserOverlay.classList.add('open');
+  // המצב נבדק בכל פתיחה, לא פעם אחת בטעינה — המשתמש מחליף ספרים בקורא
+  if (typeof refreshOpenPageRow === 'function') refreshOpenPageRow();
 }
 function closeBookChooser(){
   if (bookChooserOverlay) bookChooserOverlay.classList.remove('open');
@@ -621,3 +623,96 @@ if (libBookSearch){
 if (libBookGoBtn) libBookGoBtn.addEventListener('click', runLibraryIdentify);
 const libBookCloseBtn = document.getElementById('libBookClose');
 if (libBookCloseBtn) libBookCloseBtn.addEventListener('click', () => libraryBookOverlay.classList.remove('open'));
+
+
+// ============================================================
+//  זיהוי הדף הפתוח בקורא (3.2.0)
+//  כפתור הסרגל (toolbarItems, וריאנט 0.9.97) מוגדר openPlugin:true — כלומר
+//  כל תפקידו לפתוח את לשונית התוסף, והוא אינו מזהה כלום. מי שכן מזהה הוא
+//  פריט תפריט ההקשר, אבל הוא דורש **סימון** טקסט מראש.
+//  כאן נסגר הפער: שולפים מהקורא מה פתוח כרגע (reader.getCurrentState),
+//  מושכים את הטקסט של אותו מקום (library.getBookContent) ומריצים עליו את
+//  אותו מנוע זיהוי — בלי שהמשתמש יסמן דבר.
+//
+//  ⚠️ לא רץ אוטומטית בכל פתיחה של התוסף בכוונה: פתיחת הלשונית אינה בהכרח
+//  בקשה לזהות, והרצה אוטומטית הייתה קופצת עם חלון תוצאות על כל כניסה.
+//  הכניסה היא כפתור מפורש, שמופיע רק כשבאמת פתוח ספר בקורא.
+// ============================================================
+const openPageRow = document.getElementById('openPageRow');
+const openPageLabel = document.getElementById('openPageLabel');
+
+// מחזיר { bookId, type, index, title } של מה שפתוח בקורא, או null.
+async function currentReaderBook(){
+  if (!hasOtzaria()) return null;
+  try {
+    const st = unwrapOtz(await Otzaria.call('reader.getCurrentState', {}));
+    if (!st) return null;
+    // התשובה מגיעה בכמה צורות בין גרסאות: אובייקט יחיד, {tabs:[...]},
+    // או מערך של טאבים כשהפעיל מסומן ב-isActive/active.
+    let t = st;
+    const tabs = Array.isArray(st) ? st : (st.tabs || st.openTabs);
+    if (Array.isArray(tabs) && tabs.length){
+      t = tabs.find(x => x && (x.isActive || x.active)) || tabs[0];
+    }
+    if (!t) return null;
+    const bookId = t.bookId || t.book || (t.currentBook && t.currentBook.bookId);
+    const title = t.title || (t.currentBook && t.currentBook.title) || bookId;
+    if (!bookId) return null;
+    return {
+      bookId: String(bookId),
+      type: t.type || 'text',
+      index: Number(t.index) || 0,
+      title: String(title || bookId)
+    };
+  } catch(e){ return null; }
+}
+
+// מציג/מסתיר את הכפתור לפי מה שפתוח כרגע. נקרא בפתיחת בורר הספר, כדי
+// שהמצב יהיה עדכני ולא משוחזר מרגע הטעינה.
+async function refreshOpenPageRow(){
+  if (!openPageRow) return;
+  const cur = await currentReaderBook();
+  if (!cur){ openPageRow.hidden = true; return; }
+  openPageRow.hidden = false;
+  openPageRow.dataset.bookId = cur.bookId;
+  openPageRow.dataset.type = cur.type;
+  openPageRow.dataset.index = String(cur.index);
+  openPageRow.dataset.title = cur.title;
+  if (openPageLabel) openPageLabel.textContent = 'זהה את מה שפתוח בקורא — ' + cur.title;
+}
+
+async function identifyOpenPage(){
+  const bookId = openPageRow && openPageRow.dataset.bookId;
+  if (!bookId) return;
+  const type = openPageRow.dataset.type || 'text';
+  const index = parseInt(openPageRow.dataset.index, 10) || 0;
+  const title = openPageRow.dataset.title || bookId;
+  const label = openPageLabel ? openPageLabel.textContent : null;
+  if (openPageLabel) openPageLabel.textContent = 'מזהה…';
+  try {
+    const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
+      bookId: bookId, type: type, offset: index, limit: LIB_CHUNK
+    }));
+    let text = '';
+    if (typeof res === 'string') text = res;
+    else if (Array.isArray(res)) text = res.map(x => (typeof x === 'string' ? x : ((x && (x.text || x.content)) || ''))).join('\n');
+    else if (res) text = res.text || res.content || '';
+    text = String(text || '').replace(/<[^>]*>/g, ' ');
+    if (!text.trim()){
+      await Otzaria.call('ui.showError', { message: 'לא הצלחנו לקרוא את הטקסט שפתוח בקורא.' }).catch(()=>{});
+      return;
+    }
+    if (!parashaDataReady()) await ensureAllGuidesLoaded();
+    const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
+    closeBookChooser();
+    showResults(matches, title);
+  } catch(e){
+    await Otzaria.call('ui.showError', {
+      message: 'הזיהוי נכשל. ' + ((e && e.message) || '')
+    }).catch(() => window.alert('הזיהוי נכשל.'));
+  } finally {
+    if (openPageLabel && label) openPageLabel.textContent = label;
+  }
+}
+
+if (openPageRow) openPageRow.addEventListener('click', identifyOpenPage);
