@@ -16,6 +16,11 @@
 
 param(
   [Parameter(Mandatory=$true)][string]$TilesSource,   # תיקיית tiles/ מחולצת (z/x/y.png)
+  # -From997: בונה מעל וריאנט ה-0.9.97 (-toolbar997) במקום מעל חבילת הבסיס,
+  # וכך "עינים למקרא+" יוצא עם minAppVersion 0.9.97, reader.toolbar
+  # ו-contributes.startup (כפתור בסרגל הקורא + פריט תפריט ההקשר המוצהר).
+  # דורש שהריצה של build\pack-997-variant.ps1 כבר יצרה את הקובץ הזה.
+  [switch]$From997,
   [switch]$Release
 )
 
@@ -28,9 +33,16 @@ if (-not (Test-Path $TilesSource)) { throw "לא נמצא $TilesSource" }
 
 $manifest = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $version = $manifest.version
-$baseZip = Join-Path $distDir "$($manifest.id)-$version.otzplugin"
+$baseZip = if ($From997) {
+  Join-Path $distDir "$($manifest.id)-$version-toolbar997.otzplugin"
+} else {
+  Join-Path $distDir "$($manifest.id)-$version.otzplugin"
+}
 
 if (-not (Test-Path $baseZip)) {
+  if ($From997) {
+    throw "לא נמצא $baseZip — הרץ קודם .\build\pack-997-variant.ps1 (ולפניו pack.ps1) כדי לבנות את וריאנט ה-0.9.97 שממנו נגזרת חבילת ה+."
+  }
   throw "לא נמצא $baseZip — הרץ קודם .\build\pack.ps1 כדי לבנות את חבילת הבסיס."
 }
 
