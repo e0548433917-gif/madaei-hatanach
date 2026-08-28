@@ -227,7 +227,9 @@
           <span class="bc-sub">בחרו כל ספר שמותקן אצלכם — נזהה מה שכתוב בו</span>
         </span>
       </button>
-      <button type="button" class="book-choice-row" id="randomBookRow">
+      <!-- "ספר אקראי" מוסתר לבקשת המשתמש (3.1.5). הקוד עצמו נשאר חי
+           (openRandomBook ב-shell/shas.js) — להחזרה מספיק להסיר את hidden. -->
+      <button type="button" class="book-choice-row" id="randomBookRow" hidden>
         <span class="bc-icon">🎲</span>
         <span class="bcr-text">
           <span class="bc-label">או: הפתיעו אותי — ספר אקראי</span>
