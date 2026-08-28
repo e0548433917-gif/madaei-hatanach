@@ -201,7 +201,7 @@ function toggleExtraSection(){
     const ph = document.createElement('button');
     ph.type = 'button';
     ph.className = 'card card-placeholder';
-    ph.innerHTML = '<span class="icon">＋</span><span class="label">הוספת דף אישי</span>';
+    ph.innerHTML = '<span class="icon">＋</span><span class="label">הוספת מדריך אישי</span>';
     ph.addEventListener('click', () => openAddHtmlPanel());
     extraGrid.appendChild(ph);
   }

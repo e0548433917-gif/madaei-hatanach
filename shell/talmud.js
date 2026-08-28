@@ -53,7 +53,7 @@ function masechetCardHtml(name, page){
   // הבאדג' "גרסה ראשונית" מציין כלי-עזר שעדיין iframe חיצוני (מפרט 4.0, ד) —
   // guideId = כרטסת ילידית מלאה, לא זמנית.
   const badge = (tool && !tool.guideId) ? '<span class="talmud-tool-badge">גרסה ראשונית</span>'
-    : (!tool && page) ? '<span class="talmud-tool-badge">דף אישי</span>' : '';
+    : (!tool && page) ? '<span class="talmud-tool-badge">מדריך אישי</span>' : '';
   // הדגשת מסכתות עם תוכן בפועל מתוך 63 (רוב הכרטיסים עדיין placeholder):
   // מסגרת צבעונית למי שיש לו כלי-עזר/דף אישי, עמעום למי שאין. כלל קבוע —
   // כל מדריך/כלי-עזר חדש שנכנס מקבל את אותה מסגרת, עד שרוב המסכתות מכוסות
