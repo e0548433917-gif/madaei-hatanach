@@ -189,13 +189,22 @@ async function renderCustomPageCards(){
 }
 
 // מ-3.1.2 שורת "שלי" מכילה רק דפי HTML שהמשתמש הוסיף בעצמו (האזור האישי עבר
-// לסרגל הצד, וספר אקראי לבורר הספר). אצל רוב המשתמשים היא ריקה לגמרי, ולכן
-// גם הכותרת נעלמת — אחרת נשארת כותרת מרחפת מעל אזור ריק.
+// לסרגל הצד, וספר אקראי לבורר הספר). מ-3.1.3, במקום להסתיר את השורה כשהיא
+// ריקה, מוצגים שני ריבועים אפרוריים-למחצה באותו גודל ככרטיס רגיל, שלחיצה
+// עליהם פותחת ישירות את פאנל הוספת הדף (openAddHtmlPanel) — כך המקום מסביר
+// את עצמו במקום להיעלם, והמשתמש מגלה שאפשר להוסיף דפים משלו.
+const EXTRA_PLACEHOLDERS = 2;
 function toggleExtraSection(){
-  const sep = document.getElementById('extraSep');
-  const empty = !extraGrid.querySelector('.card');
-  extraGrid.classList.toggle('is-empty', empty);
-  if (sep) sep.classList.toggle('is-empty', empty);
+  extraGrid.querySelectorAll('.card-placeholder').forEach(el => el.remove());
+  const realCards = extraGrid.querySelectorAll('.card:not(.card-placeholder)').length;
+  for (let i = realCards; i < EXTRA_PLACEHOLDERS; i++){
+    const ph = document.createElement('button');
+    ph.type = 'button';
+    ph.className = 'card card-placeholder';
+    ph.innerHTML = '<span class="icon">＋</span><span class="label">הוספת דף אישי</span>';
+    ph.addEventListener('click', () => openAddHtmlPanel());
+    extraGrid.appendChild(ph);
+  }
 }
 toggleExtraSection();
 
