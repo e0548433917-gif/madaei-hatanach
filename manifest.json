@@ -23,6 +23,7 @@
     "plugin.storage.read",
     "plugin.storage.write",
     "app.info.read",
+    "library.books.read",
     "network.access",
     "network.localhost",
     "events.subscribe:theme.changed"
