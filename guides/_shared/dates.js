@@ -413,6 +413,11 @@ const PUBLISHED_KEYS_KEY = 'madaei_hatanach_published_event_keys_v1';
 const PUBLISH_LAST_RUN_KEY = 'madaei_hatanach_publish_last_run_v1';
 const PUBLISH_LOOKAHEAD_DAYS = 365; // שנה מראש - כדי לא להזדקק לעדכון תכוף
 const PUBLISH_LOOKBACK_DAYS = 7; // שבוע אחורה - כדי שהלוח לא יהיה ריק כשמסתכלים אחורה
+// 3.3.2 — זהה ל-PREFS_KEY שב-shell/settings.js. שם אחר בכוונה: settings.js לא
+// נטען ב-background.html, אבל כשהוא כן נטען (הטאב הפעיל) הצהרת const באותו שם
+// הייתה SyntaxError redeclare ששובר את כל הקובץ בשקט — בדיוק המלכודת שהפילה
+// את shell/daily-publish.js (ר' ההערה ב-background.html).
+const PUBLISH_PREFS_KEY = 'madaei_hatanach_ui_prefs_v1';
 
 // גל: מגן מפני הרצה כפולה *בו-זמנית* באותו מופע (למשל plugin.boot וטיימר גיבוי
 // שקוראים כמעט ביחד, לפני שהראשון הספיק לכתוב PUBLISH_LAST_RUN_KEY) - רעיון
@@ -441,6 +446,23 @@ async function publishUpcomingEventsInner(){
 
   if (_churbanHebYear == null) _churbanHebYear = gregToHebDate(70, 7, 4).year;
 
+  // 3.3.2 — קריאת ההעדפות גם כשאין uiPrefs גלובלי: מנוע הרקע (background.html)
+  // לא טוען את shell/settings.js, ולכן עד כה uiPrefs היה undefined שם והבדיקות
+  // למטה נפלו לברירת המחדל "פרסם הכל" — כיבוי בהגדרות נמחק מהיומן בטאב, ומנוע
+  // הרקע החזיר את הכל ב-app.startup הבא (דווח בפורום על 3.3.1). קוראים ישירות
+  // מאחסון אוצריא — אותו מקום ש-savePrefs (shell/settings.js) מגבה אליו.
+  let pubPrefs = (typeof uiPrefs === 'object' && uiPrefs) ? uiPrefs : null;
+  if (!pubPrefs) pubPrefs = await storageGetJson(PUBLISH_PREFS_KEY);
+  if (!pubPrefs || typeof pubPrefs !== 'object') pubPrefs = {};
+  const wantEvents  = pubPrefs.pubEvents  !== false;
+  const wantChurban = pubPrefs.pubChurban !== false;
+  // 3.3.2 — pubAhead/pubBack סוף־סוף בשימוש: עד כה ההגדרות "כמה זמן קדימה/אחורה"
+  // נשמרו (shell/settings.js) אבל אף אחד לא קרא אותן, והקבועים 365/7 נשארו קשיחים.
+  const lookAhead = (typeof pubPrefs.pubAhead === 'number' && isFinite(pubPrefs.pubAhead) && pubPrefs.pubAhead >= 1)
+    ? Math.min(Math.floor(pubPrefs.pubAhead), 3650) : PUBLISH_LOOKAHEAD_DAYS;
+  const lookBack = (typeof pubPrefs.pubBack === 'number' && isFinite(pubPrefs.pubBack) && pubPrefs.pubBack >= 0)
+    ? Math.min(Math.floor(pubPrefs.pubBack), 3650) : PUBLISH_LOOKBACK_DAYS;
+
   const pad = (n) => String(n).padStart(2, '0');
   const isoOf = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   const startsAtOf = (d) => {
@@ -451,7 +473,10 @@ async function publishUpcomingEventsInner(){
 
   const items = []; // {key, payload}
   const base = new Date();
-  for (let off = -PUBLISH_LOOKBACK_DAYS; off < PUBLISH_LOOKAHEAD_DAYS; off++){
+  // גם כששני המתגים כבויים הפונקציה ממשיכה לרוץ: items נשאר ריק, והלולאה על
+  // prev למטה היא מה שמוחק מהיומן את כל מה שכבר פורסם.
+  const spanEnd = (wantEvents || wantChurban) ? lookAhead : -lookBack;
+  for (let off = -lookBack; off < spanEnd; off++){
     const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + off);
     const raw = gregToHebDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
     const isLeap = isHebrewLeapYear(raw.year);
@@ -465,11 +490,9 @@ async function publishUpcomingEventsInner(){
     // אין קשר בין מאורעות התנ״ך/התלמוד לזמן שעבר מהחורבן - לכן churbanTxt לא
     // מופיע בתיאור שלהם (בניגוד לגרסה קודמת). מפתח ה"חורבן" מתחיל ב-z כדי
     // שיישאר אחרון בסדר לקסיקוגרפי אם היומן ממיין לפי key בין אירועי אותו יום.
-    // 3.2.8 — שתי ההעדפות נקראות בתוך הלולאה ולא בכניסה לפונקציה, כי כיבוי
-    // חייב עדיין להריץ את הפרסום: ההרצה היא מה שמוחק מהיומן את מה שכבר פורסם
-    // (הלולאה על prev למטה מסירה כל מפתח שאינו ב-items החדש).
-    const wantEvents  = !(typeof uiPrefs === 'object' && uiPrefs && uiPrefs.pubEvents  === false);
-    const wantChurban = !(typeof uiPrefs === 'object' && uiPrefs && uiPrefs.pubChurban === false);
+    // (wantEvents/wantChurban נקבעים בכניסה לפונקציה — כולל בקונטקסט הרקע,
+    // ר' ההערה על pubPrefs למעלה. כיבוי עדיין מריץ את הפרסום: ההרצה היא מה
+    // שמוחק מהיומן את מה שכבר פורסם — הלולאה על prev למטה.)
     const events = wantEvents ? allDateEvents().filter(ev => monthMatchesEventMonth(monthName, ev.month) && dayMatchesEventDay(raw.day, ev.day)) : [];
     events.forEach((ev, i) => items.push({
       key: 'madaei:dailyEvent:' + iso + ':' + i,
