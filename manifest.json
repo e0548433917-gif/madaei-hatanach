@@ -53,6 +53,9 @@
     ]
   },
   "contributes": {
+    "background": {
+      "entrypoint": "background.html"
+    },
     "toolTab": {
       "title": "עינים למקרא",
       "order": 40,

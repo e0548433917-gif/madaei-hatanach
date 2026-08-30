@@ -416,14 +416,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	background: var(--lf-surface);
 	border-radius:var(--radius-sm);
 	}
+/* ה-PNGים של Leaflet אינם נארזים: כל הסמנים כאן הם divIcon (map.js). */
 .leaflet-control-layers-toggle {
-	background-image: url(images/layers.png);
 	width: 36px;
 	height: 36px;
-	}
-.leaflet-retina .leaflet-control-layers-toggle {
-	background-image: url(images/layers-2x.png);
-	background-size: 26px 26px;
 	}
 .leaflet-touch .leaflet-control-layers-toggle {
 	width: 44px;
@@ -462,12 +458,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	border-top: 1px solid var(--lf-outline);
 	margin: 5px -10px 5px -6px;
 	}
-
-/* Default icon URLs */
-.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
-	background-image: url(images/marker-icon.png);
-	}
-
 
 /* attribution and scale controls */
 
