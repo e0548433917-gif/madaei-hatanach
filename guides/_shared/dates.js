@@ -424,10 +424,19 @@ const PUBLISH_PREFS_KEY = 'madaei_hatanach_ui_prefs_v1';
 // שנלקח מ-shell/daily-publish.js (גרסה מקבילה ישנה יותר שהמשתמש העלה).
 // ה-throttle היומי למעלה מטפל בהרצות עתידיות; זה מטפל רק בחפיפה הרגעית.
 let _publishInFlight = false;
+// דחייה אחרי plugin.boot: הפרסום רץ גם ממנוע הרקע וגם מהלשונית, ובעליית
+// האפליקציה כל קריאת publishedData מתחרה בטעינת האפליקציה עצמה. ב-3.3.1 זה
+// תקע את העלייה בפועל (~900 קריאות גשר לכל מופע): המשתמש סגר באמצע, ה-throttle
+// היומי מעולם לא נכתב, וכל עלייה התחילה את הכל מחדש. הג׳יטר מפזר את שני
+// המופעים כדי ששניהם לא יעברו את בדיקת ה-throttle באותה שנייה.
+const PUBLISH_STARTUP_DELAY_MS = 20000;
 async function publishUpcomingEvents(){
   if (_publishInFlight) return;
   _publishInFlight = true;
-  try { await publishUpcomingEventsInner(); }
+  try {
+    await new Promise(r => setTimeout(r, PUBLISH_STARTUP_DELAY_MS + Math.floor(Math.random() * 10000)));
+    await publishUpcomingEventsInner();
+  }
   finally { _publishInFlight = false; }
 }
 
@@ -438,11 +447,21 @@ async function publishUpcomingEventsInner(){
   // מריצים לכל היותר פעם ביום: פתיחת התוסף קוראת לפונקציה הזו בכל plugin.boot
   // (גם ברקע וגם בטאב הפעיל, ר' bridge.js/background.js) - בלי המגבלה הזו כל
   // פתיחה הייתה מוחקת ובונה מחדש את כל השנה מול היומן של אוצריא, גם כשכלום
-  // לא השתנה. הרצה נכשלת (או ראשונה אי-פעם) לא נכתבת ל-PUBLISH_LAST_RUN_KEY,
-  // כך שהיא תנסה שוב בפעם הבאה.
+  // לא השתנה.
   const todayIso = (() => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); })();
   const lastRun = await storageGetJson(PUBLISH_LAST_RUN_KEY);
-  if (lastRun === todayIso) return;
+  // ריצה שהושלמה היום — אין מה לעשות. ריצה שנקטעה היום (complete !== true)
+  // ממשיכה מה-checkpoint: זול, כי רק מה שטרם פורסם ייכתב.
+  const prevStateEarly = await storageGetJson(PUBLISHED_KEYS_KEY);
+  const prevComplete = Array.isArray(prevStateEarly) ? true
+    : !!(prevStateEarly && prevStateEarly.complete);
+  if (lastRun === todayIso && prevComplete) return;
+  // 3.3.2: ה-throttle נכתב *מיד*, לא בסוף. עד 3.3.1 הוא נכתב רק בסיום ריצה
+  // מלאה — וריצה שנקטעה (סגירת האפליקציה באמצע) גרמה לכל עלייה להתחיל את
+  // כל הסנכרון מחדש, שוב ושוב. הכתיבה-מראש גם סוגרת את המרוץ בין מופע הרקע
+  // למופע הלשונית. ריצה שנקטעת מושלמת למחרת דרך הסנכרון הדיפרנציאלי למטה
+  // (ה-checkpoint של kept שומר את מה שכבר פורסם).
+  await storageSetJson(PUBLISH_LAST_RUN_KEY, todayIso);
 
   if (_churbanHebYear == null) _churbanHebYear = gregToHebDate(70, 7, 4).year;
 
@@ -506,24 +525,44 @@ async function publishUpcomingEventsInner(){
     });
   }
 
-  const newKeys = items.map(it => it.key);
-  const newKeySet = new Set(newKeys);
-  const prev = await storageGetJson(PUBLISHED_KEYS_KEY);
-  if (Array.isArray(prev)){
-    for (const key of prev){
-      if (!newKeySet.has(key)){
-        await Otzaria.call('publishedData.remove', { type: 'calendar.event', scope: 'global', key }).catch(()=>{});
-      }
+  // ---- סנכרון דיפרנציאלי (3.3.2) ----
+  // עד 3.3.1 כל ריצה עשתה upsert לכל ~536 הפריטים מחדש (ובגל של עדכון-דאטה גם
+  // מאות remove) — פעם ביום זה עבר בשקט, אבל בעליית האפליקציה זה מה שתקע אותה.
+  // ה-payload של מפתח נתון דטרמיניסטי לגמרי (נגזר מהתאריך ומטבלת המאורעות),
+  // ולכן מפתח שכבר פורסם בחתימת-דאטה זהה אינו זקוק ל-upsert חוזר. ביום רגיל
+  // הדיף הוא ~2-3 פריטים (יום חדש נכנס לטווח, יום ישן יוצא); סנכרון מלא קורה
+  // רק כשטבלת המאורעות עצמה השתנתה (חתימה שונה) — פעם אחת, אחרי עדכון גרסה.
+  const djb2 = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
+  const dataSig = djb2(items.map(it => it.key + '|' + it.payload.title).join('\n'));
+  const prevState = prevStateEarly;
+  const prevKeys = Array.isArray(prevState) ? prevState
+    : (prevState && Array.isArray(prevState.keys)) ? prevState.keys : [];
+  const prevSig = (prevState && !Array.isArray(prevState)) ? prevState.sig : null;
+
+  const newKeySet = new Set(items.map(it => it.key));
+  const publishedSet = new Set(prevSig === dataSig ? prevKeys : []); // חתימה השתנתה => הכל טעון פרסום מחדש
+
+  const kept = prevKeys.filter(k => newKeySet.has(k) && publishedSet.has(k));
+  const saveState = (complete) => storageSetJson(PUBLISHED_KEYS_KEY, { sig: dataSig, keys: kept, complete: complete === true });
+
+  for (const key of prevKeys){
+    if (!newKeySet.has(key)){
+      await Otzaria.call('publishedData.remove', { type: 'calendar.event', scope: 'global', key }).catch(()=>{});
     }
   }
 
-  const kept = [];
+  // checkpoint כל 50 פריטים: ריצה שנקטעת (סגירת האפליקציה) לא מאבדת את מה
+  // שכבר פורסם, וההשלמה למחרת מתחילה מאיפה שנעצרה במקום מאפס.
+  let sinceCheckpoint = 0;
   for (const it of items){
+    if (publishedSet.has(it.key)) continue;
     const res = await Otzaria.call('publishedData.upsert', {
       type: 'calendar.event', scope: 'global', key: it.key, payload: it.payload
     }).catch(() => null);
-    if (res && res.success) kept.push(it.key);
+    if (res && res.success){
+      kept.push(it.key);
+      if (++sinceCheckpoint >= 50){ sinceCheckpoint = 0; await saveState(false); }
+    }
   }
-  await storageSetJson(PUBLISHED_KEYS_KEY, kept);
-  await storageSetJson(PUBLISH_LAST_RUN_KEY, todayIso);
+  await saveState(true);
 }
