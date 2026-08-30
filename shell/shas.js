@@ -647,22 +647,32 @@ async function currentReaderBook(){
   try {
     const st = unwrapOtz(await Otzaria.call('reader.getCurrentState', {}));
     if (!st) return null;
-    // התשובה מגיעה בכמה צורות בין גרסאות: אובייקט יחיד, {tabs:[...]},
-    // או מערך של טאבים כשהפעיל מסומן ב-isActive/active.
-    let t = st;
-    const tabs = Array.isArray(st) ? st : (st.tabs || st.openTabs);
-    if (Array.isArray(tabs) && tabs.length){
-      t = tabs.find(x => x && (x.isActive || x.active)) || tabs[0];
+    // ⚠️ המבנה אומת מול API_REFERENCE.md (28/08): הספר **הפעיל** יושב בשדות
+    // current* ב**שורש** האובייקט, ו-openTabs הוא רשימת כל הטאבים **בלי שום
+    // סימון של הפעיל**. גרסה קודמת חיפשה isActive/active בתוך openTabs, לא
+    // מצאה, ונפלה ל-openTabs[0] — כלומר זיהתה את הטאב הראשון ולא את הפתוח.
+    // הנפילה ל-openTabs[0] נשארת רק למקרה שאין current* בכלל.
+    let bookId = st.currentBookId || st.currentBook;
+    let id = st.currentId;
+    let type = st.currentType || 'text';
+    let index = Number(st.currentIndex) || 0;
+
+    if (!bookId && !Number.isInteger(id)){
+      const tabs = Array.isArray(st) ? st : (st.openTabs || st.tabs);
+      const t = Array.isArray(tabs) && tabs.length ? tabs[0] : null;
+      if (!t) return null;
+      bookId = t.bookId || t.book;
+      id = t.id;
+      type = t.type || 'text';
+      index = Number(t.index) || 0;
     }
-    if (!t) return null;
-    const bookId = t.bookId || t.book || (t.currentBook && t.currentBook.bookId);
-    const title = t.title || (t.currentBook && t.currentBook.title) || bookId;
-    if (!bookId) return null;
+    if (!bookId && !Number.isInteger(id)) return null;
     return {
-      bookId: String(bookId),
-      type: t.type || 'text',
-      index: Number(t.index) || 0,
-      title: String(title || bookId)
+      bookId: bookId ? String(bookId) : null,
+      id: Number.isInteger(id) ? id : null,
+      type: type,
+      index: index,
+      title: String(st.currentRef || bookId || 'הספר הפתוח')
     };
   } catch(e){ return null; }
 }
@@ -674,7 +684,8 @@ async function refreshOpenPageRow(){
   const cur = await currentReaderBook();
   if (!cur){ openPageRow.hidden = true; return; }
   openPageRow.hidden = false;
-  openPageRow.dataset.bookId = cur.bookId;
+  openPageRow.dataset.bookId = cur.bookId || '';
+  openPageRow.dataset.id = (cur.id != null ? String(cur.id) : '');
   openPageRow.dataset.type = cur.type;
   openPageRow.dataset.index = String(cur.index);
   openPageRow.dataset.title = cur.title;
@@ -683,16 +694,19 @@ async function refreshOpenPageRow(){
 
 async function identifyOpenPage(){
   const bookId = openPageRow && openPageRow.dataset.bookId;
-  if (!bookId) return;
+  const numId = openPageRow && openPageRow.dataset.id;
+  if (!bookId && !numId) return;
   const type = openPageRow.dataset.type || 'text';
   const index = parseInt(openPageRow.dataset.index, 10) || 0;
   const title = openPageRow.dataset.title || bookId;
   const label = openPageLabel ? openPageLabel.textContent : null;
   if (openPageLabel) openPageLabel.textContent = 'מזהה…';
   try {
-    const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
-      bookId: bookId, type: type, offset: index, limit: LIB_CHUNK
-    }));
+    // ה-id המספרי עדיף על bookId המחרוזתי כשהוא קיים: שני ספרים בספרייה
+    // יכולים לחלוק שם ("עירובין"), וה-id הוא היחיד שחד-משמעי.
+    const payload = { type: type, offset: index, limit: LIB_CHUNK };
+    if (numId) payload.id = parseInt(numId, 10); else payload.bookId = bookId;
+    const res = unwrapOtz(await Otzaria.call('library.getBookContent', payload));
     let text = '';
     if (typeof res === 'string') text = res;
     else if (Array.isArray(res)) text = res.map(x => (typeof x === 'string' ? x : ((x && (x.text || x.content)) || ''))).join('\n');
