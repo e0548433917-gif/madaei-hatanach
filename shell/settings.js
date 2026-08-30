@@ -217,6 +217,9 @@ function openSettings(){
   document.getElementById('settingsPanel').classList.add('open');
   syncSettingsUI();
   syncNikudSettings();
+  // 3.2.6 — נבדק בכל פתיחה ולא פעם אחת בטעינה: הגשר של אוצריא אינו בהכרח
+  // מוכן ברגע שהסקריפט רץ, ואז הקבוצה נשארה מוסתרת לתמיד.
+  if (typeof refreshShortcutGroup === 'function') refreshShortcutGroup();
 }
 function closeSettings(){
   document.getElementById('settingsScrim').classList.remove('open');
@@ -277,15 +280,18 @@ wireSettings();
 //  📌 להפעלה בפועל צריך להוסיף "ui.create_shortcut" לרשימת ההרשאות בווריאנט
 //     997 (build/pack-997-variant.ps1), אחרי אימות על מכשיר.
 // ============================================================
-(function(){
+let shortcutWired = false;
+function refreshShortcutGroup(){
   const group = document.getElementById('setShortcutGroup');
   const btn = document.getElementById('setShortcutBtn');
   if (!group || !btn) return;
 
   // הקבוצה מוצגת רק כשיש אוצריא. אין דרך לדעת מראש אם ההרשאה ניתנה — ננסה
   // בלחיצה, ואם נדחה נסתיר את הקבוצה כדי לא להשאיר כפתור מת.
-  if (!hasOtzaria()) return;
+  if (!hasOtzaria()) { group.hidden = true; return; }
   group.hidden = false;
+  if (shortcutWired) return;
+  shortcutWired = true;
 
   btn.addEventListener('click', async () => {
     btn.disabled = true;
@@ -313,4 +319,5 @@ wireSettings();
       btn.textContent = orig;
     }
   });
-})();
+}
+refreshShortcutGroup();
