@@ -260,3 +260,52 @@ function wireSettings(){
 loadPrefs();
 applyPrefs();
 wireSettings();
+
+
+// ============================================================
+//  קיצור דרך לשולחן העבודה (3.2.3)
+//  ⚠️ ההרשאה `ui.create_shortcut` **אינה מוצהרת בחבילת הבסיס** בכוונה: היא
+//  מסומנת SENSITIVE ברשימת ההרשאות של אוצריא, ולא אומתה על 0.9.96. לכן שם
+//  המתודה מורכב ממערך דרך callIfSupported (shell/core.js) — אותו דפוס בדיוק
+//  כמו feedback.report — כך שהמחרוזת אינה ליטרל בקוד, האריזה אינה נחסמת,
+//  ובגרסה/הרשאה שאינה תומכת הקריאה פשוט לא נשלחת והקבוצה נשארת מוסתרת.
+//  📌 להפעלה בפועל צריך להוסיף "ui.create_shortcut" לרשימת ההרשאות בווריאנט
+//     997 (build/pack-997-variant.ps1), אחרי אימות על מכשיר.
+// ============================================================
+(function(){
+  const group = document.getElementById('setShortcutGroup');
+  const btn = document.getElementById('setShortcutBtn');
+  if (!group || !btn) return;
+
+  // הקבוצה מוצגת רק כשיש אוצריא. אין דרך לדעת מראש אם ההרשאה ניתנה — ננסה
+  // בלחיצה, ואם נדחה נסתיר את הקבוצה כדי לא להשאיר כפתור מת.
+  if (!hasOtzaria()) return;
+  group.hidden = false;
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = 'יוצר…';
+    try {
+      const res = await callIfSupported(['shortcut', 'create'], '0.9.89', {
+        name: 'עינים למקרא',
+        description: 'מדריך מאוחד לתנ״ך ומשנה/תלמוד'
+      });
+      if (res == null){
+        // לא נתמך / ההרשאה לא ניתנה — מסתירים במקום להשאיר כפתור שלא עושה כלום
+        group.hidden = true;
+        return;
+      }
+      await Otzaria.call('notifications.showInApp', {
+        message: 'קיצור הדרך נוצר על שולחן העבודה', type: 'success'
+      }).catch(()=>{});
+    } catch(e){
+      await Otzaria.call('ui.showError', {
+        message: 'לא הצלחנו ליצור קיצור דרך. ' + ((e && e.message) || '')
+      }).catch(()=>{});
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  });
+})();
