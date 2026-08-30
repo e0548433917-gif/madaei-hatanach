@@ -1464,7 +1464,10 @@ html, body {
 .dropdown-field::after {
   content: ""; position: absolute; inset-inline-end: 14px; top: 50%;
   width: 7px; height: 7px; pointer-events: none;
-  border-inline-end: 2px solid var(--color-on-surface-faint);
+  /* מאפיינים פיזיים ולא לוגיים: border-inline-end מתמפה לשמאל ב-RTL, ואז
+     הריבוע המסובב הצביע שמאלה (נראה כמו "<") במקום למטה. right+bottom
+     נותנים חץ כלפי מטה בשני כיווני הכתיבה. */
+  border-right: 2px solid var(--color-on-surface-faint);
   border-bottom: 2px solid var(--color-on-surface-faint);
   transform: translateY(-65%) rotate(45deg);
 }
