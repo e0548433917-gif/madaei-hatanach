@@ -102,12 +102,30 @@ async function renderSavedHtmlList(){
   }
 }
 
+// 3.3.2 — גשר Otzaria לדפי HTML אישיים. עד כה דף שנפתח כאן קיבל iframe נקי:
+// אוצריא מזריקה את window.Otzaria רק ל-webview הראשי של התוסף, לא ל-iframe-ים
+// מקוננים — ולכן תוספים שהודבקו כדף אישי (תיקון קוראים, שניים מקרא, שני טורים)
+// "רק הציגו HTML" בלי למשוך ספרים (התלונה של אברהם mch בפורום). ה-iframe הוא
+// same-origin (srcdoc + allow-same-origin), אז מספיק לשקף את האובייקט מההורה —
+// הסקריפט מוזרק *לפני* הסקריפטים של הדף עצמו כדי שיראו אותו כבר בעת הריצה.
+// גבולות ידועים, בכוונה: הדף מקבל בדיוק את ההרשאות של "עינים למקרא" (משיכת
+// ספרים עובדת — library.books/content.read מוצהרות), לא את אלה של התוסף המקורי.
+function injectOtzariaBridge(content){
+  const tag = '<scr' + 'ipt>try{if(!window.Otzaria&&window.parent&&window.parent.Otzaria){window.Otzaria=window.parent.Otzaria;}}catch(e){}</scr' + 'ipt>';
+  const doc = String(content);
+  // אחרי <head> אם יש, אחרת אחרי <html>, אחרת בראש — לא לפני ה-DOCTYPE, כדי
+  // לא להפיל את הדף ל-quirks mode.
+  if (/<head[^>]*>/i.test(doc)) return doc.replace(/<head[^>]*>/i, m => m + tag);
+  if (/<html[^>]*>/i.test(doc)) return doc.replace(/<html[^>]*>/i, m => m + tag);
+  return tag + doc;
+}
+
 async function openCustomHtmlPage(name){
   const content = await storageGet('madaei_html_page__' + name);
   if (content == null){ window.alert('לא נמצא תוכן שמור עבור "' + name + '"'); return; }
   guideFrame.removeAttribute('src');
   guideFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals');
-  guideFrame.srcdoc = content;
+  guideFrame.srcdoc = injectOtzariaBridge(content);
   frameTitle.textContent = '📄 ' + name;
   frameWrap.classList.add('open');
   addHtmlOverlay.classList.remove('open');
