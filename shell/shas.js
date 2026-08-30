@@ -551,20 +551,24 @@ async function pickLibBook(book){
   libBookGoBtn.disabled = false;
   libStatus('טוען את מבנה הספר…');
   try {
-    const toc = unwrapOtz(await Otzaria.call('library.getBookToc', { bookId: book.bookId, type: book.type }));
+    // ⚠️ אומת מול API_REFERENCE.md (30/08): getBookToc מקבל **רק bookId** —
+    // העברת `type` נוסף היא מה שהפיל את הקריאה, ולכן רשימת הקטעים יצאה ריקה
+    // וכל ספר הראה "תחילת הספר" בלבד. התשובה היא **מערך שטוח**
+    // [{ text, index, level }] — בלי children/sections, ולכן אין מה לרקורס:
+    // ההיררכיה מיוצגת ב-level (1 = עליון), ומשמשת כאן רק להזחה חזותית.
+    // ה-index הוא אינדקס שורה 0-based, והוא בדיוק ה-offset של getBookContent.
+    const toc = unwrapOtz(await Otzaria.call('library.getBookToc', { bookId: book.bookId }));
+    const nodes = Array.isArray(toc) ? toc : (toc && (toc.toc || toc.sections)) || [];
     const flat = [];
-    (function walk(nodes, depth){
-      if (!Array.isArray(nodes)) return;
-      for (const n of nodes){
-        if (!n) continue;
-        const title = n.title || n.text || n.name;
-        const idx = (n.index !== undefined ? n.index : n.offset);
-        if (title && Number.isFinite(Number(idx))){
-          flat.push({ label: '　'.repeat(depth) + title, index: Number(idx) });
-        }
-        walk(n.children || n.sections || n.categories, depth + 1);
+    for (const n of nodes){
+      if (!n) continue;
+      const label = n.text || n.title || n.name;
+      const idx = Number(n.index);
+      if (label && Number.isFinite(idx)){
+        const depth = Math.max(0, (Number(n.level) || 1) - 1);
+        flat.push({ label: '　'.repeat(depth) + label, index: idx });
       }
-    })(Array.isArray(toc) ? toc : (toc && (toc.toc || toc.sections || toc.children)), 0);
+    }
     if (flat.length){
       libSectionSelect.innerHTML = flat.slice(0, 500)
         .map(s => '<option value="' + s.index + '">' + esc(s.label) + '</option>').join('');
@@ -586,7 +590,7 @@ async function runLibraryIdentify(){
   libStatus('שולף את הטקסט ומזהה…');
   try {
     const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
-      bookId: libPickedBook.bookId, type: libPickedBook.type, offset: offset, limit: LIB_CHUNK
+      bookId: libPickedBook.bookId, offset: offset, limit: LIB_CHUNK
     }));
     // התשובה עשויה להיות מחרוזת, מערך קטעים, או אובייקט עם text/content
     let text = '';
@@ -704,9 +708,10 @@ async function identifyOpenPage(){
   try {
     // ה-id המספרי עדיף על bookId המחרוזתי כשהוא קיים: שני ספרים בספרייה
     // יכולים לחלוק שם ("עירובין"), וה-id הוא היחיד שחד-משמעי.
-    const payload = { type: type, offset: index, limit: LIB_CHUNK };
-    if (numId) payload.id = parseInt(numId, 10); else payload.bookId = bookId;
-    const res = unwrapOtz(await Otzaria.call('library.getBookContent', payload));
+    // רק הפרמטרים המתועדים — type/id אינם בחתימה של getBookContent
+    const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
+      bookId: bookId, offset: index, limit: LIB_CHUNK
+    }));
     let text = '';
     if (typeof res === 'string') text = res;
     else if (Array.isArray(res)) text = res.map(x => (typeof x === 'string' ? x : ((x && (x.text || x.content)) || ''))).join('\n');
