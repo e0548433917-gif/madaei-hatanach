@@ -1370,3 +1370,19 @@ html, body {
 /* [hidden] חייב גבר מפורש: .book-choice-row מגדיר display:flex, שגובר על
    ברירת המחדל display:none של [hidden] ולכן הכפתור המוסתר עדיין הוצג. */
 .book-choice-row[hidden] { display: none !important; }
+
+/* הפסוק בסרגל העליון (3.2.1): פריט שלישי אחרי הכותרת ושורת החיפוש, בקצה
+   שמאל. flex:0 1 auto + min-width:0 מאפשרים לו להתכווץ ראשון כשצר, והוא
+   נעלם לגמרי מתחת ל-1100px כדי לא לגזול משורת החיפוש. */
+#topbarVerse {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-on-surface-faint);
+}
+@media (max-width: 1100px){
+  #topbarVerse { display: none; }
+}

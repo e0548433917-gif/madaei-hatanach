@@ -12,13 +12,17 @@
 // ---- שורת פסוק בסרגל העליון + הבהרת AI בתחתית (נוסף ב-JS ולא ב-HTML, כדי
 // לא להסתכן בשבירת קינון ה-divים הקיים ב-index.html) ----
 (function(){
+  // הפסוק ישב עד 3.2.1 *מתחת* לסרגל (tb.after) וגזל שורה שלמה מהתוכן.
+  // עכשיו הוא פריט שלישי **בתוך** הסרגל, בצד שמאל (סוף השורה ב-RTL), ולכן
+  // אינו מוסיף שום גובה. מוסתר אוטומטית מתחת ל-1100px — שם אין לו מקום
+  // בלי לרסק את שורת החיפוש (ר' #topbarVerse ב-router.css).
   const tb = document.querySelector('.topbar');
   if (tb){
     const verse = document.createElement('div');
+    verse.id = 'topbarVerse';
     verse.className = 'mini-hint';
-    verse.style.cssText = 'text-align:center;padding:2px 8px 6px;font-size:.85em;';
     verse.textContent = 'על דרך אמרו "כִּי עַל־כֵּן יָדַעְתָּ חֲנֹתֵנוּ בַּמִּדְבָּר וְהָיִיתָ לָּנוּ לְעֵינָיִם" (במדבר, פרק י)';
-    tb.after(verse);
+    tb.appendChild(verse);
   }
   // ⚠️ כאן היה מוזרק פתק שני, זהה במילה למה שכבר יושב ב-index.html כ-#aiDisclaimer,
   // כך שההודעה הופיעה פעמיים בעמוד השער. ההזרקה הוסרה ב-3.1.2 — הפתק ב-HTML הוא

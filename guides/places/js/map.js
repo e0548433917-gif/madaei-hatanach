@@ -268,6 +268,46 @@ function fitAllMarkers(){
   if(pts.length) worldMap.fitBounds(L.latLngBounds(pts), {padding:[30,30], maxZoom:6});
 }
 
+// כפתור מסך מלא (3.2.1). Leaflet אינו מספק אחד מובנה, ו-Fullscreen API של
+// הדפדפן חסום בתוך ה-WebView של אוצריא בחלק מהפלטפורמות — ולכן זה לא
+// fullscreen אמיתי אלא מחלקה שמותחת את המכל על כל החלון (position:fixed).
+// יתרון נוסף: זה עובד זהה בדפדפן רגיל ובתוך אוצריא, בלי הרשאות.
+function addFullscreenBtn(){
+  if(!worldMap) return;
+  const Ctl = L.Control.extend({
+    options:{position:'topleft'},
+    onAdd(){
+      const a = L.DomUtil.create('a', 'leaflet-bar leaflet-control map-fs-btn');
+      a.href = '#'; a.title = 'מסך מלא'; a.innerHTML = '⛶';
+      L.DomEvent.on(a, 'click', L.DomEvent.stop).on(a, 'click', () => {
+        const el = document.getElementById('worldMap');
+        if(!el) return;
+        const on = el.classList.toggle('map-fullscreen');
+        document.body.classList.toggle('map-fullscreen-open', on);
+        a.innerHTML = on ? '✕' : '⛶';
+        a.title = on ? 'יציאה ממסך מלא' : 'מסך מלא';
+        // Leaflet חייב לחשב מחדש את הגודל אחרי שינוי מידות המכל
+        setTimeout(() => { try { worldMap.invalidateSize(); } catch(_){} }, 60);
+      });
+      return a;
+    }
+  });
+  worldMap.addControl(new Ctl());
+}
+
+// Esc יוצא ממסך מלא — ציפייה סטנדרטית, וגם מוצא יחיד אם הכפתור נסתר
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  const el = document.getElementById('worldMap');
+  if(el && el.classList.contains('map-fullscreen')){
+    el.classList.remove('map-fullscreen');
+    document.body.classList.remove('map-fullscreen-open');
+    const b = el.querySelector('.map-fs-btn');
+    if(b){ b.innerHTML = '⛶'; b.title = 'מסך מלא'; }
+    setTimeout(() => { try { worldMap.invalidateSize(); } catch(_){} }, 60);
+  }
+});
+
 function resetWorldMap(){
   if(worldMap){ try{ worldMap.remove(); }catch(_){} }
   worldMap = null; markerLayer = null; allMarkers = []; labelMarkers = [];
@@ -283,6 +323,7 @@ function initWorldMap(){
   worldMap.attributionControl.addAttribution('מפה: Natural Earth · Leaflet — פועלת ללא אינטרנט');
   vectorBase = addBaseLayers(worldMap);
   addOfflineMapInfoBtn();
+  addFullscreenBtn();
   probeTile(S2_URL.replace('{z}','2').replace('{y}','1').replace('{x}','2'), ok=>{ if(ok){ satAvailable = true; rebuildBaseSwitch(); } });
   probeTile(OSM_PROBE_URL, ok=>{ if(ok){ osmAvailable = true; rebuildBaseSwitch(); removeOfflineMapInfoBtn(); } });
   labelMarkers = addLabels(worldMap, 1);
