@@ -212,7 +212,10 @@ if (-not $NoChangelog) {
 # שבפועל נארז - ואין שום תלות ב-fetch/רשת בזמן ריצה.
 $changelogEmbedPath = Join-Path $root "guides\_shared\changelog-embedded.js"
 $clFinal = Get-Content $changelogPath -Raw -Encoding UTF8
-$clJson = $clFinal | ConvertTo-Json -Compress
+# -InputObject ([string]...) ולא pipe: ב-PowerShell 5.1 מחרוזת של Get-Content -Raw
+# שמוזרמת ב-pipe נעטפת כ-{"value":...} — אובייקט במקום מחרוזת, ששבר את 3.3.0
+# (הלשונית "מה חדש" הייתה קורסת) ונתפס ע"י verify-embedded.js ב-CI.
+$clJson = ConvertTo-Json -InputObject ([string]$clFinal) -Compress
 $embedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך CHANGELOG.md - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_CHANGELOG_MD = $clJson;`r`n"
 [System.IO.File]::WriteAllText($changelogEmbedPath, $embedContent, [System.Text.UTF8Encoding]::new($false))
 Write-Host "הוטמע CHANGELOG.md כקבוע JS: guides/_shared/changelog-embedded.js"
@@ -224,7 +227,7 @@ Write-Host "הוטמע CHANGELOG.md כקבוע JS: guides/_shared/changelog-embe
 if (Test-Path $roadmapPath) {
   $roadmapEmbedPath = Join-Path $root "guides\_shared\roadmap-embedded.js"
   $rmFinal = Get-Content $roadmapPath -Raw -Encoding UTF8
-  $rmJson = $rmFinal | ConvertTo-Json -Compress
+  $rmJson = ConvertTo-Json -InputObject ([string]$rmFinal) -Compress   # ר' ההערה ב-1ג
   $rmEmbedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך ROADMAP.md - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_ROADMAP_MD = $rmJson;`r`n"
   [System.IO.File]::WriteAllText($roadmapEmbedPath, $rmEmbedContent, [System.Text.UTF8Encoding]::new($false))
   Write-Host "הוטמע ROADMAP.md כקבוע JS: guides/_shared/roadmap-embedded.js"
@@ -238,7 +241,7 @@ if (Test-Path $roadmapPath) {
 # ולכן "הגרסה המותקנת אצלך" בלשונית "מה חדש" הציגה "לא ידועה" בכל התקנה אמיתית,
 # אף שהיא ממש הגרסה שנארזת כאן. מטביעים את המספר כקבוע, בלי fetch בזמן ריצה.
 $versionEmbedPath = Join-Path $root "guides\_shared\version-embedded.js"
-$versionEmbedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך manifest.json - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_PLUGIN_VERSION = " + ($newVersion | ConvertTo-Json -Compress) + ";`r`n"
+$versionEmbedContent = "// נוצר אוטומטית על ידי build/pack.ps1 מתוך manifest.json - אל תערכו ביד, זה יידרס.`r`nconst EMBEDDED_PLUGIN_VERSION = " + (ConvertTo-Json -InputObject ([string]$newVersion) -Compress) + ";`r`n"
 [System.IO.File]::WriteAllText($versionEmbedPath, $versionEmbedContent, [System.Text.UTF8Encoding]::new($false))
 Write-Host "הוטמע מספר הגרסה כקבוע JS: guides/_shared/version-embedded.js"
 
