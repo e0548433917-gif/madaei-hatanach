@@ -323,7 +323,8 @@ function renderEntryDetailHTML(entry, catIdOverride){
     + ` title="${bmOn ? 'הסרה מהסימניות' : 'הוספה לסימניות (האזור האישי)'}"`
     + ` data-bm-cat="${esc(catId || '')}" data-bm-key="${esc(bmKey)}" data-bm-label="${esc(entry.name)}">${bmOn ? '★' : '☆'}</button>`
     + ` <button id="entryPrintBtn" title="הדפסה" class="entry-tool-btn">🖨️</button>`
-    + ` <button id="entryEditBtn" title="עריכת הכרטיס / הוספת מידע" class="entry-tool-btn">✏️</button></h2>`;
+    + ` <button id="entryEditBtn" title="עריכת הכרטיס / הוספת מידע" class="entry-tool-btn">✏️</button>`
+    + ` <button id="entryReportBtn" title="דיווח על ערך שגוי או כפול (בלי לערוך)" class="entry-tool-btn">🚩</button></h2>`;
   html += `<div class="entry-sub">כינויים: ${entry.aliases && entry.aliases.length ? esc(entry.aliases.join(', ')) : '<span class="missing-val">— חסר</span>'}</div>`;
   if (entry.__edited) html += `<div class="edited-note">✏️ כרטיס זה נערך על ידכם ונשמר במכשיר זה. לשחזור לגרסת המקור — פתחו את העריכה (✏️) ולחצו "שחזור לגרסת המקור".</div>`;
 
@@ -554,6 +555,27 @@ function wireEntryDetail(container, entry, onEdit){
   if (pb) pb.addEventListener('click', (e) => { e.stopPropagation(); printSingleEntry(entry); });
   const eb = container.querySelector('#entryEditBtn');
   if (eb) eb.addEventListener('click', (e) => { e.stopPropagation(); onEdit ? onEdit() : openGenericEditForm(entry); });
+  // Issue #25: דיווח ממוקד על נתון שגוי/כפול — בלי לפתוח עריכה. עובר דרך פאנל
+  // הדיווחים הקיים (personal.js) עם תבנית שלושת המקרים שביקש המדווח; העורך
+  // מוחק את השורות הלא-רלוונטיות. openReportPanel נטען אחרי הקובץ הזה בסדר
+  // הטעינה, אבל בזמן הקליק הוא כבר קיים — הבדיקה היא רק רשת ביטחון.
+  const rb = container.querySelector('#entryReportBtn');
+  if (rb) rb.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (typeof openReportPanel !== 'function') return;
+    // מזהה המדריך יושב על כפתור הסימנייה (data-bm-cat) — entry.cat הוא תת-קטגוריה
+    const guideId = bmb ? bmb.dataset.bmCat : '';
+    const catLabel = (typeof catLabelOf === 'function' && guideId) ? catLabelOf(guideId) : '';
+    openReportPanel({
+      kind: 'טעות בתוכן',
+      title: 'דיווח על הערך "' + entry.name + '"',
+      details: 'הערך: "' + entry.name + '"' + (catLabel ? ' · מדריך: ' + catLabel : '') + '\n\n'
+        + 'סמנו מה רלוונטי (מחקו את השאר) ופרטו:\n'
+        + '[ ] הערך כולו שגוי — מדוע:\n'
+        + '[ ] הערך כפול לערך אחר — שם הערך שהוא כפיל שלו:\n'
+        + '[ ] קטע/פסוק/מקור בתוך הערך שגוי או לא שייך — איזה, ולמה:\n'
+    });
+  });
   const wikiEl = container.querySelector('[data-wiki-lazy]');
   if (wikiEl){
     fetchWikiThumbnail(wikiEl.dataset.wikiLazy).then(src => {
