@@ -145,6 +145,9 @@ function syncSettingsUI(){
   const mark = (groupId, val) => {
     const g = document.getElementById(groupId);
     if (!g) return;
+    // 3.2.4 — קבוצה יכולה להיות segmented (כפתורים) או dropdown (select)
+    const sel = g.querySelector('select');
+    if (sel){ sel.value = val; return; }
     g.querySelectorAll('.set-opt').forEach(b => b.classList.toggle('active', b.dataset.val === val));
   };
   mark('setTheme', uiPrefs.theme);
@@ -232,6 +235,8 @@ function wireSettings(){
   [['setTheme','theme'], ['setFont','font'], ['setDensity','density']].forEach(([id, key]) => {
     const g = document.getElementById(id);
     if (!g) return;
+    const sel = g.querySelector('select');
+    if (sel){ sel.addEventListener('change', () => setPref(key, sel.value)); return; }
     g.addEventListener('click', (e) => {
       const b = e.target.closest('.set-opt');
       if (b) setPref(key, b.dataset.val);
