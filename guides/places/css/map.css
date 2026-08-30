@@ -796,3 +796,24 @@ svg.leaflet-image-layer.leaflet-interactive path {
   #worldMap.sat-on, .mini-map.sat-on{background:var(--map-sea-sat);}
   /* OSM אופליין: רקע רגיל, ללא צביעה מיוחדת של התוויות (זו כבר מפה עם טקסט משלה) */
   #worldMap.osm-on .ne-label, .mini-map.osm-on .ne-label{display:none;}
+
+/* מסך מלא למפה הראשית (3.2.1). לא Fullscreen API — הוא חסום בחלק
+   מהפלטפורמות בתוך ה-WebView של אוצריא — אלא מתיחה של המכל על כל החלון.
+   z-index גבוה מ-#personalView (400) ומ-.panel-overlay (1100). */
+#worldMap.map-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  z-index: 1200 !important;
+}
+body.map-fullscreen-open { overflow: hidden; }
+.map-fs-btn {
+  display: flex !important; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  font-size: 16px; line-height: 1; text-decoration: none;
+  background: var(--color-surface, #fff);
+  color: var(--color-on-surface, #222);
+}
+.map-fs-btn:hover { background: var(--color-hover, #eee); }

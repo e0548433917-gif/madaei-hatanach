@@ -126,16 +126,15 @@ function guidePrintItems(){
   if (!currentGuideCat) return [];
   const q = normalizeHeb((guideSearchBox && guideSearchBox.value) || '').trim();
   let list = currentGuideData || [];
-  if (activeGuideChip !== 'all') list = list.filter(e => e.cat === activeGuideChip);
+  if (!chipsAreAll()) list = list.filter(e => activeGuideChips.has(e.cat));
   list = list.filter(matchesGuideFilters);
   if (q) list = list.filter(e => normalizeHeb(e.name + ' ' + (e.aliases || []).join(' ')).includes(q));
   return list.map(e => ({ entry: e, catId: currentGuideCat.id }));
 }
 function guidePrintLabel(){
   const parts = [currentGuideCat ? currentGuideCat.label : 'מדריך'];
-  if (activeGuideChip !== 'all'){
-    const c = guideCatOf(activeGuideChip);
-    parts.push(c ? c.label : activeGuideChip);
+  if (!chipsAreAll()){
+    parts.push([...activeGuideChips].map(id => { const c = guideCatOf(id); return c ? c.label : id; }).join(', '));
   }
   if (activeGuideEra !== 'all') parts.push('תקופה: ' + activeGuideEra);
   if (activeGuideLetter !== 'all') parts.push('אות: ' + activeGuideLetter);

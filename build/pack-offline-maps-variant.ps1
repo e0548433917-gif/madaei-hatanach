@@ -75,6 +75,18 @@ try {
   # הייתה דורסת את "עינים למקרא" הרגיל במקום ליצור ערך חדש.
   # המשמעות של id נפרד: התוסף מותקן **לצד** הרגיל ולא משדרג אותו, ולכן מי
   # שרוצה לעבור צריך להסיר את הרגיל — זו התנהגות מכוונת.
+  # אייקון וכותרת נבדלים, כדי שמי שמותקנות אצלו שתי החבילות יבחין ביניהן
+  # בלשונית ובסרגל הקורא. eye_24_filled (עין מלאה) מול eye_24_regular (קו
+  # מתאר) — שתיהן קיימות ב-FluentUI. ⚠️ לא ניחשנו שם כמו "עין עם פלוס":
+  # ICONS.md מונה ~4,500 אייקוני FluentUI בלי לפרט אותם, ושם שאינו קיים
+  # מתורגם לאייקון פאזל ברירת מחדל.
+  if ($m.contributes -and $m.contributes.toolTab) { $m.contributes.toolTab.iconName = "eye_24_filled" }
+  if ($m.contributes -and $m.contributes.startup -and $m.contributes.startup.toolbarItems) {
+    foreach ($ti in $m.contributes.startup.toolbarItems) {
+      $ti.icon  = "eye_24_filled"
+      $ti.title = "עינים למקרא+"
+    }
+  }
   $m.id = "com.chadbedera.madaeihatanachplus"
   $newName = $m.name + "+"
   $m.name = $newName

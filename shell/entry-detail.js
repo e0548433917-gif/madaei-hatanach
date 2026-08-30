@@ -628,8 +628,8 @@ async function focusMainMap(lat, lng, zoom, name){
   resultsOverlay.classList.remove('open');
   if (!currentGuideCat || currentGuideCat.id !== 'places'){
     await openGuide('places', null);
-  } else if (activeGuideChip !== 'all' || guideSearchBox.value || activeGuideEra !== 'all' || activeGuideLetter !== 'all'){
-    activeGuideChip = 'all';
+  } else if (!chipsAreAll() || guideSearchBox.value || activeGuideEra !== 'all' || activeGuideLetter !== 'all'){
+    activeGuideChips.clear();
     activeGuideEra = 'all';
     activeGuideLetter = 'all';
     guideSearchBox.value = '';

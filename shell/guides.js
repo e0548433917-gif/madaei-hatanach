@@ -102,7 +102,11 @@ function lazyLoadWikiThumbnails(container){
   targets.forEach(el => io.observe(el));
 }
 
-let activeGuideChip = 'all';
+// 3.2.1 — ריבוי בחירה. Set ריק פירושו 'הכל'; כל צ׳יפ מתווסף/מוסר בלחיצה.
+// נשמר כ-Set ולא כמחרוזת כדי שאפשר יהיה לבחור כמה קטגוריות יחד.
+let activeGuideChips = new Set();
+function chipSelected(id){ return activeGuideChips.size === 0 || activeGuideChips.has(id); }
+function chipsAreAll(){ return activeGuideChips.size === 0; }
 const guideChips = document.getElementById('guideChips');
 
 // ---- אפשרויות הסינון, כפי שהן בתוסף ״אישים בתנ״ך״ (2.12.0) ----
@@ -166,7 +170,7 @@ function renderGuideAlphaBar(){
   // רק אותיות שיש להן ערכים *בהינתן* הסינון האחר, כדי שלא יוצגו אותיות מתות
   const letters = new Set();
   currentGuideData.forEach(e => {
-    if (activeGuideChip !== 'all' && e.cat !== activeGuideChip) return;
+    if (!chipSelected(e.cat)) return;
     if (activeGuideEra !== 'all' && guideEraOf(e) !== activeGuideEra) return;
     const l = guideFirstLetter(e.name);
     if (l) letters.add(l);
@@ -185,9 +189,9 @@ function renderGuideAlphaBar(){
 
 function updateGuideFiltersSummary(){
   const parts = [];
-  if (activeGuideChip !== 'all'){
-    const c = guideCatOf(activeGuideChip);
-    parts.push('קטגוריה: ' + (c ? c.label : activeGuideChip));
+  if (!chipsAreAll()){
+    const labels = [...activeGuideChips].map(id => { const c = guideCatOf(id); return c ? c.label : id; });
+    parts.push((labels.length > 1 ? 'קטגוריות: ' : 'קטגוריה: ') + labels.join(', '));
   }
   if (activeGuideEra !== 'all') parts.push('תקופה: ' + activeGuideEra);
   if (activeGuideLetter !== 'all') parts.push('אות: ' + activeGuideLetter);
@@ -213,10 +217,10 @@ function renderGuideChips(){
   // הספירות מכבדות את שאר הסינון, אחרת צ׳יפ יבטיח 40 ערכים ויציג שניים
   const counted = currentGuideData.filter(matchesGuideFilters);
   const totalCount = counted.length;
-  guideChips.innerHTML = `<button class="chip${activeGuideChip==='all'?' active':''}" data-chip="all">הכל (${totalCount})</button>` +
+  guideChips.innerHTML = `<button class="chip${chipsAreAll()?' active':''}" data-chip="all">הכל (${totalCount})</button>` +
     cats.map(c => {
       const n = counted.filter(e => e.cat === c.id).length;
-      return `<button class="chip${activeGuideChip===c.id?' active':''}" data-chip="${esc(c.id)}">${esc(c.label)} (${n})</button>`;
+      return `<button class="chip${activeGuideChips.has(c.id)?' active':''}" data-chip="${esc(c.id)}">${esc(c.label)} (${n})</button>`;
     }).join('');
   // במקומות: כפתור קפיצה ישירה למפה שבסוף הרשימה
   if (currentGuideCat && currentGuideCat.id === 'places'){
@@ -225,24 +229,22 @@ function renderGuideChips(){
   guideChips.querySelectorAll('.chip').forEach(btn => {
     if (btn.id === 'jumpToMapChip') return;
     btn.addEventListener('click', () => {
-      activeGuideChip = btn.dataset.chip;
+      // 'הכל' מנקה; קטגוריה מתווספת/מוסרת, כך שאפשר לבחור כמה יחד.
+      const id = btn.dataset.chip;
+      if (id === 'all') activeGuideChips.clear();
+      else if (activeGuideChips.has(id)) activeGuideChips.delete(id);
+      else activeGuideChips.add(id);
       guideSearchBox.value = '';
       renderGuideGrid('');
     });
   });
+  // 3.2.1 — הכפתור רק גולל. הוא **אינו מאפס את הסינון** יותר: המפה מוצגת
+  // עכשיו תמיד ומכבדת את הסינון, ולכן איפוס כאן היה מבטל בכוונה טובה את מה
+  // שהמשתמש בדיוק סינן — זו הייתה ההתנהגות שדווחה כתקלה.
   const jumpBtn = document.getElementById('jumpToMapChip');
   if (jumpBtn) jumpBtn.addEventListener('click', () => {
-    if (activeGuideChip !== 'all' || guideSearchBox.value || activeGuideEra !== 'all' || activeGuideLetter !== 'all'){
-      activeGuideChip = 'all';
-      activeGuideEra = 'all';
-      activeGuideLetter = 'all';
-      guideSearchBox.value = '';
-      renderGuideGrid('');
-    }
-    setTimeout(() => {
-      const el = document.getElementById('worldMap');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
+    const el = document.getElementById('worldMap');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 }
 
@@ -258,7 +260,7 @@ function guideErasInOrder(){
   cats.forEach(c => { if (c.era && !eras.includes(c.era)) eras.push(c.era); });
   return eras;
 }
-// מכבד את אותו סינון (activeGuideChip/matchesGuideFilters/חיפוש) שכבר חושב ב-renderGuideGrid -
+// מכבד את אותו סינון (activeGuideChips/matchesGuideFilters/חיפוש) שכבר חושב ב-renderGuideGrid -
 // ציר שלא מכבד את הצ'יפים היה סותר את מה שכתוב בהם.
 function renderGuideTimeline(list){
   const eras = guideErasInOrder();
@@ -298,7 +300,7 @@ function renderGuideGrid(filterText){
   renderGuideChips();
   const q = normalizeHeb(filterText || '').trim();
   let list = currentGuideData;
-  if (activeGuideChip !== 'all') list = list.filter(e => e.cat === activeGuideChip);
+  if (!chipsAreAll()) list = list.filter(e => activeGuideChips.has(e.cat));
   list = list.filter(matchesGuideFilters);
   if (q) list = list.filter(e => normalizeHeb(e.name + ' ' + (e.aliases || []).join(' ')).includes(q));
 
@@ -314,7 +316,7 @@ function renderGuideGrid(filterText){
 
   const cats = (currentGuideCat && catsCache[currentGuideCat.id]) || [];
   const noExtraFilter = activeGuideEra === 'all' && activeGuideLetter === 'all';
-  const groupByCat = activeGuideChip === 'all' && !q && noExtraFilter && cats.length;
+  const groupByCat = chipsAreAll() && !q && noExtraFilter && cats.length;
   const flatIdx = []; // רשימת (entry) לפי סדר הופעה בפועל ב-DOM, לחיבור הקליקים
   let html = '';
   if (groupByCat){
@@ -332,10 +334,18 @@ function renderGuideGrid(filterText){
 
   // במקומות בלבד: מפת עולם מלאה עם כל ציוני הדרך, בסוף הרשימה (בדיוק כמו במקור,
   // רק שם היא הייתה בהתחלה - כאן מבקשים בסוף). אופלין לגמרי (Natural Earth + Leaflet).
-  const isPlaces = currentGuideCat && currentGuideCat.id === 'places' && !q && activeGuideChip === 'all' && noExtraFilter;
+  // 3.2.1 — המפה מוצגת **תמיד** במדריך המקומות, ומקבלת את הרשימה **המסוננת**.
+  // עד כה היא נבנתה רק כשלא היה שום סינון פעיל (`!q && chipsAreAll() && ...`),
+  // ולכן כל סינון פשוט העלים אותה — מה שנראה כמו "הסינון לא משפיע על המפה",
+  // וכפתור "🗺️ למפה" נאלץ לאפס את כל הסינון רק כדי שיהיה מה להציג.
+  const isPlaces = currentGuideCat && currentGuideCat.id === 'places';
+  const mapFiltered = isPlaces && !(chipsAreAll() && !q && noExtraFilter);
   if (isPlaces){
-    html += `<div class="entry-section-head" style="grid-column:1/-1;"><span class="entry-section-num">🗺️</span><h3>מפת כל המקומות</h3></div>
-      <div id="worldMap" style="grid-column:1/-1;height:420px;border-radius:10px;overflow:hidden;"></div>`;
+    const withGeo = list.filter(e => (e.methods || []).some(m => m && m.geo));
+    html += `<div class="entry-section-head" style="grid-column:1/-1;"><span class="entry-section-num">🗺️</span>
+        <h3>${mapFiltered ? 'מפת המקומות שבסינון' : 'מפת כל המקומות'}</h3></div>`
+      + (mapFiltered ? `<div class="mini-note" style="grid-column:1/-1;margin:-4px 0 6px;">מציגה ${withGeo.length} מקומות מתוך ${list.length} שבסינון (רק למקומות עם קואורדינטות יש סימון).</div>` : '')
+      + `<div id="worldMap" style="grid-column:1/-1;height:420px;border-radius:10px;overflow:hidden;"></div>`;
   }
 
   guideGrid.innerHTML = html;
@@ -348,7 +358,8 @@ function renderGuideGrid(filterText){
   lazyLoadWikiThumbnails(guideGrid);
 
   if (isPlaces && typeof resetWorldMap === 'function'){
-    window.DATA = currentGuideData;
+    // ⚠️ list ולא currentGuideData: זה מה שגורם למפה לכבד את הסינון בפועל.
+    window.DATA = list;
     window.CATS = catsCache['places'] || [];
     window.openModal = openEntryDetail;
     resetWorldMap();
@@ -372,7 +383,7 @@ async function openGuide(catId, term){
     ? ' <span class="mini-note" style="font-weight:400;">— בעזרת תוסף ״ביוגרפיות״ מאת יאיר דניאל</span>' : '';
   guideViewTitle.innerHTML = catIconHtml(cat.id, 26) + ' ' + esc(cat.label) + credit;
   guideSearchBox.value = '';
-  activeGuideChip = 'all';
+  activeGuideChips.clear();
   activeGuideEra = 'all';
   activeGuideLetter = 'all';
   guideViewMode = 'grid';
