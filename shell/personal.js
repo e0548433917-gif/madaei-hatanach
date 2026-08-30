@@ -1467,16 +1467,23 @@ function loadChangelogBlocks(){
     };
   }));
 }
-function renderChangelogInto(container, blocks, missingLabel){
+function renderChangelogInto(container, blocks, missingLabel, collapseAfter){
   if (!blocks || !blocks.length){
     container.innerHTML = '<p class="mini-note">לא הצלחתי לטעון את ' + (missingLabel || 'יומן השינויים (CHANGELOG.md)') + '.</p>';
     return;
   }
-  // יומן מלא מההתחלה - הגרסאות האחרונות פתוחות, השאר מקופל (details/summary),
-  // כדי שאפשר יהיה גם לגלול אחורה עד ההתחלה וגם לא להיטבע בעשרות גרסאות ישנות.
-  container.innerHTML = blocks.map((b, i) =>
-    `<details class="month-details"${i < 3 ? ' open' : ''}><summary>${esc(b.header)}</summary>${mdLiteToHtml(b.body)}</details>`
-  ).join('');
+  // 4.7: תקציר במקום כל היומן - collapseAfter (אם ניתן) קובע כמה בלוקים
+  // אחרונים גלויים; כל השאר נכנס תחת קיפול "גרסאות קודמות" אחד, כך שהלשונית
+  // נפתחת על תקציר קצר אבל ההיסטוריה המלאה עדיין נגישה בלחיצה. בלי
+  // collapseAfter (ROADMAP) - כל הבלוקים גלויים כמו קודם.
+  const det = (b, open) =>
+    `<details class="month-details"${open ? ' open' : ''}><summary>${esc(b.header)}</summary>${mdLiteToHtml(b.body)}</details>`;
+  const recent = collapseAfter ? blocks.slice(0, collapseAfter) : blocks;
+  const older = collapseAfter ? blocks.slice(collapseAfter) : [];
+  container.innerHTML = recent.map((b, i) => det(b, i < 3)).join('')
+    + (older.length
+      ? `<details class="month-details"><summary>📜 ${older.length} גרסאות קודמות</summary>${older.map(b => det(b, false)).join('')}</details>`
+      : '');
 }
 
 // EMBEDDED_ROADMAP_MD (guides/_shared/roadmap-embedded.js) מוטבע ב-build/pack.ps1
@@ -1531,7 +1538,7 @@ function renderPersonalWhatsNew(){
   }
   refreshBtn.addEventListener('click', refreshStatus);
   refreshStatus();
-  loadChangelogBlocks().then(blocks => renderChangelogInto(changelogWrap, blocks));
+  loadChangelogBlocks().then(blocks => renderChangelogInto(changelogWrap, blocks, null, 5));
   loadRoadmapBlocks().then(blocks => renderChangelogInto(roadmapWrap, blocks, 'מה מתוכנן (ROADMAP.md)'));
 }
 
