@@ -1380,9 +1380,75 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  /* em ולא px: DESIGN_GUIDE מתיר px רק בסלקטור פס הכותרת עצמו, והוולידטור
+     של החנות אינו מזהה #topbarVerse ככזה — ו-3.2.1 כבר נחסמה בגלל זה. */
+  font-size: .8em;
   color: var(--color-on-surface-faint);
 }
 @media (max-width: 1100px){
   #topbarVerse { display: none; }
 }
+
+/* ==================== פאנל ההגדרות — סגנון SettingsCard (3.2.3) ====================
+   מאומץ מ"סידורון" (v3.7.0), שמשקף את קומפוננטות ההגדרות של אוצריא עצמה:
+   כל קבוצה היא "כרטיס" מעוגל על רקע מוגבה, הכותרת ב-primary ומודגשת,
+   ובורר האפשרויות הוא segmented control **מחובר** (לא צ׳יפים מרוחים) שבו
+   הנבחר מסומן ב-secondary-container. השינוי כאן הוא CSS בלבד — מבנה ה-HTML
+   הקיים (.set-group / .set-title / .set-opts / .set-opt) לא נגע. */
+#settingsPanel { background: var(--color-bg); padding: 14px 14px 22px; }
+#settingsPanel h2 { font-size: 1.05em; margin: 0 0 2px; }
+
+.set-group {
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline-faint);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 12px;
+  padding: 14px 14px 12px;
+}
+.set-group > label.set-title {
+  font-size: .92em;
+  color: var(--color-primary);
+  margin-bottom: 9px;
+}
+
+/* segmented control מחובר: מסגרת אחת סביב הכל, מפרידים דקים בין הכפתורים */
+.set-opts {
+  display: flex; flex-wrap: wrap; gap: 0;
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.set-opt {
+  flex: 1 1 auto; min-width: 0;
+  border: none; border-radius: 0;
+  background: transparent;
+  color: var(--color-on-surface-dim);
+  padding: 9px 10px;
+  font-size: .84em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.set-opt + .set-opt { border-inline-start: 1px solid var(--color-outline-faint); }
+.set-opt:hover { background: var(--color-primary-subtle); border-color: transparent; }
+.set-opt.active {
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+/* כפתור פעולה בתוך שורת הגדרה (יצירת קיצור דרך) */
+.set-action {
+  align-self: flex-start;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  font-family: var(--font-main);
+  font-size: .86em; font-weight: 600;
+  padding: 8px 15px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+}
+.set-action:hover { background: var(--color-hover); }
+.set-action:disabled { opacity: .45; cursor: default; }
