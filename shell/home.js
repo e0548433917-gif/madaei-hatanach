@@ -500,7 +500,17 @@ function renderDailyEventBody(){
   </div>`;
   const all = allDateEvents();
   HEBREW_MONTHS_ORDER.forEach(month => {
-    const items = all.filter(e => e.month === month);
+    // ממוין לפי היום בחודש (3.2.9). עד כה הרשימה הוצגה בסדר שבו הרשומות
+    // יושבות בקובץ הנתונים — כלומר החודשים היו מסודרים אבל הימים בתוכם לא.
+    // gematriaValue (dates.js) ממיר אותיות למספר; לטווח (כז-כה) ממיינים לפי
+    // היום המוקדם, כדי שהוא ייפול במקומו הטבעי ברצף.
+    const dayOrder = (d) => {
+      const parts = String(d || '').split('-').map(gematriaValue).filter(n => n > 0);
+      return parts.length ? Math.min.apply(null, parts) : 999;
+    };
+    const items = all.filter(e => e.month === month)
+      .slice()
+      .sort((x, y) => dayOrder(x.day) - dayOrder(y.day));
     if (!items.length) return;
     html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
       + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
