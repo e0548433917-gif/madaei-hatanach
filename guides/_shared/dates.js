@@ -465,13 +465,18 @@ async function publishUpcomingEventsInner(){
     // אין קשר בין מאורעות התנ״ך/התלמוד לזמן שעבר מהחורבן - לכן churbanTxt לא
     // מופיע בתיאור שלהם (בניגוד לגרסה קודמת). מפתח ה"חורבן" מתחיל ב-z כדי
     // שיישאר אחרון בסדר לקסיקוגרפי אם היומן ממיין לפי key בין אירועי אותו יום.
-    const events = allDateEvents().filter(ev => monthMatchesEventMonth(monthName, ev.month) && dayMatchesEventDay(raw.day, ev.day));
+    // 3.2.8 — שתי ההעדפות נקראות בתוך הלולאה ולא בכניסה לפונקציה, כי כיבוי
+    // חייב עדיין להריץ את הפרסום: ההרצה היא מה שמוחק מהיומן את מה שכבר פורסם
+    // (הלולאה על prev למטה מסירה כל מפתח שאינו ב-items החדש).
+    const wantEvents  = !(typeof uiPrefs === 'object' && uiPrefs && uiPrefs.pubEvents  === false);
+    const wantChurban = !(typeof uiPrefs === 'object' && uiPrefs && uiPrefs.pubChurban === false);
+    const events = wantEvents ? allDateEvents().filter(ev => monthMatchesEventMonth(monthName, ev.month) && dayMatchesEventDay(raw.day, ev.day)) : [];
     events.forEach((ev, i) => items.push({
       key: 'madaei:dailyEvent:' + iso + ':' + i,
       payload: { title: ev.event, startsAt, source: 'עינים למקרא', importance: 'low',
         description: dayLabel + (ev.source ? ' · ' + ev.source : '') }
     }));
-    items.push({
+    if (wantChurban) items.push({
       key: 'madaei:zChurban:' + iso,
       payload: { title: churbanTxt, startsAt, source: 'עינים למקרא', importance: 'low',
         description: dayLabel }

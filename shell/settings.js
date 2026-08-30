@@ -267,10 +267,34 @@ function wireSettings(){
   // ולהריץ מחדש: ה-throttle היומי היה משאיר ביומן את מה שכבר פורסם עד מחר,
   // והמשתמש היה מכבה ולא רואה שום שינוי. ההרצה עצמה היא גם מה שמוחק —
   // הלולאה על המפתחות הקודמים מסירה כל מה שאינו ברשימה החדשה.
+  // הפרסום עצמו רץ **מיד** בכל שינוי — לא בהפעלה הבאה של אוצריא. עד 3.2.8 זה
+  // קרה בשקט מוחלט, ולכן לא הייתה שום דרך לדעת שזה עבד; החיווי כאן הוא כל
+  // ההבדל. הכפתור "החל כעת" הוא אותה פעולה בדיוק, למקרה שמישהו רוצה לכפות
+  // ריענון בלי לשנות הגדרה.
+  const pubStatus = () => document.getElementById('setPubStatus');
+  let pubBusy = false;
   const republishCalendar = async () => {
-    try { await storageSetJson(PUBLISH_LAST_RUN_KEY, null); } catch(e){}
-    if (typeof publishUpcomingEvents === 'function') publishUpcomingEvents().catch(()=>{});
+    if (pubBusy) return;
+    pubBusy = true;
+    const el = pubStatus();
+    const btn = document.getElementById('setPubApplyBtn');
+    if (el) el.textContent = 'מעדכן את היומן…';
+    if (btn) btn.disabled = true;
+    try {
+      try { await storageSetJson(PUBLISH_LAST_RUN_KEY, null); } catch(e){}
+      if (typeof publishUpcomingEvents === 'function') await publishUpcomingEvents();
+      if (el) el.textContent = 'היומן עודכן ✓';
+    } catch(e){
+      if (el) el.textContent = 'העדכון נכשל';
+    } finally {
+      pubBusy = false;
+      if (btn) btn.disabled = false;
+      // ההודעה נעלמת מעצמה — היא חיווי רגעי, לא מצב קבוע
+      setTimeout(() => { const e2 = pubStatus(); if (e2 && e2.textContent !== 'מעדכן את היומן…') e2.textContent = ''; }, 4000);
+    }
   };
+  const applyBtn = document.getElementById('setPubApplyBtn');
+  if (applyBtn) applyBtn.addEventListener('click', republishCalendar);
   const peW = document.getElementById('setPubEvents');
   if (peW) peW.addEventListener('change', () => { setPref('pubEvents', peW.checked); republishCalendar(); });
   const pcW = document.getElementById('setPubChurban');
