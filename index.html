@@ -349,23 +349,30 @@
 
   <div class="set-group">
     <label class="set-title">ערכת צבעים</label>
-    <div class="set-opts" id="setTheme">
-      <button class="set-opt" type="button" data-val="classic">קלאסי</button>
-      <button class="set-opt" type="button" data-val="otzaria">תואם לאוצריא (ברירת מחדל)</button>
-      <button class="set-opt" type="button" data-val="plain">בהיר נקי</button>
-      <button class="set-opt" type="button" data-val="dark">כהה</button>
+    <div class="dropdown-field" id="setTheme">
+      <select id="setThemeSelect" aria-label="בחירת ערכת צבעים">
+        <option value="otzaria">תואם לאוצריא (ברירת מחדל)</option>
+        <option value="classic">קלאסי</option>
+        <option value="plain">בהיר נקי</option>
+        <option value="dark">כהה</option>
+      </select>
     </div>
   </div>
 
   <div class="set-group">
     <label class="set-title">גופן</label>
-    <div class="set-opts" id="setFont">
-      <button class="set-opt" type="button" data-val="default">היבו (רגיל)</button>
-      <button class="set-opt" type="button" data-val="otzaria">כמו באוצריא (ברירת מחדל)</button>
-      <button class="set-opt" type="button" data-val="frank">פרנק־ריהל</button>
-      <button class="set-opt" type="button" data-val="david">דוד</button>
-      <button class="set-opt" type="button" data-val="arial">אריאל</button>
-      <button class="set-opt" type="button" data-val="times">טיימס</button>
+    <!-- 3.2.4 — נפתח ולא מרובע. שש אפשרויות הן יותר מדי ל-segmented control
+         (הכפתורים יוצאים צרים ונחתכים), ולכן דרופדאון מעוגל בסגנון
+         AppDropdownField של אוצריא, כמו ב"סידורון". ר' .dropdown-field. -->
+    <div class="dropdown-field" id="setFont">
+      <select id="setFontSelect" aria-label="בחירת גופן">
+        <option value="otzaria">כמו באוצריא (ברירת מחדל)</option>
+        <option value="default">היבו (רגיל)</option>
+        <option value="frank">פרנק־ריהל</option>
+        <option value="david">דוד</option>
+        <option value="arial">אריאל</option>
+        <option value="times">טיימס</option>
+      </select>
     </div>
     <p class="set-note" style="margin:7px 0 0;">״כמו באוצריא״ לוקח רק את שם הגופן — גודל הטקסט נשאר בשליטתך למטה.</p>
   </div>
