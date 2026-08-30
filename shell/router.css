@@ -198,7 +198,9 @@ html, body {
 #landingBody {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 24px;
+  /* 3.2.7 — צומצם מ-24px אחיד: המטרה שכל האיקונים ייראו בלי גלילה
+     במחשב נייד 13.3", שהוא היעד. */
+  padding: 12px 24px 16px;
 }
 /* ששת המדריכים הם מספר קבוע, ולכן מספר עמודות קבוע ולא auto-fit: ב-auto-fit יצאו
    ארבע עמודות במסך רחב, כלומר שורה של 4 ושורה קטועה של 2 (ועם האזור האישי - 4+3).
@@ -223,7 +225,8 @@ html, body {
 .cards-sep {
   display: flex; align-items: center; gap: 10px;
   max-width: 640px;
-  margin: 22px auto 14px;
+  /* 3.2.7 — צומצם מ-22px/14px */
+  margin: 13px auto 9px;
   color: var(--color-on-surface-ghost);
   font-size: .8em;
 }
@@ -1267,8 +1270,9 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: clamp(calc(var(--card-pad) * .83), 1.6vw, calc(var(--card-pad) * 1.33));
-  /* מיושר לגובה שורת הכרטיסים הראשונה, לא לראש ה-cards-sep שמעליה */
-  margin-top: 36px;
+  /* מיושר לגובה שורת הכרטיסים הראשונה, לא לראש ה-cards-sep שמעליה.
+     3.2.7 — הותאם לרווחים המצומצמים החדשים */
+  margin-top: 22px;
   position: sticky;
   top: 0;
 }
@@ -1484,3 +1488,7 @@ html, body {
   border-color: var(--color-primary);
   outline: none;
 }
+
+/* הקישור בפוטר לשליחת תיקון (3.2.7) */
+#aiDisclaimer a { color: var(--color-link); text-decoration: underline; cursor: pointer; }
+#aiDisclaimer a:hover { color: var(--color-primary); }

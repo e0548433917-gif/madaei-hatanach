@@ -569,3 +569,11 @@ document.getElementById('dailyEventClose').addEventListener('click', () => {
   dailyEventOverlay.classList.remove('open');
   if (templeTimerInterval){ clearInterval(templeTimerInterval); templeTimerInterval = null; }
 });
+
+// "שלחו פנייה" בפוטר → פאנל הדיווחים באזור האישי (3.2.7). אותו דפוס בדיוק
+// כמו dailyEventReportLink ב"ערך היום" ו-talmudBannerAddLink ב"ציורים וכלי עזר".
+const footerReportLink = document.getElementById('footerReportLink');
+if (footerReportLink) footerReportLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  openPersonalArea('drafts');
+});

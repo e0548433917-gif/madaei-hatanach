@@ -94,7 +94,9 @@
        לתחתית מאליו בלי position:fixed. שתי השורות אוחדו לשורה אחת דחוסה. -->
   <div id="landingFooter">
     <span id="copyrightFooter">כל הזכויות שמורות לחד בדרא</span>
-    <span id="aiDisclaimer">התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא שלחו פנייה על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.</span>
+    <!-- "שלחו פנייה" הוא קישור פעיל לפאנל הדיווחים (3.2.7) — עד כה זו הייתה
+         בקשה בטקסט בלי שום דרך לפעול לפיה מכאן. -->
+    <span id="aiDisclaimer">התוכן נכתב בעזרת בינה מלאכותית, ויתכנו בו שגיאות חמורות או ניסוחים שאינם מקובלים — ועימכם הסליחה. אנא <a href="#" id="footerReportLink">שלחו פנייה</a> על כל טעות כזו שמצאתם, בהקדם האפשרי, כדי שנוכל להסיר את המכשול.</span>
   </div>
 </div>
 
@@ -428,6 +430,37 @@
       <div class="pv-ref">בראשית י״ב, א׳</div>
       <p class="pv-text">וַיֹּאמֶר ה׳ אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.</p>
     </div>
+  </div>
+
+  <!-- פרסום ליומן של אוצריא (3.2.7). מונה החורבן פורסם עד כה לכל אחד מ-372
+       הימים שבטווח — כלומר אירוע יומי ביומן — וזו הסיבה שהתבקש מתג כיבוי.
+       שני המתגים עצמאיים, וכיבוי מריץ מחדש כדי למחוק מהיומן את מה שכבר פורסם. -->
+  <div class="set-group">
+    <label class="set-title">פרסום ליומן של אוצריא</label>
+    <label class="set-switch"><span>מאורעות התנ״ך והתלמוד</span><input type="checkbox" id="setPubEvents" checked></label>
+    <label class="set-switch" style="margin-top:8px;"><span>מונה הזמן שעבר מהחורבן</span><input type="checkbox" id="setPubChurban" checked></label>
+
+    <div class="field-label" style="margin-top:12px;">כמה זמן קדימה</div>
+    <div class="dropdown-field" id="setPubAhead">
+      <select aria-label="טווח פרסום קדימה">
+        <option value="30">חודש</option>
+        <option value="90">שלושה חודשים</option>
+        <option value="180">חצי שנה</option>
+        <option value="365">שנה (ברירת מחדל)</option>
+        <option value="730">שנתיים</option>
+      </select>
+    </div>
+    <div class="field-label" style="margin-top:8px;">כמה זמן אחורה</div>
+    <div class="dropdown-field" id="setPubBack">
+      <select aria-label="טווח פרסום אחורה">
+        <option value="0">בלי אחורה</option>
+        <option value="7">שבוע (ברירת מחדל)</option>
+        <option value="30">חודש</option>
+        <option value="90">שלושה חודשים</option>
+        <option value="365">שנה</option>
+      </select>
+    </div>
+    <p class="set-note" style="margin:9px 0 0;">כיבוי מסיר מהיומן גם את מה שכבר פורסם.</p>
   </div>
 
   <!-- קיצור דרך לשולחן העבודה (3.2.3, בהשראת "סידורון"). דסקטופ בלבד —
