@@ -812,8 +812,8 @@ body.map-fullscreen-open { overflow: hidden; }
 .map-fs-btn {
   display: flex !important; align-items: center; justify-content: center;
   width: 30px; height: 30px;
-  font-size: 16px; line-height: 1; text-decoration: none;
-  background: var(--color-surface, #fff);
-  color: var(--color-on-surface, #222);
+  font-size: 1em; line-height: 1; text-decoration: none;
+  background: var(--color-surface);
+  color: var(--color-on-surface);
 }
-.map-fs-btn:hover { background: var(--color-hover, #eee); }
+.map-fs-btn:hover { background: var(--color-hover); }
