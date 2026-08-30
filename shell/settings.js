@@ -9,7 +9,10 @@
 //  הערכות רק דורסות משתני CSS, בלי לשנות שום כלל עיצוב אחר.
 // ============================================================
 const PREFS_KEY = 'madaei_hatanach_ui_prefs_v1';
-const DEFAULT_PREFS = { theme: 'otzaria', font: 'otzaria', scale: 100, density: 'normal', cardImg: true };
+// pubEvents/pubChurban/pubAhead/pubBack — פרסום ליומן של אוצריא. ברירות המחדל
+// משמרות בדיוק את ההתנהגות שהייתה לפני 3.2.7, כדי לא לשנות בשקט למי שלא נגע.
+const DEFAULT_PREFS = { theme: 'otzaria', font: 'otzaria', scale: 100, density: 'normal', cardImg: true,
+  pubEvents: true, pubChurban: true, pubAhead: 365, pubBack: 7 };
 let uiPrefs = Object.assign({}, DEFAULT_PREFS);
 let otzariaTheme = null; // ה-theme האחרון שהתקבל מאוצריא (boot / theme.changed)
 
@@ -153,6 +156,14 @@ function syncSettingsUI(){
   mark('setTheme', uiPrefs.theme);
   mark('setFont', uiPrefs.font);
   mark('setDensity', uiPrefs.density);
+  const pe = document.getElementById('setPubEvents');
+  if (pe) pe.checked = uiPrefs.pubEvents !== false;
+  const pc = document.getElementById('setPubChurban');
+  if (pc) pc.checked = uiPrefs.pubChurban !== false;
+  const pa = document.querySelector('#setPubAhead select');
+  if (pa) pa.value = String(uiPrefs.pubAhead != null ? uiPrefs.pubAhead : 365);
+  const pb = document.querySelector('#setPubBack select');
+  if (pb) pb.value = String(uiPrefs.pubBack != null ? uiPrefs.pubBack : 7);
   const sc = document.getElementById('setScale');
   const scv = document.getElementById('setScaleVal');
   if (sc) sc.value = uiPrefs.scale;
@@ -251,6 +262,23 @@ function wireSettings(){
 
   const ci = document.getElementById('setCardImg');
   if (ci) ci.addEventListener('change', () => setPref('cardImg', ci.checked));
+
+  // 3.2.7 — פרסום ליומן. אחרי כל שינוי חייבים לאפס את חותמת ההרצה היומית
+  // ולהריץ מחדש: ה-throttle היומי היה משאיר ביומן את מה שכבר פורסם עד מחר,
+  // והמשתמש היה מכבה ולא רואה שום שינוי. ההרצה עצמה היא גם מה שמוחק —
+  // הלולאה על המפתחות הקודמים מסירה כל מה שאינו ברשימה החדשה.
+  const republishCalendar = async () => {
+    try { await storageSetJson(PUBLISH_LAST_RUN_KEY, null); } catch(e){}
+    if (typeof publishUpcomingEvents === 'function') publishUpcomingEvents().catch(()=>{});
+  };
+  const peW = document.getElementById('setPubEvents');
+  if (peW) peW.addEventListener('change', () => { setPref('pubEvents', peW.checked); republishCalendar(); });
+  const pcW = document.getElementById('setPubChurban');
+  if (pcW) pcW.addEventListener('change', () => { setPref('pubChurban', pcW.checked); republishCalendar(); });
+  const paW = document.querySelector('#setPubAhead select');
+  if (paW) paW.addEventListener('change', () => { setPref('pubAhead', parseInt(paW.value, 10)); republishCalendar(); });
+  const pbW = document.querySelector('#setPubBack select');
+  if (pbW) pbW.addEventListener('change', () => { setPref('pubBack', parseInt(pbW.value, 10)); republishCalendar(); });
 
   const reset = document.getElementById('settingsReset');
   if (reset) reset.addEventListener('click', () => {
