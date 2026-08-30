@@ -237,12 +237,23 @@ function postViaIframe(params){
       ifr.name = name;
       ifr.setAttribute('aria-hidden', 'true');
       ifr.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none;';
-      // ה-load הראשון הוא about:blank של ההוספה עצמה — סופרים רק את זה שאחרי השליחה
+      // 3.3.2 — ה-load של about:blank (ההוספה עצמה) נורה *אחרי* שהקוד הסינכרוני
+      // כאן הספיק לסמן submitted=true, ולכן הבדיקה `!submitted` הישנה לא סיננה
+      // אותו כלום — כל שליחה "הצליחה" מיד, גם כשה-WebView חסם את הניווט ושום
+      // דיווח לא יצא (זה ה"קלוד טוען שזה בסדר" מהפורום). הסדר החדש: מחכים
+      // ל-load הראשון (about:blank), רק אז שולחים את הטופס, ורק load *שני*
+      // נחשב תשובה. אם ה-load הראשון לא מגיע — timeout, שנקרא ככישלון וממשיך
+      // ל-outbox — כישלון-שווא עדיף על הצלחת-שווא.
       ifr.addEventListener('load', () => {
-        if (done || !submitted) return;
+        if (done) return;
+        if (!submitted){
+          submitted = true;
+          try { form.submit(); }
+          catch(e){ done = true; clearTimeout(timer); cleanup(); reject(e); }
+          return;
+        }
         done = true; clearTimeout(timer); cleanup(); resolve('iframe');
       });
-      document.body.appendChild(ifr);
       form = document.createElement('form');
       form.action = REPORT_FORM_URL;
       form.method = 'POST';
@@ -254,8 +265,10 @@ function postViaIframe(params){
         form.appendChild(inp);
       });
       document.body.appendChild(form);
-      submitted = true;
-      form.submit();
+      // src מפורש כדי להבטיח שאירוע ה-load הראשון באמת יגיע (iframe בלי src
+      // יורה load ב-Chromium, אבל עדיף לא להסתמך על זה בתוך WebView).
+      ifr.src = 'about:blank';
+      document.body.appendChild(ifr);
     } catch(e){
       if (!done){ done = true; clearTimeout(timer); cleanup(); reject(e); }
     }
