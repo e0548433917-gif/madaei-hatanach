@@ -255,7 +255,9 @@ New-Item -ItemType Directory -Path $stageDir | Out-Null
 # הפניה מ-index.html או מ-shell/. אותו דבר tools/ (סקריפט ולידציה שרץ ב-node).
 # mishna-talmud-addons/ הוא גיבוי קוד-מקור בלבד (המניפסטים והאיקונים של 3 התוספים
 # העצמאיים). מה שנטען בפועל הוא guides/talmud-tools/ — ר׳ ט.2 בתוכנית.
-$excludeDirs = @('build', 'dist', '.git', '.github', '.claude', 'assets', 'docs', 'tools', 'mishna-talmud-addons')
+# 'שדרוג 3.8' הוא תיקיית חומרי עבודה של הכותב (860MB, לא במעקב גיט) — בלעדיו
+# אריזת 3.3.4 יצאה 757MB במקום 16MB. בדיוק המלכודת שבעטיפה מתריעה עליה למטה.
+$excludeDirs = @('build', 'dist', '.git', '.github', '.claude', 'assets', 'docs', 'tools', 'mishna-talmud-addons', 'שדרוג 3.8')
 $excludeFiles = @('_serve.ps1', 'README.md', 'למפתחים.md', 'פוסט-לפורום.md', '.gitignore', '.gitattributes')
 
 Get-ChildItem -Path $root -Force | Where-Object {
