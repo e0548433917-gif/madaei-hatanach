@@ -809,6 +809,12 @@ svg.leaflet-image-layer.leaflet-interactive path {
   z-index: 1200 !important;
 }
 body.map-fullscreen-open { overflow: hidden; }
+/* גלגל ההגדרות הוא position:fixed ב-top/left:10px — בדיוק המקום שבו Leaflet
+   מניח את פקדי הזום (leaflet-top leaflet-left). בתצוגה רגילה המפה אינה מגיעה
+   לשם, אבל במסך מלא היא נפרשת על כל החלון והשניים יושבים זה על זה: הגלגל מכסה
+   את כפתור ה-+. במסך מלא אין לו ממילא מה לעשות — הפאנל שלו נמצא מתחת למפה
+   (z-index 450 מול 1200) — ולכן הוא מוסתר, וחוזר ביציאה. */
+body.map-fullscreen-open #settingsBtn { display: none !important; }
 .map-fs-btn {
   display: flex !important; align-items: center; justify-content: center;
   width: 30px; height: 30px;

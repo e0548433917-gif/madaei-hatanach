@@ -62,6 +62,50 @@ const REPORT_SEND_TIMEOUT_MS = 8000;      // שלא תישאר בקשה תלוי
 const REPORT_STEP_TIMEOUT_MS = 4000;      // תקרה לכל קריאת גשר/קובץ מקומי
 const REPORT_TITLE_MAX = 120;             // הטריגר חותך ל-120 בכותרת ה-Issue
 const REPORT_DETAILS_MAX = 6000;
+// ---- כתובת לתשובה (3.3.4) ----
+// עד כאן השדה היה "רשות", והתוצאה בפועל: רוב ה-Issues נפתחו בלי שום דרך לחזור
+// לשולח — לא ב-Issue ולא במייל. מ-3.3.4 היא **חובה**, ונשמרת במכשיר אחרי
+// ההזנה הראשונה כדי שלא נבקש אותה שוב בכל דיווח. השמירה כפולה בכוונה
+// (גשר + localStorage): הצעת עריכה נשלחת בלי טופס ולכן צריכה קריאה מיידית,
+// ולא תמיד יש גשר זמין באותו רגע.
+const REPORT_EMAIL_KEY = 'madaei_report_reply_email_v1';
+
+function isValidReplyEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v == null ? '' : v).trim());
+}
+
+async function readReplyEmail(){
+  try {
+    if (hasOtzaria()){
+      const v = await withTimeout(storageGetJson(REPORT_EMAIL_KEY), REPORT_STEP_TIMEOUT_MS, 'email-read').catch(() => null);
+      if (typeof v === 'string' && v) return v;
+    }
+  } catch(e){}
+  try { return localStorage.getItem(REPORT_EMAIL_KEY) || ''; } catch(e){ return ''; }
+}
+
+async function saveReplyEmail(v){
+  const clean = String(v == null ? '' : v).trim();
+  if (!isValidReplyEmail(clean)) return;
+  try { localStorage.setItem(REPORT_EMAIL_KEY, clean); } catch(e){}
+  try { if (hasOtzaria()) await storageSetJson(REPORT_EMAIL_KEY, clean); } catch(e){}
+}
+
+// לשליחה שאין לה טופס (הצעת עריכה מכרטיס) — מחזיר את הכתובת השמורה, ואם אין
+// כזו מבקש אותה פעם אחת. מחזיר '' אם המשתמש ויתר, ואז השליחה נעצרת.
+async function ensureReplyEmail(){
+  const saved = await readReplyEmail();
+  if (isValidReplyEmail(saved)) return saved;
+  const typed = window.prompt('כתובת אימייל לתשובה (חובה — כדי שנוכל לחזור אליכם על ההצעה):', saved || '');
+  if (typed === null) return '';
+  const clean = typed.trim();
+  if (!isValidReplyEmail(clean)){
+    window.alert('הכתובת אינה תקינה — ההצעה לא נשלחה. אפשר לנסות שוב.');
+    return '';
+  }
+  await saveReplyEmail(clean);
+  return clean;
+}
 // ---- תמונות (2.16.2) ----
 // כל תמונה מוקטנת ל-JPEG לפני השליחה, ולא נשלחת כמו שהיא: צילום מסך של מכשיר
 // מודרני הוא 2-4MB, ובבסיס-64 זה גדל בעוד שליש. הקטנה ל-1600px היא הפרש של
@@ -302,13 +346,24 @@ const FEEDBACK_REPORT_TYPES = {
 
 // מחזיר 'sent' / 'queued' אם הצליח, 'cancelled' אם המשתמש ביטל בדיאלוג,
 // או null אם המסלול אינו זמין (גרסה ישנה / הרשאה חסרה / שגיאה).
+// גוף ההודעה נכתב כ-Markdown, כי היעד העיקרי הוא GitHub Issue — שם ה-`**` וה-`##`
+// הם מה שמדגיש איזה כרטיס נערך ומה השתנה בו. מערכת המשוב של אוצריא מציגה טקסט
+// גולמי, ולכן אותם סימנים נראים שם כזבל ודווקא מטשטשים את ההדגשה. ההמרה כאן
+// שומרת על המבנה (כותרת, בולטים, "לפני ← אחרי") בלי תווי הסימון.
+function markdownToPlain(md){
+  return String(md == null ? '' : md)
+    .replace(/^#{1,6}\s*/gm, '')        // ## כותרת → כותרת
+    .replace(/\*\*(.+?)\*\*/g, '$1')    // **מודגש** → מודגש
+    .replace(/^\s*\*\s+/gm, '• ');      // * בולט → • בולט
+}
+
 async function postViaOtzariaFeedback(item, env){
   if (!hasOtzaria()) return null;
   const body = [
     item.title ? ('נושא: ' + item.title) : '',
     item.kind ? ('סוג: ' + item.kind) : '',
     '',
-    item.details || '',
+    markdownToPlain(item.details || ''),
     env ? ('\n---\n' + env) : ''
   ].filter(Boolean).join('\n');
   const res = await callIfSupported(['feedback', 'report'], '0.9.97', {
@@ -326,23 +381,32 @@ async function postViaOtzariaFeedback(item, env){
 // כמות שהוא: Web App קודם (תשובה אמיתית), והטופס רק אם הוא לא הוגדר או נכשל.
 async function postReportToRelay(item, env){
   const errors = [];
+  const ok = [];
+  // ⚠️ 3.3.4 — היפוך סדר. עד כאן `feedback.report` רץ ראשון ו**חזר מיד** בהצלחה,
+  // ולכן ה-Web App כלל לא נקרא — והוא היחיד שפותח GitHub Issue. התוצאה: מאז
+  // 3.1.0 הדיווחים הגיעו רק למערכת המשוב של אוצריא, והריפו נשאר ריק. הגיטהאב
+  // הוא היעד העיקרי, ולכן הוא נשלח **תמיד**, ו-feedback.report הוא העתק נוסף.
+  // (הכתובת מוצהרת ב-network.allowlist שבמניפסט, ולכן אינה חסומה.)
+  if (REPORT_WEBAPP_URL){
+    try { ok.push(await postViaWebApp(item, env)); }
+    catch(e){ errors.push((e && (e.name + ': ' + e.message)) || String(e)); }
+  }
+  let cancelled = false;
   try {
     const viaOtz = await postViaOtzariaFeedback(item, env);
-    // ביטול מפורש של המשתמש בדיאלוג של אוצריא הוא תשובה, לא כישלון — אין
-    // לעקוף אותו בשליחה מאחורי גבו דרך הממסר הישן.
-    if (viaOtz === 'cancelled'){
-      const cancelErr = new Error('הדיווח בוטל על ידך.');
-      cancelErr.cancelled = true;
-      throw cancelErr;
-    }
-    if (viaOtz) return 'otzaria-feedback (' + viaOtz + ')';
+    // ביטול בדיאלוג של אוצריא הוא "אל תשלח בערוץ הזה", לא ביטול הדיווח כולו —
+    // המשתמש כבר לחץ "שליחה" אצלנו. לכן הוא חוסם רק את הממסר הישן, ורק אם
+    // שום מסלול אחר לא הצליח.
+    if (viaOtz === 'cancelled') cancelled = true;
+    else if (viaOtz) ok.push('otzaria-feedback (' + viaOtz + ')');
   } catch(e){
-    if (e && e.cancelled) throw e;
     errors.push((e && (e.name + ': ' + e.message)) || String(e));
   }
-  if (REPORT_WEBAPP_URL){
-    try { return await postViaWebApp(item, env); }
-    catch(e){ errors.push((e && (e.name + ': ' + e.message)) || String(e)); }
+  if (ok.length) return ok.join(' + ');
+  if (cancelled){
+    const cancelErr = new Error('הדיווח בוטל על ידך.');
+    cancelErr.cancelled = true;
+    throw cancelErr;
   }
   const params = reportParams(item, env);
   for (const t of [postViaFetch, postViaIframe]){
@@ -699,7 +763,7 @@ function buildReportPanel(){
     + '</select>'
     + '<input type="text" id="reportTitle" maxlength="' + REPORT_TITLE_MAX + '" placeholder="כותרת קצרה (רשות — אם ריק, נלקחת מהשורה הראשונה שלמטה)">'
     + '<textarea id="reportDetails" placeholder="מה קרה? איפה? מה ציפיתם שיקרה? ככל שיהיה מפורט יותר — כך קל יותר לתקן.&#10;(אפשר גם להדביק כאן צילום מסך ב-Ctrl+V)"></textarea>'
-    + '<input type="email" id="reportReplyEmail" placeholder="אימייל לתשובה (רשות)">'
+    + '<input type="email" id="reportReplyEmail" required placeholder="אימייל לתשובה (חובה — בלעדיו אין למי להשיב)">'
     + '<div class="report-upload" id="reportUpload" tabindex="0" role="button">'
     +   '🖼️ צירוף צילום מסך — לחיצה, גרירה לכאן, או הדבקה בשדה למעלה'
     +   '<span class="report-upload-sub" id="reportImagesHint"></span>'
@@ -829,6 +893,12 @@ function openReportPanel(preset){
   if (preset && preset.details != null) details.value = preset.details;
   reportImages = [];                 // פתיחה חדשה = דיווח חדש, בלי תמונות שנשארו
   renderReportImages();
+  // מילוי מראש של הכתובת ששמורה מהדיווח הקודם — היא חובה, ואין טעם לבקש אותה
+  // מחדש בכל פעם. אסינכרוני בכוונה: פתיחת הפאנל לא ממתינה לגשר.
+  const emailBox = ov.querySelector('#reportReplyEmail');
+  if (emailBox && !emailBox.value){
+    readReplyEmail().then(v => { if (v && !emailBox.value) emailBox.value = v; }).catch(() => {});
+  }
   ov.classList.add('open');
   setTimeout(() => { try { title.focus(); } catch(e){} }, 30);
 }
@@ -843,13 +913,22 @@ async function submitReportPanel(){
   // מהשורה הראשונה של הפירוט - בדיוק כמו שהתנהגה לשונית "משוב" הישנה.
   const effectiveTitle = title.value.trim() || details.value.trim().split('\n')[0];
   if (!effectiveTitle){ window.alert('יש לכתוב כותרת או פירוט.'); details.focus(); return; }
+  // 3.3.4 — הכתובת חובה. בלעדיה הדיווח נפתח כ-Issue אנונימי ואי אפשר לחזור
+  // לשולח אפילו כשהתשובה קיימת, וזה היה המצב ברוב הדיווחים עד כה.
+  const emailBox = ov.querySelector('#reportReplyEmail');
+  if (!isValidReplyEmail(emailBox.value)){
+    window.alert('יש למלא כתובת אימייל תקינה לתשובה — בלעדיה אין לנו איך לחזור אליכם.');
+    emailBox.focus();
+    return;
+  }
   if (btn.disabled) return;
   btn.disabled = true;
   const label = btn.textContent;
   btn.textContent = 'שולח…';
   try {
-    const replyEmail = ov.querySelector('#reportReplyEmail').value.trim();
-    const detailsWithReply = details.value + (replyEmail ? '\n\n---\nאימייל לתשובה: ' + replyEmail : '');
+    const replyEmail = emailBox.value.trim();
+    await saveReplyEmail(replyEmail);     // כדי שלא נבקש אותה שוב בדיווח הבא
+    const detailsWithReply = details.value + '\n\n---\nאימייל לתשובה: ' + replyEmail;
     await sendReport(ov.querySelector('#reportKind').value, effectiveTitle, detailsWithReply, reportImages);
   } finally {
     btn.disabled = false;
@@ -858,7 +937,7 @@ async function submitReportPanel(){
   // גם אם רק נכנס לתור — הטופס התרוקן והפאנל נסגר, כי הדיווח כבר שמור.
   title.value = '';
   details.value = '';
-  ov.querySelector('#reportReplyEmail').value = '';
+  // הכתובת נשארת בשדה בכוונה — היא חובה וזהה בין דיווח לדיווח.
   reportImages = [];
   renderReportImages();
   closeReportPanel();
@@ -883,8 +962,12 @@ function fmtDate(iso){
 // נקודת השליחה היחידה בכל התוסף. מאז 2.13.2 היא עוברת בממסר ולא במייל —
 // כל שאר הקבצים (edit-forms.js, home.js, results-ui.js) קוראים לכאן.
 // מחזירה true רק אם הבקשה יצאה בלי חריגה; אחרת הדיווח שמור בתור.
+// 3.3.4 — גם להצעת עריכה מכרטיס נדרשת כתובת לתשובה. אין כאן טופס, ולכן היא
+// נלקחת מהכתובת השמורה ונשאלת פעם אחת בלבד אם עוד אין כזו. ויתור = לא נשלח.
 async function sendToDev(subject, body, kind){
-  return sendReport(kind || 'דיווח', subject, body);
+  const replyEmail = await ensureReplyEmail();
+  if (!replyEmail) return false;
+  return sendReport(kind || 'דיווח', subject, body + '\n\n---\nאימייל לתשובה: ' + replyEmail);
 }
 
 function openPersonalArea(tab){
@@ -1130,8 +1213,14 @@ function renderPersonalEdits(){
   bulkBtn.type = 'button';
   bulkBtn.className = 'panel-btn';
   bulkBtn.textContent = '📨 שליחת כל העריכות למפתח (' + edits.length + ')';
-  bulkBtn.addEventListener('click', () => {
-    sendToDev('עריכות מקומיות (' + edits.length + ' כרטיסים)', editsBulkBody(edits), 'עריכות מקומיות');
+  bulkBtn.addEventListener('click', async () => {
+    const ok = await sendToDev('עריכות מקומיות (' + edits.length + ' כרטיסים)', editsBulkBody(edits), 'עריכות מקומיות');
+    // סימון קבוצתי: כל מה שיצא בפועל מסומן כנשלח, ולכן לא ייצא שוב בשליחה
+    // הבאה כל עוד לא נערך מחדש.
+    if (ok){
+      edits.forEach(e => markEntryEditSent(e.catId, e.origName, editDiffHash(editReportBody(e))));
+      renderPersonalBody();
+    }
   });
   bulk.appendChild(bulkBtn);
   // אותה בעיה שנפתרה בהצעות: "שליחה" לבדה מניחה חיבור לרשת. מי שהמחשב שלו
@@ -1149,14 +1238,26 @@ function renderPersonalEdits(){
   personalBody.appendChild(bulk);
 
   edits.forEach(e => {
+    // 3.3.4 — מי שכבר נשלח מסומן, ולא נשלח שוב אלא אם השתנה מאז. החתימה היא
+    // על גוף ההצעה, כך ששליחה חוזרת של אותו תוכן בדיוק נחסמת ועריכה חדשה לא.
+    const sentRec = getEntryEditSent(e.catId, e.origName);
+    const bodyHash = editDiffHash(editReportBody(e));
+    const isSent = !!(sentRec && sentRec.hash === bodyHash);
     personalBody.appendChild(personalRow(
-      (e.rec.entry && e.rec.entry.name) || e.origName,
+      ((e.rec.entry && e.rec.entry.name) || e.origName) + (isSent ? ' ✓' : ''),
       catLabelOf(e.catId) + ' · נשמר ' + fmtDate(e.rec.savedAt)
-        + (e.rec.entry && e.rec.entry.name !== e.origName ? ' · במקור: ' + e.origName : ''),
+        + (e.rec.entry && e.rec.entry.name !== e.origName ? ' · במקור: ' + e.origName : '')
+        + (isSent ? ' · נשלח ' + fmtDate(sentRec.at) : ''),
       [
         { label: 'פתיחה', onClick: () => openEntryByBookmark(e.catId, e.origName, e.origName) },
-        { label: 'שליחה', secondary: true, onClick: () => sendToDev(
-            editReportTitle(e), editReportBody(e), 'עריכת כרטיס') },
+        { label: isSent ? 'נשלח ✓' : 'שליחה', secondary: true, onClick: async () => {
+            if (isSent){
+              window.alert('העריכה הזו כבר נשלחה. אם שיניתם משהו נוסף מאז — היא תישלח שוב.');
+              return;
+            }
+            const ok = await sendToDev(editReportTitle(e), editReportBody(e), 'עריכת כרטיס');
+            if (ok){ markEntryEditSent(e.catId, e.origName, bodyHash); renderPersonalBody(); }
+          } },
         { label: '💾 הורדה', secondary: true, onClick: () => downloadEdits([e],
             'עריכה-' + ((e.rec.entry && e.rec.entry.name) || e.origName)) },
         { label: 'שחזור למקור', secondary: true, onClick: async () => {

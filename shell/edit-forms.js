@@ -243,6 +243,16 @@ function openGenericEditForm(entry, catIdOverride){
     const c = collect();
     if (!c.fields.name){ window.alert('יש למלא שם לערך.'); return; }
     const diff = buildDiff(c);
+    // 3.3.4 — לא לשלוח פעמיים את אותה הצעה. החתימה היא על ה-diff עצמו, ולכן
+    // לחיצה חוזרת בלי שינוי נחסמת, אבל עריכה נוספת על אותו כרטיס נשלחת שוב.
+    const diffHash = editDiffHash(diff);
+    const alreadySent = getEntryEditSent(catId, origName);
+    if (alreadySent && alreadySent.hash === diffHash){
+      window.alert('ההצעה הזו כבר נשלחה' + (alreadySent.at ? ' (' + new Date(alreadySent.at).toLocaleDateString('he-IL') + ')' : '')
+        + '. אם שיניתם משהו נוסף — ערכו ושלחו שוב.');
+      openEntryDetail(entry);
+      return;
+    }
     apply(c);
     registerIfNew();
     renderGuideGrid(guideSearchBox.value);
@@ -252,7 +262,7 @@ function openGenericEditForm(entry, catIdOverride){
     // 2.17.2 — הערך הנערך מודגש בראש ההודעה. קודם הוא היה שורת טקסט רגילה
     // לפני ה-diff, ובקריאה ב-Issue לא היה ברור מיד באיזה כרטיס ובאיזה מדריך
     // מדובר — מה שהופך כל דיווח לחיפוש קטן במקום לפעולה.
-    await sendToDev(
+    const sentOk = await sendToDev(
       label + ' — ' + entry.name + ' (' + catLabel + ')',
       ['## ' + label + ': **' + entry.name + '**',
        '',
@@ -264,6 +274,9 @@ function openGenericEditForm(entry, catIdOverride){
        diff].filter(x => x !== '').join('\n'),
       label
     );
+    // רק שליחה שבאמת יצאה מסומנת. "נכנס לתור" מחזיר false, ולכן הצעה שנשמרה
+    // לשליחה מאוחרת עדיין ניתנת לשליחה חוזרת ולא נחסמת בטעות.
+    if (sentOk) markEntryEditSent(catId, origName, diffHash);
     openEntryDetail(entry);
   });
 }
