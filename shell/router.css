@@ -1490,7 +1490,11 @@ html, body {
 .dropdown-field select {
   width: 100%;
   border: 1.4px solid transparent;
-  border-radius: var(--radius-pill);
+  /* 31/08/2026 — היה radius-pill (מועתק מ"סידורון"). מקור אמת אמיתי
+     (Otzaria_Offline_update, קוד מפורט ישירות מ-otzaria/lib/theme/app_tokens.dart)
+     מראה שאוצריא עצמה משתמשת ברדיוס 8px אחיד לכל הכפתורים/הכרטיסים/הדרופדאון —
+     לא pill. ר' נספח ג' ב-docs/מפרט-עיצוב-אוצריא.md. */
+  border-radius: var(--radius-sm);
   background: var(--color-primary-subtle);
   color: var(--color-on-surface);
   font-family: var(--font-main);
