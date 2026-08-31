@@ -180,7 +180,11 @@ function setPref(key, val){
 
 // ---- הנקדן המקומי (2.17.2) ----
 // "הנקדן" הוא תוסף אוצריא נפרד (לא קובץ הפעלה עצמאי), לא מורד מאתר חיצוני.
-// NAKDAN_STORE_URL הועתק מ-index.html של "שומר השם" (חנות התוספים הכללית).
+// ⚠️ 31.8.26, מהמשתמש: **הנקדן מעולם לא פורסם בחנות התוספים.** לכן
+// הקישור העיקרי הוא פוסט הפורום, והוא גם מה שכפתור ההעתקה מעתיק מעתה — עד
+// כאן הוא העתיק דווקא את NAKDAN_STORE_URL, כלומר באופליין (שבו כפתורי
+// הפתיחה מוסתרים) נשאר ביד המשתמש הקישור הלא-נכון בלבד. קישור החנות
+// נשאר כמשני, למקרה שיתפרסם שם בעתיד (הועתק מ-index.html של "שומר השם").
 // NAKDAN_FORUM_URL הוא הקישור הישיר לפוסט שבו הנקדן פורסם בפועל (מהמשתמש,
 // 13.8.26) - עדיף על קישור הנושא הכללי שהיה כאן קודם. otzaria.org לא צריך
 // להתווסף ל-network.allowlist: app.openUrl מוסר לדפדפן המערכת ואינו fetch
@@ -206,6 +210,13 @@ function syncNikudSettings(){
     const b = document.getElementById(id);
     if (b) b.style.display = offline ? 'none' : '';
   });
+  // באופליין נשארת רק ההעתקה, וה-clipboard חסום בחלק מגרסאות ה-WebView.
+  // לכן מוצגת שם גם הכתובת עצמה, כטקסט נבחר שאפשר לסמן ולהעתיק ביד.
+  const urlEl = document.getElementById('setNikudUrl');
+  if (urlEl){
+    urlEl.textContent = NAKDAN_FORUM_URL;
+    urlEl.style.display = offline ? '' : 'none';
+  }
 }
 
 function wireNikudSettings(){
@@ -213,13 +224,14 @@ function wireNikudSettings(){
   if (openBtn) openBtn.addEventListener('click', () => confirmOpenExternal(NAKDAN_STORE_URL));
   const forumBtn = document.getElementById('setNikudForum');
   if (forumBtn) forumBtn.addEventListener('click', () => confirmOpenExternal(NAKDAN_FORUM_URL));
+  // מעתיק את קישור הפורום ולא את קישור החנות — הנקדן לא פורסם בחנות.
   const copyBtn = document.getElementById('setNikudCopy');
   if (copyBtn) copyBtn.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(NAKDAN_STORE_URL);
+      await navigator.clipboard.writeText(NAKDAN_FORUM_URL);
       copyBtn.textContent = '✓ הועתק';
-      setTimeout(() => { copyBtn.textContent = '📋 העתקת הקישור'; }, 1800);
-    } catch(e){ window.prompt('העתיקו את הקישור:', NAKDAN_STORE_URL); }
+      setTimeout(() => { copyBtn.textContent = '📋 העתקת קישור הפורום'; }, 1800);
+    } catch(e){ window.prompt('העתיקו את קישור הפורום:', NAKDAN_FORUM_URL); }
   });
 }
 
