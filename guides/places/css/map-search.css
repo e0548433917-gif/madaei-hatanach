@@ -1,75 +1,80 @@
 /* חיפוש מיקום בתוך המפה (3.3.4) — פקד Leaflet בפינה, לא חלק מסינון הרשימה.
    ⚠️ קובץ נפרד ולא בתוך map.css בכוונה: map.css היה תחת עריכה לא-מקומטת של
    עובד אחר בזמן הכתיבה. נטען משני המקומות שטוענים את map.css —
-   index.html (הקליפה) ו-guides/places/view.html (התצוגה העצמאית). */
+   index.html (הקליפה) ו-guides/places/view.html (התצוגה העצמאית).
+
+   ⚠️ 3.3.5: הגרסה הראשונה של הקובץ הזה נכתבה עם צבעי hex, px ו-font-family
+   קבועים — והחנות של אוצריא **דחתה את פרסום 3.3.4 בגללה** (HTTP 400,
+   DESIGN_GUIDE.md). כל ערך כאן חייב להיות var(--color-*) / var(--radius-*) /
+   var(--font-main) או יחידת em. ר׳ docs/מפרט-עיצוב-אוצריא.md. */
 
 .map-search {
   position: relative;
   width: 210px;
-  font-family: inherit;
+  font-family: var(--font-main);
 }
 .map-search-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 9px;
-  border: 1px solid rgba(0, 0, 0, .25);
-  border-radius: 8px;
-  background: #fff;
-  color: #24201a;
-  font-size: 13px;
-  font-family: inherit;
+  padding: .4em .62em;
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: .87em;
+  font-family: var(--font-main);
   direction: rtl;
   text-align: right;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+  box-shadow: 0 1px 4px var(--color-shadow-strong);
 }
 .map-search-input:focus {
   outline: none;
-  border-color: #8a7648;
+  border-color: var(--color-primary);
 }
 .map-search-list {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + .27em);
   right: 0;
   left: 0;
-  max-height: 232px;
+  max-height: 15em;
   overflow-y: auto;
   margin: 0;
   padding: 0;
   list-style: none;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, .2);
-  border-radius: 8px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, .28);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 3px 12px var(--color-shadow-strong);
 }
 .map-search-list:empty { display: none; }
 .map-search-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 9px;
-  font-size: 13px;
-  color: #24201a;
+  gap: .4em;
+  padding: .4em .62em;
+  font-size: .87em;
+  color: var(--color-on-surface);
   cursor: pointer;
   direction: rtl;
   text-align: right;
-  border-bottom: 1px solid rgba(0, 0, 0, .07);
+  border-bottom: 1px solid var(--color-outline-faint);
 }
 .map-search-item:last-child { border-bottom: none; }
 .map-search-item:hover,
-.map-search-item.active { background: #f1ece0; }
+.map-search-item.active { background: var(--color-surface-2); }
 .map-search-kind {
   flex: 0 0 auto;
-  font-size: 11px;
-  opacity: .65;
+  font-size: .78em;
+  color: var(--color-on-surface-faint);
 }
 .map-search-name { flex: 1 1 auto; }
 .map-search-empty {
-  padding: 6px 9px;
-  font-size: 12.5px;
-  color: #6b6257;
+  padding: .4em .62em;
+  font-size: .83em;
+  color: var(--color-on-surface-faint);
   direction: rtl;
   text-align: right;
 }
 /* סמן זמני למקום שנמצא בחיפוש אך אינו בסינון הנוכחי — ר' ההערה
    ב-addMapSearchControl (guides/places/js/map.js). */
-.map-search-pin { filter: drop-shadow(0 0 3px rgba(0, 0, 0, .45)); }
+.map-search-pin { filter: drop-shadow(0 0 3px var(--color-shadow-strong)); }
