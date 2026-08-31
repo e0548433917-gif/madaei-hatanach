@@ -94,7 +94,7 @@ DESIGN_GUIDE, `otzaria_plugin.d.ts`) **ואימות מול קוד המקור ע�
 
 ## ב. מה שנשאר פתוח וחייב פעולה מחוץ לריפו
 
-### ב.1 🔴 אף כתובת רשת של התוסף אינה ב-allowlist הרשמי של אוצריא
+### ב.1 ✅ ה-PR נפתח (31/08/2026) — ממתין לאישור ומיזוג
 
 הצהרה במניפסט היא **תנאי הכרחי ולא מספיק**. `PluginNetworkAccessResolver.isUriAllowedForPlugin`
 דורש התאמה גם ל-`plugin_network_allowlist.txt` שבענף `dev`, ו-`plugin_tab_page.dart`
@@ -105,12 +105,27 @@ DESIGN_GUIDE, `otzaria_plugin.d.ts`) **ואימות מול קוד המקור ע�
 ״נכשלים בשקט בגלל שאין רשת״. גישת loopback (הנקדן) אינה מושפעת — לוקאלהוסט
 אינו נכלל ב-allowlist הגלובלי.
 
-**מה נעשה (19–20/08/2026).** השינוי כתוב בקלון המקומי של אוצריא, בענף
-`plugin-allowlist-madaei-hatanach` (מבוסס `dev`), בשני הקבצים שהבדיקה
-`plugin_network_allowlist_branch_sync_test.dart` מחייבת שיהיו זהים:
-`plugin_network_allowlist.txt` **וגם** `lib/plugins/models/plugin_network_allowlist.dart`.
-**נשאר: לדחוף את הענף ולפתוח PR ל-`Otzaria/otzaria` מול `dev`.**
-המיזוג נכנס לתוקף מיד אצל כל המשתמשים, בלי release.
+**✅ מה נעשה בפועל (31/08/2026): ה-PR נפתח — `Otzaria/otzaria#1070`**
+(base `dev`, `MERGEABLE`, שני קבצים, +14 שורות, בלי מחיקות).
+**נשאר רק: שיאשרו וימזגו.** המיזוג נכנס לתוקף מיד אצל כל המשתמשים, בלי release.
+
+⚠️ **שני דברים השתנו מאז הרישום המקורי (19–20/08), ומי שקורא את הסעיף הזה
+חייב לדעת אותם:**
+
+1. **הקלון המקומי של אוצריא אינו קיים יותר במחשב.** הענף
+   `plugin-allowlist-madaei-hatanach` שנכתב בו נעלם איתו; מה שנשאר בפורק
+   `e0548433917-gif/otzaria` היה מבוסס על `dev` ישן ולא נפתח ממנו PR מעולם.
+   הענף נבנה **מחדש** מ-`dev` העדכני (`973e802`) דרך ה-API של גיטהאב.
+2. **מבנה הרשימה באוצריא השתנה.** `lib/plugins/models/plugin_network_allowlist.dart`
+   **כבר אינו מכיל את הרשימה** — הוא רק לוגיקת התאמה שמייצאת מקובץ מחולל.
+   שני הקבצים לעריכה היום הם:
+   * `plugin_network_allowlist.txt` (שורש הריפו) — **מקור האמת**, נמשך בזמן ריצה מ-`dev`
+   * `lib/plugins/models/plugin_network_allowlist.g.dart` — העותק המקומפל.
+     מסומן `DO NOT MODIFY BY HAND` ומחולל ע״י
+     `dart run tool/generate_plugin_network_allowlist.dart`, **אבל הוא מחויב בריפו**
+     ו-`plugin_network_allowlist_branch_sync_test.dart` נכשל אם הוא אינו זהה
+     ל-`.txt` **ובאותו סדר בדיוק**. בלי דארט מקומי מוסיפים לשניהם ידנית
+     ומאמתים שהרשימות זהות — כך נעשה כאן (37 ערכים בשניהם).
 
 שש הכתובות שנוספו, וממי הן נדרשות:
 
