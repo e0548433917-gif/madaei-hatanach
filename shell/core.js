@@ -28,6 +28,7 @@ const CATEGORIES = [
   { id: 'mumim', label: 'מומים', icon: '🩺', loaderPath: 'guides/mumim/data/_loader.html' },
   { id: 'chullin', label: 'חולין', icon: '🔪', loaderPath: 'guides/chullin/data/_loader.html' },
   { id: 'sukkah', label: 'סוכה ולולב', icon: '🌴', loaderPath: 'guides/sukkah/data/_loader.html' },
+  { id: 'archaeology', label: 'ארכיאולוגיה יהודית', icon: '🏺', loaderPath: 'guides/archaeology/data/_loader.html' },
 ];
 
 // סבב 4.8 — האחדת איקונים. עד כה `icon/cats/*.png` הופיעו רק בכרטיסי השער
@@ -46,6 +47,7 @@ const CAT_ICON_IMG = {
   mumim: 'icon/masechtot/bechorot.png',
   chullin: 'icon/masechtot/chullin.png',
   sukkah: 'icon/masechtot/sukkah.png',
+  archaeology: 'icon/cats/archaeology.png',
 };
 
 // HTML של איקון קטגוריה. `onerror` מחזיר לאמוג׳י בדיוק כמו בכרטיסי השער — קובץ

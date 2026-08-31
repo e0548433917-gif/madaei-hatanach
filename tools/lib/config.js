@@ -13,6 +13,7 @@ const GUIDES = [
   { id: 'domem',         label: 'דומם',       file: 'guides/domem/data/domem-data.js' },
   { id: 'amoraim',       label: 'אנשים מהתלמוד', file: 'guides/amoraim/data/amoraim-data.js' },
   { id: 'beithamikdash', label: 'בית המקדש',  file: 'guides/beithamikdash/data/beithamikdash-data.js' },
+  { id: 'archaeology',   label: 'ארכיאולוגיה', file: 'guides/archaeology/data/archaeology-data.js' },
 ];
 
 // שדות החובה נגזרו מהדאטה עצמו: שדה נחשב חובה אם הוא מלא ב-100% מהרשומות של אותה
@@ -28,6 +29,8 @@ const FIELD_RULES = {
   // תלמודיים ונפרסים ב-parseMidrashRef. אין להם פסוקי תנ״ך כלל.
   amoraim:       { required: ['name', 'cat', 'midrash'], recommended: ['role', 'dor', 'methods'] },
   beithamikdash: { required: ['name', 'cat', 'methods'],          recommended: ['verses'] },
+  // ארכיאולוגיה: לא לכל ממצא יש פסוק (מטבעות, כתובות יווניות) — verses מומלץ ולא חובה.
+  archaeology:   { required: ['name', 'cat', 'methods', 'site', 'era'], recommended: ['verses', 'midrash', 'credit'] },
 };
 
 

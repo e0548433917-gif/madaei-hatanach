@@ -219,7 +219,9 @@ const FIELD_LABELS = {
   explanation:'הסבר', identification:'זיהוי מודרני', region:'נחלה',
   gender:'מין', era:'תקופה', modern:'זיהוי מודרני', latin:'שם מדעי (לטיני)',
   wiki:'ערך ויקיפדיה', confidence:'מידת ודאות', mapQuery:'חיפוש במפה',
-  role:'תקופה', dor:'דור', place:'מקום פעילות'
+  role:'תקופה', dor:'דור', place:'מקום פעילות',
+  // ארכיאולוגיה יהודית (3.3.4)
+  site:'מקום הגילוי', found:'שנת הגילוי', museum:'היכן מוצג היום', credit:'קרדיט לתמונה'
 };
 const ARRAY_FIELDS = new Set(['aliases','spouses','children','siblings','roles']);
 const LONG_FIELDS = new Set(['explanation','identification','note','modern']);
@@ -231,6 +233,7 @@ const GUIDE_FIELDS = {
   flora:  ['explanation','latin','wiki','confidence','note'],
   domem:  ['tribe','explanation','identification','note'],
   beithamikdash: ['explanation','identification','note'],
+  archaeology: ['site','era','found','museum','note','credit'],
   mumim:  ['explanation','modern','note'],
   sukkah: ['explanation','note'],
   // אנשים מהתלמוד: אין שדות זיהוי/משפחה — רק תקופה, דור ומקום פעילות.
