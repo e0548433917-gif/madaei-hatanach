@@ -308,9 +308,169 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ---------- חיפוש מיקום בתוך המפה (3.3.4) ----------
+// שורת החיפוש שבראש המדריך מסננת ערכים; הפקד הזה עושה דבר אחר לגמרי —
+// מוצא **מקום על המפה** וטס אליו. שני מקורות, שניהם מוטבעים בחבילה ולכן
+// עובדים בלי אינטרנט (אין שום geocoder חיצוני, ולא צריך כזה):
+//   1. DATA (places.js) — כל ערך שיש לו methods[].geo, כולל ה-aliases שלו.
+//   2. NE_DATA.labels (geo-basemap.js) — 378 תוויות המפה עצמה: מדינות, ימים
+//      ונהרות, אזורים וערים. זה מה שנותן ערים מודרניות שאינן ערך במדריך.
+// האינדקס נבנה עצלנית בחיפוש הראשון ולא בטעינה — מי שלא מחפש לא משלם עליו.
+let mapSearchIndex = null;
+let mapSearchPin = null;
+
+function normHebForSearch(s){
+  // ניקוד/טעמים וגרש/גרשיים יוצאים; רווח נשמר, כדי ש"בית לחם" לא יידבק
+  // למילה אחת ויפסיק להימצא בחיפוש "לחם".
+  return String(s == null ? '' : s)
+    .replace(/[֑-ׇ]/g, '')
+    .replace(/["״'׳’”\-–]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildMapSearchIndex(){
+  const out = [];
+  const seen = new Set();
+  const push = (name, lat, lng, z, kind, idx, mi) => {
+    if(!name || !isFinite(lat) || !isFinite(lng)) return;
+    const key = kind + '|' + name + '|' + lat.toFixed(3) + '|' + lng.toFixed(3);
+    if(seen.has(key)) return;
+    seen.add(key);
+    out.push({name, norm: normHebForSearch(name), lat, lng, z: z || 8, kind, idx, mi});
+  };
+  if(typeof DATA !== 'undefined' && Array.isArray(DATA)){
+    DATA.forEach((item, idx)=>{
+      (item.methods || []).forEach((m, mi)=>{
+        if(!m.geo) return;
+        push(item.name, m.geo[0], m.geo[1], m.geo[2], 'entry', idx, mi);
+        (item.aliases || []).forEach(a => push(a, m.geo[0], m.geo[1], m.geo[2], 'alias', idx, mi));
+      });
+    });
+  }
+  if(typeof NE_DATA !== 'undefined' && Array.isArray(NE_DATA.labels)){
+    NE_DATA.labels.forEach(lb => push(lb.he, lb.lat, lb.lng, (lb.z || 5) + 2, 'label', -1, -1));
+  }
+  return out;
+}
+
+// התאמת-תחילית קודמת להכלה, ושם קצר קודם לארוך — כך "דן" לא נקבר מתחת לעשרות
+// שמות שמכילים "דן". עד 8 תוצאות — רשימה ארוכה יותר מכסה את המפה עצמה.
+function searchMapPlaces(q){
+  const nq = normHebForSearch(q);
+  if(nq.length < 2) return [];
+  if(!mapSearchIndex) mapSearchIndex = buildMapSearchIndex();
+  const starts = [], contains = [];
+  for(const rec of mapSearchIndex){
+    if(rec.norm.indexOf(nq) === 0) starts.push(rec);
+    else if(rec.norm.indexOf(nq) !== -1) contains.push(rec);
+  }
+  const byLen = (a, b) => a.norm.length - b.norm.length;
+  return starts.sort(byLen).concat(contains.sort(byLen)).slice(0, 8);
+}
+
+const MAP_SEARCH_KIND_ICON = {entry: '📍', alias: '📍', label: '🗺️'};
+const MAP_SEARCH_KIND_TITLE = {entry: 'ערך במדריך', alias: 'שם נוסף לערך', label: 'תווית במפה'};
+
+function clearMapSearchPin(){
+  if(mapSearchPin && worldMap){ try{ worldMap.removeLayer(mapSearchPin); }catch(_){} }
+  mapSearchPin = null;
+}
+
+// ⚠️ מ-3.2.1 המפה מציגה רק את הסימונים שבסינון. חיפוש שמצא מקום שסונן החוצה
+// (או תווית מפה, שאין לה סמן כלל) לא יכול לפתוח פופאפ שאינו על המפה, ולכן
+// מקבל סמן זמני משלו שנמחק בחיפוש הבא. זה גם מונע את המצב שבו "טסנו לשום
+// מקום" — תמיד יש סימון ויזואלי של מה שנמצא.
+function gotoMapSearchResult(rec){
+  if(!worldMap) return;
+  clearMapSearchPin();
+  const z = Math.min(rec.z, zoomCap());
+  worldMap.flyTo([rec.lat, rec.lng], z, {duration: 1.2});
+  const marked = rec.idx >= 0 && allMarkers.find(r => r.idx === rec.idx && r.mi === rec.mi);
+  worldMap.once('moveend', ()=>{
+    if(marked && markerLayer && markerLayer.hasLayer(marked.marker)){
+      if(typeof markerLayer.zoomToShowLayer === 'function'){
+        markerLayer.zoomToShowLayer(marked.marker, ()=>marked.marker.openPopup());
+      } else {
+        marked.marker.openPopup();
+      }
+      return;
+    }
+    const html = '<svg width="30" height="30" viewBox="0 0 24 24" class="map-search-pin">' +
+      '<path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="#1F7FB8" stroke="#FFF8E7" stroke-width="1.4"/>' +
+      '<circle cx="12" cy="9" r="2.6" fill="#FFF8E7"/></svg>';
+    mapSearchPin = L.marker([rec.lat, rec.lng], {
+      icon: L.divIcon({className: 'geo-pin', html, iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -24]})
+    }).addTo(worldMap).bindTooltip(rec.name, {direction: 'top', permanent: true}).openTooltip();
+  });
+}
+
+function addMapSearchControl(){
+  if(!worldMap) return;
+  const Ctl = L.Control.extend({
+    options:{position:'topright'},
+    onAdd(){
+      const wrap = L.DomUtil.create('div', 'map-search leaflet-control');
+      L.DomEvent.disableClickPropagation(wrap);
+      L.DomEvent.disableScrollPropagation(wrap);
+      const input = L.DomUtil.create('input', 'map-search-input', wrap);
+      input.type = 'search';
+      input.placeholder = 'חיפוש מיקום במפה…';
+      input.setAttribute('aria-label', 'חיפוש מיקום במפה');
+      const list = L.DomUtil.create('ul', 'map-search-list', wrap);
+      let results = [], active = -1;
+
+      const close = ()=>{ list.innerHTML = ''; results = []; active = -1; };
+      const paint = ()=>{
+        Array.prototype.forEach.call(list.children, (li, i)=>li.classList.toggle('active', i === active));
+      };
+      const choose = i => {
+        if(!results[i]) return;
+        const rec = results[i];
+        input.value = rec.name;
+        close();
+        input.blur();
+        gotoMapSearchResult(rec);
+      };
+
+      const run = ()=>{
+        if(normHebForSearch(input.value).length < 2){ close(); return; }
+        results = searchMapPlaces(input.value);
+        active = results.length ? 0 : -1;
+        if(!results.length){
+          list.innerHTML = '<li class="map-search-empty">לא נמצא מקום בשם הזה</li>';
+          return;
+        }
+        list.innerHTML = results.map((r, i)=>
+          '<li class="map-search-item' + (i === 0 ? ' active' : '') + '" data-i="' + i + '">' +
+          '<span class="map-search-name">' + esc(r.name) + '</span>' +
+          '<span class="map-search-kind" title="' + MAP_SEARCH_KIND_TITLE[r.kind] + '">' +
+          MAP_SEARCH_KIND_ICON[r.kind] + '</span></li>').join('');
+      };
+
+      input.addEventListener('input', run);
+      input.addEventListener('keydown', e => {
+        if(e.key === 'Escape'){ close(); input.value = ''; clearMapSearchPin(); return; }
+        if(!results.length) return;
+        if(e.key === 'ArrowDown'){ active = (active + 1) % results.length; paint(); e.preventDefault(); }
+        else if(e.key === 'ArrowUp'){ active = (active - 1 + results.length) % results.length; paint(); e.preventDefault(); }
+        else if(e.key === 'Enter'){ choose(active < 0 ? 0 : active); e.preventDefault(); }
+      });
+      list.addEventListener('click', e => {
+        const li = e.target.closest('.map-search-item');
+        if(li) choose(parseInt(li.dataset.i, 10));
+      });
+      return wrap;
+    }
+  });
+  worldMap.addControl(new Ctl());
+}
+
 function resetWorldMap(){
   if(worldMap){ try{ worldMap.remove(); }catch(_){} }
   worldMap = null; markerLayer = null; allMarkers = []; labelMarkers = [];
+  // האינדקס נבנה מתוך DATA, ו-DATA מוחלף בכל סינון (guides.js) — לכן מתאפס כאן.
+  mapSearchIndex = null; mapSearchPin = null;
 }
 
 function initWorldMap(){
@@ -324,6 +484,7 @@ function initWorldMap(){
   vectorBase = addBaseLayers(worldMap);
   addOfflineMapInfoBtn();
   addFullscreenBtn();
+  addMapSearchControl();
   probeTile(S2_URL.replace('{z}','2').replace('{y}','1').replace('{x}','2'), ok=>{ if(ok){ satAvailable = true; rebuildBaseSwitch(); } });
   probeTile(OSM_PROBE_URL, ok=>{ if(ok){ osmAvailable = true; rebuildBaseSwitch(); removeOfflineMapInfoBtn(); } });
   labelMarkers = addLabels(worldMap, 1);
