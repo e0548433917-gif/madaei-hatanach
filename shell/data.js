@@ -62,6 +62,46 @@ function hasStoredEdit(catId, origName){
   return Object.prototype.hasOwnProperty.call(readStoredEdits(catId), origName);
 }
 
+// ---- סימון "כבר נשלח" להצעות עריכה (3.3.4) ----
+// עד כאן כל לחיצה על "שליחה" בכרטיס פתחה Issue חדש, גם כשלא השתנה דבר מאז
+// השליחה הקודמת — ולכן אותו כרטיס הגיע כמה פעמים והמתחזק לא ידע מה חדש.
+// המפתח נפרד מ-<cat>_edits_v1 בכוונה: saveEntryEdit דורס את הרשומה כולה בכל
+// שמירה, ושליחה אפשרית גם בלי שמירה מקומית. מה שנשמר הוא חתימת ה-diff עצמו,
+// כך שעריכה נוספת (diff שונה) פותחת שליחה מחדש, וחזרה על אותה הצעה — לא.
+function sentEditsKey(catId){ return (catId || 'general') + '_sent_v1'; }
+
+function readSentEdits(catId){
+  try { return JSON.parse(localStorage.getItem(sentEditsKey(catId)) || '{}'); }
+  catch(e){ return {}; }
+}
+
+// FNV-1a 32-bit — די והותר לזיהוי "אותו diff בדיוק", ואינו דורש ספרייה.
+function editDiffHash(text){
+  let h = 0x811c9dc5;
+  const s = String(text == null ? '' : text);
+  for (let i = 0; i < s.length; i++){
+    h ^= s.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h.toString(16);
+}
+
+function getEntryEditSent(catId, origName){
+  return readSentEdits(catId)[origName] || null;
+}
+
+function markEntryEditSent(catId, origName, hash){
+  try {
+    const sent = readSentEdits(catId);
+    sent[origName] = { at: new Date().toISOString(), hash: hash };
+    localStorage.setItem(sentEditsKey(catId), JSON.stringify(sent));
+    return true;
+  } catch(e){
+    console.warn('madaei-hatanach: failed to persist sent marker', e);
+    return false;
+  }
+}
+
 // מחזיר ערך לגרסת המקור שבקובץ הנתונים, ומוחק את העריכה השמורה.
 function restoreEntryToOriginal(catId, entry, origName){
   const pristine = pristineCache[catId] && pristineCache[catId][origName];
