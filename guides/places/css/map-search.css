@@ -1,0 +1,75 @@
+/* חיפוש מיקום בתוך המפה (3.3.4) — פקד Leaflet בפינה, לא חלק מסינון הרשימה.
+   ⚠️ קובץ נפרד ולא בתוך map.css בכוונה: map.css היה תחת עריכה לא-מקומטת של
+   עובד אחר בזמן הכתיבה. נטען משני המקומות שטוענים את map.css —
+   index.html (הקליפה) ו-guides/places/view.html (התצוגה העצמאית). */
+
+.map-search {
+  position: relative;
+  width: 210px;
+  font-family: inherit;
+}
+.map-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 9px;
+  border: 1px solid rgba(0, 0, 0, .25);
+  border-radius: 8px;
+  background: #fff;
+  color: #24201a;
+  font-size: 13px;
+  font-family: inherit;
+  direction: rtl;
+  text-align: right;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+}
+.map-search-input:focus {
+  outline: none;
+  border-color: #8a7648;
+}
+.map-search-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  max-height: 232px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .2);
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .28);
+}
+.map-search-list:empty { display: none; }
+.map-search-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  font-size: 13px;
+  color: #24201a;
+  cursor: pointer;
+  direction: rtl;
+  text-align: right;
+  border-bottom: 1px solid rgba(0, 0, 0, .07);
+}
+.map-search-item:last-child { border-bottom: none; }
+.map-search-item:hover,
+.map-search-item.active { background: #f1ece0; }
+.map-search-kind {
+  flex: 0 0 auto;
+  font-size: 11px;
+  opacity: .65;
+}
+.map-search-name { flex: 1 1 auto; }
+.map-search-empty {
+  padding: 6px 9px;
+  font-size: 12.5px;
+  color: #6b6257;
+  direction: rtl;
+  text-align: right;
+}
+/* סמן זמני למקום שנמצא בחיפוש אך אינו בסינון הנוכחי — ר' ההערה
+   ב-addMapSearchControl (guides/places/js/map.js). */
+.map-search-pin { filter: drop-shadow(0 0 3px rgba(0, 0, 0, .45)); }
