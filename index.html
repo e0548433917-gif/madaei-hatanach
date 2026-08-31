@@ -414,12 +414,17 @@
       ״כי <b>אֲשֶׁר</b> יאמר״ (מילת קישור). זה דורש תוסף אוצריא נפרד — ״הנקדן״,
       באדיבות יוסף שלום בן שטרית — שרץ ברקע ומנקד טקסט עברי מקומית. הוא אינו
       נדרש לשום דבר; הזיהוי עובד היטב גם בלעדיו.
+      <br><b>הנקדן לא פורסם בחנות התוספים</b> — הפוסט בפורום הוא
+      המקור להורדה, והוא גם מה שכפתור ההעתקה מעתיק.
     </p>
     <div class="set-row" id="setNikudLinkRow" style="margin-top:8px;">
-      <button class="panel-btn secondary" type="button" id="setNikudOpen">🧩 חנות התוספים של אוצריא</button>
-      <button class="panel-btn secondary" type="button" id="setNikudForum">💬 דיון בפורום</button>
-      <button class="panel-btn secondary" type="button" id="setNikudCopy">📋 העתקת הקישור</button>
+      <button class="panel-btn secondary" type="button" id="setNikudForum">💬 הפוסט בפורום (להורדה)</button>
+      <button class="panel-btn secondary" type="button" id="setNikudCopy">📋 העתקת קישור הפורום</button>
+      <button class="panel-btn secondary" type="button" id="setNikudOpen">🧩 חנות התוספים</button>
     </div>
+    <!-- באופליין כפתורי הפתיחה מוסתרים; הכתובת מוצגת כאן כטקסט נבחר,
+         למי שה-clipboard חסום אצלו — ר' syncNikudSettings ב-shell/settings.js -->
+    <div id="setNikudUrl" class="nikud-url" style="display:none;"></div>
   </div>
 
   <div class="set-group">

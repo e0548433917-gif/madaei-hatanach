@@ -599,6 +599,22 @@ html, body {
 }
 .nikud-status:empty { display: none; margin: 0; }
 .nikud-status.on { color: var(--color-on-surface-dim); }
+/* כתובת פוסט הנקדן בפורום, מוצגת באופליין בלבד (שאז כפתורי הפתיחה
+   מוסתרים). נבחרת במפורש: ה-clipboard חסום בחלק מגרסאות ה-WebView. */
+.nikud-url {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--color-outline-faint);
+  border-radius: 8px;
+  font-size: .78em;
+  direction: ltr;
+  text-align: left;
+  word-break: break-all;
+  user-select: all;
+  -webkit-user-select: all;
+  color: var(--color-on-surface-dim);
+  background: var(--color-surface-2);
+}
 #resultsChips {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--color-outline-faint);
