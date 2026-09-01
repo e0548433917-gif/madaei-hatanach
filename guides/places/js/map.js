@@ -3,7 +3,10 @@
 // ---------- מפה מוטמעת ללא אינטרנט — Natural Earth + Leaflet ----------
 const CAT_COLORS = {
   cities:'#C93A2C', villages:'#D97E10', mountains:'#7C4DD4', water:'#1F7FB8',
-  valleys:'#2E8B57', deserts:'#B8860B', lands:'#2F6F6F', stations:'#D6408A'
+  valleys:'#2E8B57', deserts:'#B8860B', lands:'#2F6F6F', stations:'#D6408A',
+  // יישובי היהודים בבבל בתקופת חז"ל (3.3.4). צבע נפרד בכוונה: המיקום שלהם
+  // אזורי ומשוער בלבד ולא זיהוי אתר, ולכן הם צריכים להיקרא במפה כקבוצה נבדלת.
+  bavel:'#6B4E9B'
 };
 const MAP_MAX_ZOOM = 12;
 
