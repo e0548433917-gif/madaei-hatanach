@@ -250,20 +250,33 @@ $stageDir = Join-Path $env:TEMP "madaei-hatanach-stage"
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
 New-Item -ItemType Directory -Path $stageDir | Out-Null
 
-# מה לא נשלח למשתמשים. שים לב: assets/ ו-docs/ נכנסו לריפו ב-2.11.3 והחבילה קפצה
-# מ-12MB ל-50MB, כי הם לא היו ברשימה הזו. הם חומרי פיתוח בלבד — אין אליהם שום
-# הפניה מ-index.html או מ-shell/. אותו דבר tools/ (סקריפט ולידציה שרץ ב-node).
-# mishna-talmud-addons/ הוא גיבוי קוד-מקור בלבד (המניפסטים והאיקונים של 3 התוספים
-# העצמאיים). מה שנטען בפועל הוא guides/talmud-tools/ — ר׳ ט.2 בתוכנית.
-# 'שדרוג 3.8' הוא תיקיית חומרי עבודה של הכותב (860MB, לא במעקב גיט) — בלעדיו
-# אריזת 3.3.4 יצאה 757MB במקום 16MB. בדיוק המלכודת שבעטיפה מתריעה עליה למטה.
-$excludeDirs = @('build', 'dist', '.git', '.github', '.claude', 'assets', 'docs', 'tools', 'mishna-talmud-addons', 'שדרוג 3.8')
-$excludeFiles = @('_serve.ps1', 'README.md', 'למפתחים.md', 'פוסט-לפורום.md', '.gitignore', '.gitattributes')
+# ---- 2ג. העתקת פריטי המוצר בלבד (whitelist) ----
+# רשימה לבנה, לא שחורה. עד 3.3.6 העתקנו את *כל* השורש חוץ מ-$excludeDirs/
+# $excludeFiles — וכל תיקיית עבודה חדשה בשורש שנשכחה מהרשימה נשלחה למשתמשים
+# (assets/ + docs/: 12MB→50MB ב-2.11.3; תיקיית עבודה 860MB: 757MB ב-3.3.4).
+# עכשיו מעתיקים רק את מה שבאמת נטען בזמן ריצה — הוודא מול index.html,
+# background.html ו-manifest.json. שום קובץ נשלח אחר לא מפנה ל-assets/docs/tools.
+# הרשימה הזו חייבת להישאר זהה ל-!/-entries ב-.otzignore (ר' בדיקה 2ד למטה).
+$includeItems = @('manifest.json', 'index.html', 'background.html', 'icon', 'shell', 'guides')
+foreach ($item in $includeItems) {
+  $src = Join-Path $root $item
+  if (-not (Test-Path $src)) { throw "פריט מוצר חובה חסר מהשורש: $item" }
+  Copy-Item $src -Destination (Join-Path $stageDir $item) -Recurse -Force
+}
 
-Get-ChildItem -Path $root -Force | Where-Object {
-  $_.Name -notin $excludeDirs -and $_.Name -notin $excludeFiles -and $_.Name -ne (Split-Path $stageDir -Leaf)
-} | ForEach-Object {
-  Copy-Item $_.FullName -Destination (Join-Path $stageDir $_.Name) -Recurse -Force
+# ---- 2ד. אימות סנכרון מול .otzignore ----
+# .otzignore הוא המסלול של הכלי הרשמי / ה-GitHub Action של החנות. הוא מנוסח
+# כ-whitelist מקבילה (/*‎ + ‎!/<item>). כאן רק מוודאים ששתי הרשימות לא נפרדו.
+$otzignorePath = Join-Path $root ".otzignore"
+if (Test-Path $otzignorePath) {
+  $wl = Get-Content $otzignorePath -Encoding UTF8 |
+        ForEach-Object { if ($_ -match '^\s*!/([^\s/]+)/?\s*$') { $Matches[1] } }
+  $diff = Compare-Object -ReferenceObject ($includeItems | Sort-Object) `
+                         -DifferenceObject (@($wl) | Sort-Object)
+  if ($diff) {
+    Write-Warning "הרשימה הלבנה ב-pack.ps1 לא תואמת ל-!/-entries ב-.otzignore. סנכרן ידנית:"
+    $diff | ForEach-Object { Write-Warning "  $($_.SideIndicator) $($_.InputObject)" }
+  }
 }
 
 # ---- 2ב. הסרת קבצים שאינם בשימוש מהחבילה ----
@@ -318,13 +331,15 @@ Write-Host "נוצרה גרסה עצמאית: $standalonePath"
 Remove-Item $stageDir -Recurse -Force
 
 # ---- 5. שומר גודל ----
-# 2.11.2 שקל 12.2MB. אם החבילה חצתה 16MB כנראה שנכנסה אליה תיקייה חדשה שאמורה
-# להיות ב-$excludeDirs — בדיוק מה שקרה ב-2.11.3 עם assets/ ו-docs/ (50MB).
+# מאז המעבר ל-whitelist (2ג) תיקיית עבודה חדשה בשורש כבר לא יכולה להיכנס לחבילה,
+# והרף הישן (16MB) לא היה רלוונטי: החבילה הרגילה ~18MB בגלל התמונות המוטבעות,
+# וריאנט המפות ~63MB — שניהם תקינים. הרגיל והמורחב עולים עוד ~40MB כשמצורפים
+# אריחי מפה. הרף כאן הוא רק רשת ביטחון רופפת לקפיצה חריגה באמת.
 $sizeMB = [math]::Round((Get-Item $otzpluginPath).Length / 1MB, 1)
 Write-Host ""
 Write-Host "גודל החבילה: $sizeMB MB"
-if ($sizeMB -gt 16) {
-  Write-Warning "החבילה גדולה מהצפוי ($sizeMB MB, הרף 16MB). בדוק אם נוספה תיקייה שצריכה להיכנס ל-`$excludeDirs ב-build\pack.ps1."
+if ($sizeMB -gt 40) {
+  Write-Warning "החבילה גדולה מהצפוי ($sizeMB MB, הרף 40MB). בדוק מה תפח בתוך guides/ (דאטה/תמונות)."
 }
 
 Write-Host ""
