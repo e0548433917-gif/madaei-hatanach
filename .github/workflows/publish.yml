@@ -19,8 +19,9 @@ on:
   push:
     branches: [main]
     paths:
-      # רק מה שנכנס בפועל לחבילה (ר׳ .otzignore). שינוי ב-docs/ או assets/
-      # אינו שינוי מוצר ואינו אמור להפעיל פרסום.
+      # רק מה שנכנס בפועל לחבילה — 6 פריטי המוצר, זהים ל-!/-entries ב-.otzignore
+      # ול-$includeItems ב-build/pack.ps1. שינוי ב-_עבודה/ (assets, docs וכו') אינו
+      # שינוי מוצר ואינו אמור להפעיל פרסום.
       - 'manifest.json'
       - 'index.html'
       - 'background.html'
@@ -90,9 +91,10 @@ jobs:
           # רווחים — להעתיק 2-3 מהם ל-screenshots/01.png וכו׳ לפני שמפעילים:
           # screenshots: 'screenshots/01.png,screenshots/02.png'
 
-      # שומר גודל, במקביל לסעיף 5 ב-build/pack.ps1: 2.11.2 שקלה 12.2MB, ו-
-      # 2.11.3 קפצה ל-50MB כי assets/ ו-docs/ לא היו מוחרגים. חריגה כאן היא
-      # כמעט תמיד תיקייה חדשה שחסרה ב-.otzignore.
+      # שומר גודל, במקביל לסעיף 5 ב-build/pack.ps1. מאז המעבר ל-whitelist ב-
+      # .otzignore תיקיית עבודה חדשה כבר לא יכולה להיכנס לחבילה, והרף הישן
+      # (16MB) לא רלוונטי: הרגילה ~18MB (תמונות מוטבעות), וריאנט המפות ~63MB,
+      # +~40MB כשמצורפים אריחי מפה — הכול תקין. רשת ביטחון רופפת בלבד.
       - name: שומר גודל החבילה
         env:
           PLUGIN_FILE: ${{ steps.otzaria.outputs.plugin-file }}
@@ -104,8 +106,8 @@ jobs:
           bytes="$(stat -c%s "$PLUGIN_FILE")"
           mb="$(awk "BEGIN{printf \"%.1f\", $bytes/1048576}")"
           echo "גודל החבילה: $mb MB"
-          if (( bytes > 16777216 )); then
-            echo "::warning::החבילה גדולה מהצפוי ($mb MB, הרף 16MB). בדוק אם נוספה תיקייה שצריכה להיכנס ל-.otzignore."
+          if (( bytes > 41943040 )); then
+            echo "::warning::החבילה גדולה מהצפוי ($mb MB, הרף 40MB). בדוק מה תפח בתוך guides/."
           fi
 
       - name: קביעת גרסה ותג
