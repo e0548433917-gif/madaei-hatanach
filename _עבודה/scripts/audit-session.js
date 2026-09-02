@@ -2,7 +2,7 @@
 // ושכל משימה שנרשמה מופיעה בתיעוד. הרצה: node _עבודה/scripts/audit-session.js
 const {execSync} = require('child_process');
 const fs = require('fs');
-const q = c => { try { return execSync(c,{encoding:'utf8'}).trim(); } catch(e){ return 'ERR'; } };
+const q = c => { try { return execSync(c,{encoding:'utf8'}).trim(); } catch(e){ return String(e.stdout||'').trim() || 'ERR'; } };  // הוולידטור יוצא בקוד שגיאה כשיש ממצאים - הפלט עדיין תקף
 const load = (p, strip=true) => { let s=fs.readFileSync(p,'utf8'); if(strip) s=s.replace(/^\/\/.*$/gm,''); return (0,eval)(s+';DATA'); };
 const has = (p, needle) => fs.readFileSync(p,'utf8').includes(needle);
 
@@ -63,7 +63,7 @@ check('תאימות-SDK: ב.1 סגור', has('docs/תאימות-SDK-אוצריא
 
 // ── 6. ולידטור ───────────────────────────────────────────────
 const v = q('node tools/validate.js --strict');
-const m = v.match(/שדות חובה חסרים\s*\.*\s*(\d+)/);
+const m = v.match(/שדות חובה חסרים[\s.]*(\d+)/);
 check('ולידטור: שדות חובה חסרים = 0', m && m[1]==='0', m?('בפועל '+m[1]):'לא נמצא');
 
 console.log('✅ עברו ('+ok.length+'):');
