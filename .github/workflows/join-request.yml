@@ -1,0 +1,215 @@
+name: בקשת הצטרפות — הזמנה אוטומטית
+
+# כל מי שפותח בקשת הצטרפות מקבל אוטומטית הזמנת collaborator (permission=push)
+# ותגובה עם בלוק ההוראות המלא מתוך docs/הצטרפות-מפתח.md.
+#
+# 🔑 דורש secret בשם INVITE_TOKEN — fine-grained PAT על הריפו הזה בלבד, עם
+#    ההרשאה **Administration: Read and write**. ה-GITHUB_TOKEN המובנה *אינו*
+#    יכול להזמין שותפים: `administration` אינו בין ההרשאות שאפשר לתת לו
+#    ב-`permissions:` (ר' תיעוד GitHub — workflow-syntax#permissions).
+#    בלי ה-secret ה-workflow לא נכשל: הוא מתייג "ממתין-להזמנה-ידנית" ומשאיר
+#    את ה-Issue פתוח, וקלוד של מי שעובד יטפל בו (ר' CLAUDE.md).
+#
+# 🎚️ משתנה ריפו AUTO_INVITE (Settings ← Variables): ברירת מחדל true = הזמנה
+#    מיידית לכל מבקש. false = רק עונה ומתייג, ומזמין רק אחרי שבעל הפרויקט
+#    מוסיף את התווית "אושר".
+#
+# ⚠️ הזמנה לפי מייל אינה אפשרית ב-API בריפו של חשבון פרטי — הנקודה
+#    PUT /repos/{o}/{r}/collaborators/{username} מקבלת שם משתמש בלבד. במסלול
+#    גיטהאב זה לא מפריע: שם המשתמש הוא פותח ה-Issue.
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: join-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  join:
+    runs-on: ubuntu-latest
+    # issue_comment נורה גם על PRs, ותגובות הבוט עצמו לא אמורות להחזיר אותנו לכאן.
+    if: >-
+      github.event.issue.pull_request == null &&
+      github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── 1. שער כניסה + קביעת שם המשתמש ─────────────────────────────────
+      - name: זיהוי הבקשה
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue  = context.payload.issue;
+            const labels = (issue.labels || []).map(l => (l.name || l));
+            const out = (k, v) => core.setOutput(k, String(v));
+            const stop = (why) => { core.info('מדלג: ' + why); out('proceed', false); };
+
+            // נבדק כאן ולא ב-`if` של השלב הבא: זמינות ה-env של שלב לתנאי של אותו
+            // שלב עצמו אינה מובטחת, ופלט מפורש הוא חד-משמעי.
+            out('has_token', process.env.HAS_TOKEN === 'true');
+
+            // זו בכלל בקשת הצטרפות?
+            const isJoin = labels.includes('בקשת-הצטרפות')
+                        || /^\s*\[הצטרפות\]/.test(issue.title || '');   // הכנה למסלול אוצריא
+            if (!isJoin)                    return stop('אינו בקשת הצטרפות');
+            if (labels.includes('הוזמן'))   return stop('כבר טופל (תווית "הוזמן")');
+
+            // AUTO_INVITE=false → מזמינים רק אחרי שבעל הפרויקט תייג "אושר"
+            const auto = (process.env.AUTO_INVITE || 'true').toLowerCase() !== 'false';
+            if (!auto && !labels.includes('אושר')) {
+              core.info('AUTO_INVITE=false וטרם אושר — עונים בלי להזמין');
+              out('proceed', true); out('approved', false); out('username', '');
+              return;
+            }
+            out('approved', true);
+
+            // ── שם המשתמש ──
+            // ברירת המחדל היא פותח ה-Issue. שדה בטופס גובר (בקשה עבור מישהו אחר).
+            const VALID = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
+            let user = '';
+
+            const section = (body, heading) => {
+              const lines = String(body || '').split(/\r?\n/);
+              const i = lines.findIndex(l => l.trim() === '### ' + heading);
+              if (i < 0) return '';
+              for (let j = i + 1; j < lines.length; j++) {
+                const t = lines[j].trim();
+                if (t.startsWith('### ')) break;
+                if (t && t !== '_No response_') return t;
+              }
+              return '';
+            };
+
+            if (context.eventName === 'issue_comment') {
+              // השלמת שם משתמש בתגובה, אחרי שהבקשה הראשונה לא הספיקה
+              if (!labels.includes('ממתין-להזמנה-ידנית')) return stop('תגובה על בקשה שכבר טופלה');
+              const c = context.payload.comment.body || '';
+              const m = c.match(/שם\s*משתמש\s*[::]\s*@?([A-Za-z0-9-]+)/);
+              user = m ? m[1] : context.payload.comment.user.login;
+            } else {
+              user = section(issue.body, 'שם משתמש בגיטהאב').replace(/^@/, '');
+              if (!VALID.test(user)) user = issue.user.login;
+            }
+
+            if (!VALID.test(user)) { out('proceed', true); out('username', ''); return; }
+            out('proceed', true);
+            out('username', user);
+        env:
+          AUTO_INVITE: ${{ vars.AUTO_INVITE }}
+          HAS_TOKEN: ${{ secrets.INVITE_TOKEN != '' }}
+
+      # ── 2. ההזמנה עצמה — דורשת PAT עם Administration: R/W ───────────────
+      - name: הזמנת השותף
+        id: invite
+        if: >-
+          steps.gate.outputs.proceed == 'true' &&
+          steps.gate.outputs.approved == 'true' &&
+          steps.gate.outputs.username != '' &&
+          steps.gate.outputs.has_token == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          TARGET: ${{ steps.gate.outputs.username }}
+        with:
+          github-token: ${{ secrets.INVITE_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const username = process.env.TARGET;
+
+            if (username.toLowerCase() === owner.toLowerCase()) {
+              core.setOutput('status', 'owner');   // אי־אפשר להזמין את בעל הריפו
+              return;
+            }
+
+            // אידמפוטנטיות: הטריגר `labeled` יכול לרוץ שוב על אותו Issue.
+            try {
+              await github.request('GET /repos/{owner}/{repo}/collaborators/{username}',
+                                   { owner, repo, username });
+              core.setOutput('status', 'already');       // 204 = כבר שותף
+              return;
+            } catch (e) { if (e.status !== 404) throw e; }
+
+            const inv = await github.request('GET /repos/{owner}/{repo}/invitations', { owner, repo });
+            if (inv.data.some(i => i.invitee && i.invitee.login.toLowerCase() === username.toLowerCase())) {
+              core.setOutput('status', 'pending');       // הזמנה כבר ממתינה
+              return;
+            }
+
+            await github.request('PUT /repos/{owner}/{repo}/collaborators/{username}',
+                                 { owner, repo, username, permission: 'push' });
+            core.setOutput('status', 'invited');
+
+      # ── 3. תגובה, תיוג וסגירה ───────────────────────────────────────────
+      - name: תגובה עם בלוק ההוראות
+        if: steps.gate.outputs.proceed == 'true'
+        uses: actions/github-script@v7
+        env:
+          HAS_TOKEN: ${{ steps.gate.outputs.has_token }}
+          TARGET:    ${{ steps.gate.outputs.username }}
+          APPROVED:  ${{ steps.gate.outputs.approved }}
+          STATUS:    ${{ steps.invite.outputs.status }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const number   = context.payload.issue.number;
+            const user     = process.env.TARGET;
+            const status   = process.env.STATUS || '';
+            const hasToken = process.env.HAS_TOKEN === 'true';
+            const approved = process.env.APPROVED === 'true';
+
+            const guide = fs.readFileSync('docs/הצטרפות-מפתח.md', 'utf8')
+                            .replace(/^#\s.*\n/, '');   // הכותרת מוחלפת בפתיח האישי
+
+            let head, ok = false, close = false;
+            if (!approved) {
+              head = 'תודה על הבקשה! היא ממתינה לאישור בעל הפרויקט. בינתיים — כל מה שצריך לדעת:';
+            } else if (!user) {
+              head = 'תודה על הבקשה! לא הצלחתי לזהות שם משתמש בגיטהאב.\n'
+                   + '**כתוב בתגובה כאן:** `שם משתמש: <השם שלך בגיטהאב>` — וההזמנה תישלח אוטומטית.';
+            } else if (!hasToken) {
+              head = `תודה על הבקשה, @${user}! ההזמנה תישלח ידנית בקרוב (טוקן ההזמנה טרם הוגדר בריפו).`;
+            } else if (status === 'invited') {
+              head = `שלום @${user} — **ההזמנה נשלחה!** 🎉\n`
+                   + 'אשר אותה ב-https://github.com/e0548433917-gif/madaei-hatanach/invitations '
+                   + 'או בקישור שהגיע למייל.';
+              ok = close = true;
+            } else if (status === 'pending') {
+              head = `@${user} — כבר ממתינה לך הזמנה. אשר אותה ב-`
+                   + 'https://github.com/e0548433917-gif/madaei-hatanach/invitations';
+              ok = close = true;
+            } else if (status === 'already') {
+              head = `@${user} — אתה כבר שותף בריפו, אין צורך בהזמנה חדשה. הנה כללי העבודה:`;
+              ok = close = true;
+            } else if (status === 'owner') {
+              head = 'זה הריפו שלך — אין את מי להזמין. 🙂';
+              ok = close = true;
+            } else {
+              head = `@${user} — ההזמנה האוטומטית נכשלה. בעל הפרויקט יזמין ידנית.\n`
+                   + 'בינתיים אפשר להתחיל לקרוא:';
+            }
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: number,
+              body: head + '\n\n---\n\n' + guide
+            });
+
+            const labels = ok ? ['הוזמן'] : (approved && user ? ['ממתין-להזמנה-ידנית'] : []);
+            if (labels.length) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels });
+            }
+            if (close) {
+              await github.rest.issues.update({
+                owner, repo, issue_number: number,
+                state: 'closed', state_reason: 'completed'
+              });
+            }

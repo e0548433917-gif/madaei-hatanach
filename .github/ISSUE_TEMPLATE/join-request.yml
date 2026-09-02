@@ -1,0 +1,49 @@
+name: 🤝 בקשת הצטרפות לפיתוח
+description: להצטרף כמפתח לפרויקט — ההזמנה נשלחת אוטומטית
+title: "בקשת הצטרפות לפיתוח"
+labels: ["בקשת-הצטרפות"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        תודה על הרצון לעזור! עם שליחת הבקשה תישלח אליך **אוטומטית הזמנת שיתוף**
+        עם הרשאת כתיבה, ותקבל כאן בתגובה בלוק הוראות מוכן להדבקה בקלוד.
+
+        ⚠️ **שים לב:** עובדים כאן כמה מפתחים במקביל, לפעמים על אותם קבצים באותה
+        שעה. כל הכללים בתגובה שתקבל.
+
+  - type: input
+    id: username
+    attributes:
+      label: שם משתמש בגיטהאב
+      description: רק אם הבקשה אינה עבורך. ריק = פותח הבקשה (ברירת המחדל, וזה הנפוץ).
+      placeholder: octocat
+    validations:
+      required: false
+
+  - type: input
+    id: email
+    attributes:
+      label: מייל ליצירת קשר
+      description: רשות. ההזמנה עצמה נשלחת לפי שם המשתמש בגיטהאב, לא לפי המייל.
+    validations:
+      required: false
+
+  - type: textarea
+    id: area
+    attributes:
+      label: במה תרצה לעבוד?
+      description: |
+        רשות. תור המשימות הקבוע: (1) סבב 3 — מנוע הזיהוי v2 · (2) עיצוב ·
+        (3) סבב ת׳ — תוכן. אפשר גם לכתוב "מה שצריך".
+      placeholder: תוכן / עיצוב / מנוע הזיהוי / באגים / מה שצריך
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: אישור
+      options:
+        - label: קראתי שעובדים כאן כמה מפתחים במקביל, ואעבוד על ענף משלי (`work/<נושא>`) בלי `git add -A` ובלי `git commit -a`
+          required: true
