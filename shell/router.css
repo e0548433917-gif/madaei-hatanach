@@ -72,6 +72,16 @@
   /* --- פריסה --- */
   --card-min: 200px;      /* צפיפות רשת הערכים */
   --card-pad: 12px;
+
+  /* --- Spacing & Animation (Otzaria app_tokens.dart) --- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --anim-fast: 150ms;
+  --anim-medium: 250ms;
+  --anim-slow: 400ms;
 }
 
 /* ערכה כהה מובנית */
@@ -244,13 +254,13 @@ html, body {
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-outline-faint);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   /* בערכת "רגיל" (--card-pad: 12px) זה שקול ל-clamp(12px,2vw,20px) הישן -
      כרטיסי הבית והמסכתות מגיבים עכשיו להגדרת הצפיפות כמו .entry-card. */
   padding: clamp(var(--card-pad), 2vw, calc(var(--card-pad) * 1.65)) 10px;
   text-align: center;
   cursor: pointer;
-  transition: box-shadow .15s, transform .15s, border-color .15s, background .15s;
+  transition: box-shadow var(--anim-fast), transform var(--anim-fast), border-color var(--anim-fast), background var(--anim-fast);
   color: inherit;
 }
 .card:hover {
@@ -494,29 +504,39 @@ html, body {
 .panel-box .panel-hint { font-size: .86em; color: var(--color-on-surface-dim); margin-top: 0; }
 .panel-box select {
   width: 100%; border: 1px solid var(--color-outline); border-radius: var(--radius-sm);
-  padding: 8px 10px; font-family: var(--font-main); font-size: .93em;
+  min-block-size: 40px; padding: 0 10px; font-family: var(--font-main); font-size: .93em;
   margin-bottom: 10px; box-sizing: border-box;
   background: var(--color-surface); color: var(--color-on-surface);
 }
-.panel-box textarea, .panel-box input[type=text] {
+.panel-box textarea, .panel-box input[type=text], .panel-box input[type=email] {
   width: 100%; border: 1px solid var(--color-outline); border-radius: var(--radius-sm);
-  padding: 8px 10px; font-family: var(--font-main); font-size: .93em;
+  min-block-size: 40px; padding: 8px 12px; font-family: var(--font-main); font-size: .93em;
   margin-bottom: 10px; box-sizing: border-box;
   background: var(--color-surface); color: var(--color-on-surface);
-  transition: border-color .15s;
+  transition: border-color var(--anim-fast);
 }
-.panel-box textarea:focus, .panel-box input[type=text]:focus { outline: none; border-color: var(--color-primary); }
+.panel-box textarea:focus, .panel-box input[type=text]:focus, .panel-box input[type=email]:focus {
+  outline: none; border-color: var(--color-primary);
+}
 .panel-box input[type=file] { color: var(--color-on-surface); font-family: var(--font-main); }
 .panel-box textarea { min-height: 90px; resize: vertical; }
 .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .panel-btn {
-  border: none; background: var(--color-btn); color: var(--color-on-btn);
-  border-radius: var(--radius-sm); padding: 9px 16px; cursor: pointer;
+  min-block-size: 40px;
+  border: none; background: var(--color-primary); color: var(--color-on-primary);
+  border-radius: var(--radius-sm); padding: 0 16px; cursor: pointer;
   font-family: var(--font-main); font-size: .86em; font-weight: 600;
-  transition: opacity .15s;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--anim-fast), opacity var(--anim-fast);
 }
-.panel-btn.secondary { background: var(--color-secondary-subtle); color: var(--color-on-surface); }
-.panel-btn:hover { opacity: .88; }
+.panel-btn:hover { opacity: .92; }
+.panel-btn.secondary {
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+}
+.panel-btn.secondary:hover {
+  background: color-mix(in srgb, var(--color-on-secondary-container) 8%, var(--color-secondary-container));
+}
 /* ---- צירוף צילומי מסך לדיווח (2.16.2) ---- */
 .report-upload {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -1006,23 +1026,29 @@ html, body {
   width: 100%; padding: 9px 12px; border: 1px solid var(--color-outline); border-radius: var(--radius-sm);
   font-family: var(--font-main); font-size: .9em;
   background: var(--color-surface); color: var(--color-on-surface);
-  transition: border-color .15s;
+  transition: border-color var(--anim-fast);
 }
+.f-input { min-block-size: 40px; }
 .f-textarea { min-height: 60px; resize: vertical; }
 .f-input:focus, .f-textarea:focus { outline: none; border-color: var(--color-primary); }
 
 .nf-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .nf-btn {
-  border: 1px solid transparent; background: var(--color-btn); color: var(--color-on-btn);
-  padding: 9px 18px; border-radius: var(--radius-pill);
+  min-block-size: 40px;
+  border: 1px solid transparent; background: var(--color-primary); color: var(--color-on-primary);
+  padding: 0 18px; border-radius: var(--radius-sm);
   font-family: var(--font-main); font-size: .86em; font-weight: 600; cursor: pointer;
-  transition: opacity .15s, border-color .15s;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: opacity var(--anim-fast), border-color var(--anim-fast), background var(--anim-fast);
 }
-.nf-btn:hover { opacity: .88; }
+.nf-btn:hover { opacity: .92; }
 .nf-btn.secondary {
-  background: var(--color-secondary-subtle); color: var(--color-on-surface); border-color: var(--color-outline);
+  background: var(--color-secondary-container); color: var(--color-on-secondary-container); border-color: transparent;
 }
-.nf-btn.secondary:hover { border-color: var(--color-primary); opacity: 1; }
+.nf-btn.secondary:hover {
+  background: color-mix(in srgb, var(--color-on-secondary-container) 8%, var(--color-secondary-container));
+  opacity: 1;
+}
 .nf-btn.danger-link { color: var(--color-error); }
 .custom-field-row { margin-bottom: 10px; }
 .custom-field-row .del-field:hover { text-decoration: underline; }
@@ -1253,10 +1279,10 @@ html, body {
   background: var(--color-secondary-container);
   color: var(--color-on-secondary-container);
   border: 1px solid var(--color-outline-faint);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: var(--font-main);
-  transition: box-shadow .15s, transform .15s, border-color .15s;
+  transition: box-shadow var(--anim-fast), transform var(--anim-fast), border-color var(--anim-fast);
 }
 .book-choice:hover {
   box-shadow: 0 4px 14px var(--color-shadow);
@@ -1329,11 +1355,11 @@ html, body {
   background: transparent;
   color: var(--color-on-surface);
   border: 1px solid var(--color-outline-faint);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: var(--font-main);
   text-align: start;
-  transition: background .15s, border-color .15s;
+  transition: background var(--anim-fast), border-color var(--anim-fast);
 }
 .book-choice-row:hover {
   background: var(--color-primary-subtle);
@@ -1426,18 +1452,78 @@ html, body {
 #settingsPanel h2 { font-size: 1.05em; margin: 0 0 2px; }
 
 .set-group {
-  background: var(--color-surface);
-  border: 1px solid var(--color-outline-faint);
-  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  margin-bottom: 12px;
-  padding: 14px 14px 12px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;                       /* מפריד = רווח שקוף, לא קו (app_card.dart) */
 }
+.set-group > .set-title,
 .set-group > label.set-title {
-  font-size: .92em;
+  display: block;
+  margin: 0 4px 8px;
+  font-size: 1.06rem;
+  font-weight: 700;
   color: var(--color-primary);
-  margin-bottom: 9px;
 }
+
+.settings-row {
+  background: var(--color-surface);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+}
+.settings-row.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-row-title    { font-size: 1.06rem; color: var(--color-on-surface); }
+.settings-row-subtitle { font-size: .86rem; color: var(--color-on-surface-dim); margin-top: 2px; }
+
+/* מתג גלולה תואם CustomSwitch של אוצריא (M3) */
+.switch {
+  --sw-w: 46px; --sw-h: 26px; --sw-thumb: 16px; --sw-gap: 3px;
+  inline-size: var(--sw-w); block-size: var(--sw-h);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-outline);
+  background: var(--color-surface-container-highest);
+  position: relative; flex: 0 0 auto; cursor: pointer; padding: 0;
+  transition: background var(--anim-fast), border-color var(--anim-fast);
+}
+.switch::after {
+  content: ""; position: absolute; inset-block-start: 50%;
+  inset-inline-start: var(--sw-gap);
+  inline-size: var(--sw-thumb); block-size: var(--sw-thumb);
+  border-radius: 50%; background: var(--color-outline);
+  transform: translateY(-50%);
+  transition: inset-inline-start var(--anim-fast), inline-size var(--anim-fast), background var(--anim-fast);
+}
+.switch[aria-checked="true"] { background: var(--color-primary); border-color: var(--color-primary); }
+.switch[aria-checked="true"]::after {
+  --sw-thumb: 20px;
+  inset-inline-start: calc(var(--sw-w) - 20px - var(--sw-gap) - 4px);
+  background: var(--color-on-primary);
+}
+.switch:disabled {
+  background: color-mix(in srgb, var(--color-surface-container-highest) 12%, transparent);
+  border-color: transparent; cursor: default;
+}
+.switch:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* כפתורי אייקון עגולים (.tool-btn) */
+.tool-btn {
+  width: 38px; height: 38px; border: none; border-radius: 50%;
+  background: transparent; color: var(--color-on-surface-dim);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1em;
+  transition: background var(--anim-fast), color var(--anim-fast);
+}
+.tool-btn:hover { background: var(--color-primary-subtle); color: var(--color-on-surface); }
 
 /* segmented control מחובר: מסגרת אחת סביב הכל, מפרידים דקים בין הכפתורים */
 .set-opts {
@@ -1448,6 +1534,8 @@ html, body {
 }
 .set-opt {
   flex: 1 1 auto; min-width: 0;
+  min-block-size: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
   border: none; border-radius: 0;
   background: transparent;
   color: var(--color-on-surface-dim);
@@ -1467,54 +1555,53 @@ html, body {
 /* כפתור פעולה בתוך שורת הגדרה (יצירת קיצור דרך) */
 .set-action {
   align-self: flex-start;
+  min-block-size: 40px;
   border: 1px solid var(--color-primary);
   background: var(--color-primary-subtle);
   color: var(--color-primary);
   font-family: var(--font-main);
   font-size: .86em; font-weight: 600;
-  padding: 8px 15px;
-  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background .12s, opacity .12s;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--anim-fast), opacity var(--anim-fast);
 }
 .set-action:hover { background: var(--color-hover); }
 .set-action:disabled { opacity: .45; cursor: default; }
 
 /* דרופדאון מעוגל בסגנון AppDropdownField של אוצריא (3.2.4) — לרשימות ארוכות
    שאינן מתאימות ל-segmented control. חץ מצויר ב-CSS כי appearance:none מסיר
-   את החץ הילידי, ורדיוס pill במקום פינות מרובעות. */
+   את החץ הילידי, צבע secondary-container וגובה אחיד 40px. */
 .dropdown-field { position: relative; }
 .dropdown-field::after {
   content: ""; position: absolute; inset-inline-end: 14px; top: 50%;
   width: 7px; height: 7px; pointer-events: none;
-  /* מאפיינים פיזיים ולא לוגיים: border-inline-end מתמפה לשמאל ב-RTL, ואז
-     הריבוע המסובב הצביע שמאלה (נראה כמו "<") במקום למטה. right+bottom
-     נותנים חץ כלפי מטה בשני כיווני הכתיבה. */
   border-right: 2px solid var(--color-on-surface-faint);
   border-bottom: 2px solid var(--color-on-surface-faint);
   transform: translateY(-65%) rotate(45deg);
 }
 .dropdown-field select {
   width: 100%;
+  min-block-size: 40px;
   border: 1.4px solid transparent;
-  /* 31/08/2026 — היה radius-pill (מועתק מ"סידורון"). מקור אמת אמיתי
-     (Otzaria_Offline_update, קוד מפורט ישירות מ-otzaria/lib/theme/app_tokens.dart)
-     מראה שאוצריא עצמה משתמשת ברדיוס 8px אחיד לכל הכפתורים/הכרטיסים/הדרופדאון —
-     לא pill. ר' נספח ג' ב-docs/מפרט-עיצוב-אוצריא.md. */
   border-radius: var(--radius-sm);
-  background: var(--color-primary-subtle);
-  color: var(--color-on-surface);
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
   font-family: var(--font-main);
   font-size: .9em;
-  padding: 10px 14px 10px 34px;
+  padding-block: 0;
+  padding-inline: 16px 34px;
   text-align: start;
   cursor: pointer;
   appearance: none; -webkit-appearance: none;
-  transition: background .12s, border-color .12s;
+  transition: background var(--anim-fast), border-color var(--anim-fast);
 }
-.dropdown-field select:hover { background: var(--color-hover); }
+.dropdown-field select:hover {
+  background: color-mix(in srgb, var(--color-on-secondary-container) 8%, var(--color-secondary-container));
+}
 .dropdown-field select:focus {
-  background: var(--color-hover);
+  background: color-mix(in srgb, var(--color-on-secondary-container) 12%, var(--color-secondary-container));
   border-color: var(--color-primary);
   outline: none;
 }

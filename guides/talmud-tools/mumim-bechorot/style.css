@@ -1,25 +1,39 @@
 
-  :root{
-    --color-primary:#6750A4;   --color-on-primary:#FFFFFF;
-    --color-secondary:#625B71; --color-on-secondary:#FFFFFF;
-    --color-surface:#FFFBFE;   --color-on-surface:#1C1B1F;
-    --color-surface-container-highest:#E6E0E9;
-    --color-error:#B3261E;     --color-on-error:#FFFFFF;
-    --color-outline:#79747E;
-    --color-primary-rgb:103,80,164;   --color-primary-subtle:color-mix(in srgb, var(--color-primary) 12%, transparent);
-    --color-secondary-rgb:98,91,113;  --color-secondary-subtle:color-mix(in srgb, var(--color-secondary) 12%, transparent);
-    --color-error-rgb:179,38,30;      --color-error-subtle:color-mix(in srgb, var(--color-error) 12%, transparent);
-    --color-outline-rgb:121,116,126;  --color-outline-subtle:color-mix(in srgb, var(--color-outline) 12%, transparent);
-    --color-on-surface-rgb:28,27,31;
-    --font-main:'FrankRuhlCLM','David',serif;
-    --font-size-base:18px;
-    --line-height:1.5;
-    --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
-    --shadow:0 8px 24px color-mix(in srgb, var(--color-on-surface) 18%, transparent);
-  
-    --radius-xs:3px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
-    --font-main:'Heebo',sans-serif; --font-display:'Frank Ruhl Libre',serif;
+  :root {
+    --color-primary: #A9812F;
+    --color-on-primary: #ffffff;
+    --color-secondary: #9C4A2E;
+    --color-on-secondary: #ffffff;
+    --color-surface: #ffffff;
+    --color-on-surface: #2a2016;
+    --color-surface-container-highest: #f1ece0;
+    --color-error: #9C4A2E;
+    --color-on-error: #ffffff;
+    --color-outline: #d8cfb8;
+    --color-primary-subtle: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    --color-secondary-subtle: color-mix(in srgb, var(--color-secondary) 12%, transparent);
+    --color-error-subtle: color-mix(in srgb, var(--color-error) 12%, transparent);
+    --color-outline-subtle: color-mix(in srgb, var(--color-outline) 12%, transparent);
+    --font-main: 'Heebo', Arial, sans-serif;
+    --line-height: 1.5;
+    --radius-xs: 3px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+    --shadow: 0 8px 24px color-mix(in srgb, var(--color-on-surface) 18%, transparent);
+  }
 
+  :root[data-theme="dark"] {
+    --color-primary: #d8ab52;
+    --color-on-primary: #1a1610;
+    --color-secondary: #dd8b68;
+    --color-on-secondary: #1a1610;
+    --color-surface: #201c17;
+    --color-on-surface: #f0e9dc;
+    --color-surface-container-highest: #1d1914;
+    --color-error: #dd8b68;
+    --color-outline: #4a4032;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth; height:100%; overflow-y:auto; overflow-x:hidden;}

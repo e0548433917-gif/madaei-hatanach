@@ -349,95 +349,102 @@
 <div id="settingsScrim"></div>
 <div id="settingsPanel" role="dialog" aria-label="הגדרות תצוגה">
   <h2>⚙️ הגדרות תצוגה
-    <button id="settingsCloseBtn" type="button" title="סגירה">✕</button>
+    <button id="settingsCloseBtn" class="tool-btn" type="button" title="סגירה">✕</button>
   </h2>
   <p class="set-note">ההגדרות נשמרות במכשיר ונשארות גם אחרי סגירת אוצריא.</p>
 
   <div class="set-group">
-    <label class="set-title">ערכת צבעים</label>
-    <div class="dropdown-field" id="setTheme">
-      <select id="setThemeSelect" aria-label="בחירת ערכת צבעים">
-        <option value="otzaria">תואם לאוצריא (ברירת מחדל)</option>
-        <option value="classic">קלאסי</option>
-        <option value="plain">בהיר נקי</option>
-        <option value="dark">כהה</option>
-      </select>
+    <div class="set-title">ערכת צבעים</div>
+    <div class="settings-row">
+      <div class="dropdown-field" id="setTheme">
+        <select id="setThemeSelect" aria-label="בחירת ערכת צבעים">
+          <option value="otzaria">תואם לאוצריא (ברירת מחדל)</option>
+          <option value="classic">קלאסי</option>
+          <option value="plain">בהיר נקי</option>
+          <option value="dark">כהה</option>
+        </select>
+      </div>
     </div>
   </div>
 
   <div class="set-group">
-    <label class="set-title">גופן</label>
-    <!-- 3.2.4 — נפתח ולא מרובע. שש אפשרויות הן יותר מדי ל-segmented control
-         (הכפתורים יוצאים צרים ונחתכים), ולכן דרופדאון מעוגל בסגנון
-         AppDropdownField של אוצריא, כמו ב"סידורון". ר' .dropdown-field. -->
-    <div class="dropdown-field" id="setFont">
-      <select id="setFontSelect" aria-label="בחירת גופן">
-        <option value="otzaria">כמו באוצריא (ברירת מחדל)</option>
-        <option value="default">היבו (רגיל)</option>
-        <option value="frank">פרנק־ריהל</option>
-        <option value="david">דוד</option>
-        <option value="arial">אריאל</option>
-        <option value="times">טיימס</option>
-      </select>
-    </div>
-    <p class="set-note" style="margin:7px 0 0;">״כמו באוצריא״ לוקח רק את שם הגופן — גודל הטקסט נשאר בשליטתך למטה.</p>
-  </div>
-
-  <div class="set-group">
-    <label class="set-title">גודל טקסט</label>
-    <div class="set-row">
-      <input type="range" id="setScale" min="85" max="125" step="5" value="100">
-      <span class="set-val" id="setScaleVal">100%</span>
+    <div class="set-title">גופן</div>
+    <div class="settings-row">
+      <div class="dropdown-field" id="setFont">
+        <select id="setFontSelect" aria-label="בחירת גופן">
+          <option value="otzaria">כמו באוצריא (ברירת מחדל)</option>
+          <option value="default">היבו (רגיל)</option>
+          <option value="frank">פרנק־ריהל</option>
+          <option value="david">דוד</option>
+          <option value="arial">אריאל</option>
+          <option value="times">טיימס</option>
+        </select>
+      </div>
+      <div class="settings-row-subtitle" style="margin-top:7px;">״כמו באוצריא״ לוקח רק את שם הגופן — גודל הטקסט נשאר בשליטתך למטה.</div>
     </div>
   </div>
 
   <div class="set-group">
-    <label class="set-title">צפיפות הכרטיסים</label>
-    <div class="set-opts" id="setDensity">
-      <button class="set-opt" type="button" data-val="compact">צפוף</button>
-      <button class="set-opt" type="button" data-val="normal">רגיל</button>
-      <button class="set-opt" type="button" data-val="roomy">מרווח</button>
+    <div class="set-title">גודל טקסט</div>
+    <div class="settings-row">
+      <div class="set-row">
+        <input type="range" id="setScale" min="85" max="125" step="5" value="100">
+        <span class="set-val" id="setScaleVal">100%</span>
+      </div>
     </div>
   </div>
 
   <div class="set-group">
-    <label class="set-switch">
-      <span>הצגת תמונות בכרטיסי הרשימה</span>
-      <input type="checkbox" id="setCardImg" checked>
-    </label>
+    <div class="set-title">צפיפות הכרטיסים</div>
+    <div class="settings-row">
+      <div class="set-opts" id="setDensity">
+        <button class="set-opt" type="button" data-val="compact">צפוף</button>
+        <button class="set-opt" type="button" data-val="normal">רגיל</button>
+        <button class="set-opt" type="button" data-val="roomy">מרווח</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="set-group">
+    <div class="settings-row toggle-row">
+      <div class="settings-row-title">הצגת תמונות בכרטיסי הרשימה</div>
+      <button type="button" role="switch" aria-checked="true" id="setCardImg" class="switch"></button>
+    </div>
   </div>
 
   <!-- הנקדן המקומי (2.17.2): מנוע ניקוד אופציונלי שרץ על המחשב, אותו פרוטוקול
        כמו ב"שומר השם". כשהוא פועל, הזיהוי מבחין בין מילים דו-משמעיות לפי ניקוד. -->
   <div class="set-group">
-    <label class="set-title">🔤 הנקדן המקומי (אופציונלי)</label>
-    <div id="setNikudStatus" class="nikud-status"></div>
-    <p class="set-note" style="margin:7px 0 0;">
-      הזיהוי משתמש בניקוד כדי להבחין בין מילים שנכתבות אותו הדבר: ״בָּא <b>אֶל</b>
-      משה״ (מילת יחס) מול ״ה<b>אֵל</b> הגדול״ (שם), ו״בני <b>אָשֵׁר</b>״ (שם) מול
-      ״כי <b>אֲשֶׁר</b> יאמר״ (מילת קישור). זה דורש תוסף אוצריא נפרד — ״הנקדן״,
-      באדיבות יוסף שלום בן שטרית — שרץ ברקע ומנקד טקסט עברי מקומית. הוא אינו
-      נדרש לשום דבר; הזיהוי עובד היטב גם בלעדיו.
-      <br><b>הנקדן לא פורסם בחנות התוספים</b> — הפוסט בפורום הוא
-      המקור להורדה, והוא גם מה שכפתור ההעתקה מעתיק.
-    </p>
-    <div class="set-row" id="setNikudLinkRow" style="margin-top:8px;">
-      <button class="panel-btn secondary" type="button" id="setNikudForum">💬 הפוסט בפורום (להורדה)</button>
-      <button class="panel-btn secondary" type="button" id="setNikudCopy">📋 העתקת קישור הפורום</button>
-      <button class="panel-btn secondary" type="button" id="setNikudOpen">🧩 חנות התוספים</button>
+    <div class="set-title">🔤 הנקדן המקומי (אופציונלי)</div>
+    <div class="settings-row">
+      <div id="setNikudStatus" class="nikud-status"></div>
+      <div class="settings-row-subtitle" style="margin-top:7px;">
+        הזיהוי משתמש בניקוד כדי להבחין בין מילים שנכתבות אותו הדבר: ״בָּא <b>אֶל</b>
+        משה״ (מילת יחס) מול ״ה<b>אֵל</b> הגדול״ (שם), ו״בני <b>אָשֵׁר</b>״ (שם) מול
+        ״כי <b>אֲשֶׁר</b> יאמר״ (מילת קישור). זה דורש תוסף אוצריא נפרד — ״הנקדן״,
+        באדיבות יוסף שלום בן שטרית — שרץ ברקע ומנקד טקסט עברי מקומית. הוא אינו
+        נדרש לשום דבר; הזיהוי עובד היטב גם בלעדיו.
+        <br><b>הנקדן לא פורסם בחנות התוספים</b> — הפוסט בפורום הוא
+        המקור להורדה, והוא גם מה שכפתור ההעתקה מעתיק.
+      </div>
+      <div class="set-row" id="setNikudLinkRow" style="margin-top:8px;">
+        <button class="panel-btn secondary" type="button" id="setNikudForum">💬 הפוסט בפורום (להורדה)</button>
+        <button class="panel-btn secondary" type="button" id="setNikudCopy">📋 העתקת קישור הפורום</button>
+        <button class="panel-btn secondary" type="button" id="setNikudOpen">🧩 חנות התוספים</button>
+      </div>
+      <div id="setNikudUrl" class="nikud-url" style="display:none;"></div>
     </div>
-    <!-- באופליין כפתורי הפתיחה מוסתרים; הכתובת מוצגת כאן כטקסט נבחר,
-         למי שה-clipboard חסום אצלו — ר' syncNikudSettings ב-shell/settings.js -->
-    <div id="setNikudUrl" class="nikud-url" style="display:none;"></div>
   </div>
 
   <div class="set-group">
-    <label class="set-title">תצוגה מקדימה</label>
-    <div class="set-preview">
-      <div class="pv-title">אַבְרָהָם אָבִינוּ</div>
-      <div class="pv-sub">אישים בתנ״ך · דור עשרים</div>
-      <div class="pv-ref">בראשית י״ב, א׳</div>
-      <p class="pv-text">וַיֹּאמֶר ה׳ אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.</p>
+    <div class="set-title">תצוגה מקדימה</div>
+    <div class="settings-row">
+      <div class="set-preview">
+        <div class="pv-title">אַבְרָהָם אָבִינוּ</div>
+        <div class="pv-sub">אישים בתנ״ך · דור עשרים</div>
+        <div class="pv-ref">בראשית י״ב, א׳</div>
+        <p class="pv-text">וַיֹּאמֶר ה׳ אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.</p>
+      </div>
     </div>
   </div>
 
@@ -445,43 +452,52 @@
        הימים שבטווח — כלומר אירוע יומי ביומן — וזו הסיבה שהתבקש מתג כיבוי.
        שני המתגים עצמאיים, וכיבוי מריץ מחדש כדי למחוק מהיומן את מה שכבר פורסם. -->
   <div class="set-group">
-    <label class="set-title">פרסום ליומן של אוצריא</label>
-    <label class="set-switch"><span>מאורעות התנ״ך והתלמוד</span><input type="checkbox" id="setPubEvents" checked></label>
-    <label class="set-switch" style="margin-top:8px;"><span>מונה הזמן שעבר מהחורבן</span><input type="checkbox" id="setPubChurban" checked></label>
-
-    <div class="field-label" style="margin-top:12px;">כמה זמן קדימה</div>
-    <div class="dropdown-field" id="setPubAhead">
-      <select aria-label="טווח פרסום קדימה">
-        <option value="30">חודש</option>
-        <option value="90">שלושה חודשים</option>
-        <option value="180">חצי שנה</option>
-        <option value="365">שנה (ברירת מחדל)</option>
-        <option value="730">שנתיים</option>
-      </select>
+    <div class="set-title">פרסום ליומן של אוצריא</div>
+    <div class="settings-row toggle-row">
+      <div class="settings-row-title">מאורעות התנ״ך והתלמוד</div>
+      <button type="button" role="switch" aria-checked="true" id="setPubEvents" class="switch"></button>
     </div>
-    <div class="field-label" style="margin-top:8px;">כמה זמן אחורה</div>
-    <div class="dropdown-field" id="setPubBack">
-      <select aria-label="טווח פרסום אחורה">
-        <option value="0">בלי אחורה</option>
-        <option value="7">שבוע (ברירת מחדל)</option>
-        <option value="30">חודש</option>
-        <option value="90">שלושה חודשים</option>
-        <option value="365">שנה</option>
-      </select>
+    <div class="settings-row toggle-row">
+      <div class="settings-row-title">מונה הזמן שעבר מהחורבן</div>
+      <button type="button" role="switch" aria-checked="true" id="setPubChurban" class="switch"></button>
     </div>
-    <p class="set-note" style="margin:9px 0 0;">כל שינוי כאן מוחל על היומן מיד. כיבוי מסיר ממנו גם את מה שכבר פורסם.</p>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:9px;">
-      <button class="set-action" id="setPubApplyBtn" type="button">↻ החל על היומן כעת</button>
-      <span class="set-note" id="setPubStatus" style="margin:0;"></span>
+    <div class="settings-row">
+      <div class="field-label">כמה זמן קדימה</div>
+      <div class="dropdown-field" id="setPubAhead">
+        <select aria-label="טווח פרסום קדימה">
+          <option value="30">חודש</option>
+          <option value="90">שלושה חודשים</option>
+          <option value="180">חצי שנה</option>
+          <option value="365">שנה (ברירת מחדל)</option>
+          <option value="730">שנתיים</option>
+        </select>
+      </div>
+      <div class="field-label" style="margin-top:8px;">כמה זמן אחורה</div>
+      <div class="dropdown-field" id="setPubBack">
+        <select aria-label="טווח פרסום אחורה">
+          <option value="0">בלי אחורה</option>
+          <option value="7">שבוע (ברירת מחדל)</option>
+          <option value="30">חודש</option>
+          <option value="90">שלושה חודשים</option>
+          <option value="365">שנה</option>
+        </select>
+      </div>
+      <div class="settings-row-subtitle" style="margin-top:9px;">כל שינוי כאן מוחל על היומן מיד. כיבוי מסיר ממנו גם את מה שכבר פורסם.</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:9px;">
+        <button class="set-action" id="setPubApplyBtn" type="button">↻ החל על היומן כעת</button>
+        <span class="set-note" id="setPubStatus" style="margin:0;"></span>
+      </div>
     </div>
   </div>
 
   <!-- קיצור דרך לשולחן העבודה (3.2.3, בהשראת "סידורון"). דסקטופ בלבד —
        הקבוצה מוסתרת לגמרי כשה-API לא זמין, ר' wireShortcutBtn ב-settings.js -->
   <div class="set-group" id="setShortcutGroup" hidden>
-    <label class="set-title">קיצור דרך</label>
-    <p class="set-note" style="margin:0 0 9px;">יצירת קיצור לתוסף על שולחן העבודה, לפתיחה ישירה בלי לעבור דרך אוצריא.</p>
-    <button class="set-action" id="setShortcutBtn" type="button">＋ צור קיצור דרך</button>
+    <div class="set-title">קיצור דרך</div>
+    <div class="settings-row">
+      <div class="settings-row-subtitle" style="margin:0 0 9px;">יצירת קיצור לתוסף על שולחן העבודה, לפתיחה ישירה בלי לעבור דרך אוצריא.</div>
+      <button class="set-action" id="setShortcutBtn" type="button">＋ צור קיצור דרך</button>
+    </div>
   </div>
 
   <button id="settingsReset" type="button">איפוס להגדרות ברירת המחדל</button>

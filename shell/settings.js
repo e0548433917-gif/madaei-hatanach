@@ -144,6 +144,9 @@ function applyPrefs(){
   syncSettingsUI();
 }
 
+const isOn  = el => el && el.getAttribute('aria-checked') === 'true';
+const setOn = (el, v) => el && el.setAttribute('aria-checked', v ? 'true' : 'false');
+
 function syncSettingsUI(){
   const mark = (groupId, val) => {
     const g = document.getElementById(groupId);
@@ -157,9 +160,9 @@ function syncSettingsUI(){
   mark('setFont', uiPrefs.font);
   mark('setDensity', uiPrefs.density);
   const pe = document.getElementById('setPubEvents');
-  if (pe) pe.checked = uiPrefs.pubEvents !== false;
+  if (pe) setOn(pe, uiPrefs.pubEvents !== false);
   const pc = document.getElementById('setPubChurban');
-  if (pc) pc.checked = uiPrefs.pubChurban !== false;
+  if (pc) setOn(pc, uiPrefs.pubChurban !== false);
   const pa = document.querySelector('#setPubAhead select');
   if (pa) pa.value = String(uiPrefs.pubAhead != null ? uiPrefs.pubAhead : 365);
   const pb = document.querySelector('#setPubBack select');
@@ -169,7 +172,7 @@ function syncSettingsUI(){
   if (sc) sc.value = uiPrefs.scale;
   if (scv) scv.textContent = uiPrefs.scale + '%';
   const ci = document.getElementById('setCardImg');
-  if (ci) ci.checked = !!uiPrefs.cardImg;
+  if (ci) setOn(ci, !!uiPrefs.cardImg);
 }
 
 function setPref(key, val){
@@ -273,7 +276,11 @@ function wireSettings(){
   if (sc) sc.addEventListener('input', () => setPref('scale', parseInt(sc.value, 10) || 100));
 
   const ci = document.getElementById('setCardImg');
-  if (ci) ci.addEventListener('change', () => setPref('cardImg', ci.checked));
+  if (ci) ci.addEventListener('click', () => {
+    const next = !isOn(ci);
+    setOn(ci, next);
+    setPref('cardImg', next);
+  });
 
   // 3.2.7 — פרסום ליומן. אחרי כל שינוי חייבים לאפס את חותמת ההרצה היומית
   // ולהריץ מחדש: ה-throttle היומי היה משאיר ביומן את מה שכבר פורסם עד מחר,
@@ -308,9 +315,19 @@ function wireSettings(){
   const applyBtn = document.getElementById('setPubApplyBtn');
   if (applyBtn) applyBtn.addEventListener('click', republishCalendar);
   const peW = document.getElementById('setPubEvents');
-  if (peW) peW.addEventListener('change', () => { setPref('pubEvents', peW.checked); republishCalendar(); });
+  if (peW) peW.addEventListener('click', () => {
+    const next = !isOn(peW);
+    setOn(peW, next);
+    setPref('pubEvents', next);
+    republishCalendar();
+  });
   const pcW = document.getElementById('setPubChurban');
-  if (pcW) pcW.addEventListener('change', () => { setPref('pubChurban', pcW.checked); republishCalendar(); });
+  if (pcW) pcW.addEventListener('click', () => {
+    const next = !isOn(pcW);
+    setOn(pcW, next);
+    setPref('pubChurban', next);
+    republishCalendar();
+  });
   const paW = document.querySelector('#setPubAhead select');
   if (paW) paW.addEventListener('change', () => { setPref('pubAhead', parseInt(paW.value, 10)); republishCalendar(); });
   const pbW = document.querySelector('#setPubBack select');
