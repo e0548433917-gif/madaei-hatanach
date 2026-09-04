@@ -154,7 +154,7 @@ git status --short                       # חייב לצאת ריק משינוי
 על אותם קבצים — וזה כבר קרה בפועל (31/08: שתי סדרות עבודה נפרדות רצו על אותו
 עץ עבודה, אחת מהן על `shell/personal.js` ללא קומיט).
 
-⚠️ **שלוש מלכודות שכבר קרו כאן בפועל:**
+⚠️ **ארבע מלכודות שכבר קרו כאן בפועל:**
 
 1. **הענף המקומי אינו בהכרח `main`.** בקלון הזה העבודה נעשית על ענף `reconcile`
    שה-upstream שלו הוא `origin/main`. `git push` סתם נכשל עם
@@ -166,6 +166,19 @@ git status --short                       # חייב לצאת ריק משינוי
 3. **`git pull --rebase` נכשל כשעץ העבודה מלוכלך** ("cannot pull with rebase:
    You have unstaged changes"). אם הלכלוך אינו שלך — **אל תעשה stash ואל תקמט
    אותו.** זו עבודה של מישהו אחר. עבוד סביבו וקמט רק את הקבצים שלך.
+4. **שני `pack.ps1`/`pack-*-variant.ps1` שרצים במקביל מתנגשים על אותה תיקיית
+   stage זמנית** (`$env:TEMP\madaei-hatanach-stage`) — נתקל בזה בפועל ב-04/09/2026
+   (Issue #97): שיחה אחת עבדה על אריזת 3.6.0 בזמן ששיחה שנייה כבר אחרי, מה
+   שגרם ל-`Remove-Item`/`Copy-Item` ליפול עם "the process cannot access the
+   file… being used by another process" חוזר ונשנה. **לפני שמריצים כל סקריפט
+   אריזה — לבדוק שאין כבר תהליך כזה רץ:**
+   ```powershell
+   Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'pack.*\.ps1' } |
+     Select-Object ProcessId, CreationDate, CommandLine
+   ```
+   תוצאה לא-ריקה = מישהו כבר אורז. **אל תריץ אריזה משלך, אל תמחק את תיקיית
+   ה-stage שלו, ואל תהרוג את התהליך** — חכה שיסיים (`git log`/`git status`
+   מתנקים לבד כשהוא מסיים ודוחף) ורק אז ארוז, אם בכלל עוד צריך.
 
 **אחרי `pack.ps1 -Release`:** הוא דוחף בעצמו. אם מישהו הספיק לדחוף בינתיים,
 השחרור ייעצר באמצע — עם תג שאולי כבר נוצר. לבדוק `git tag --list` לפני ניסיון
