@@ -1,66 +1,66 @@
 {
-    "id":  "com.chadbedera.madaeihatanach",
-    "name":  "עינים למקרא",
-    "version":  "3.5.0",
-    "description":  "מדריך מאוחד לתנ״ך ומשנה/תלמוד: אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, אנשים מהתלמוד ומסכתות — זיהוי אחיד בלחיצה ימנית, תמונות ומפה בלי אינטרנט.",
-    "author":  "חד בדרא",
-    "homepage":  "https://github.com/e0548433917-gif/madaei-hatanach",
-    "schemaVersion":  1,
-    "sdkVersion":  "1.x",
-    "stability":  "stable",
-    "minAppVersion":  "0.9.96",
-    "icon":  "icon/icon.png",
-    "entrypoint":  "index.html",
-    "permissions":  [
-                        "reader.context_menu",
-                        "reader.open",
-                        "published_data.write",
-                        "app.run_on_startup",
-                        "notifications.send",
-                        "ui.feedback",
-                        "app.open_url",
-                        "navigation.write",
-                        "plugin.storage.read",
-                        "plugin.storage.write",
-                        "app.info.read",
-                        "library.books.read",
-                        "library.content.read",
-                        "network.access",
-                        "network.localhost",
-                        "events.subscribe:theme.changed"
-                    ],
-    "network":  {
-                    "enabled":  true,
-                    "allowlist":  [
-                                      "https://raw.githubusercontent.com/e0548433917-gif/madaei-hatanach/main/manifest.json",
-                                      "https://api.github.com/repos/e0548433917-gif/madaei-hatanach/contents/manifest.json",
-                                      "https://github.com/e0548433917-gif/madaei-hatanach/releases",
-                                      "https://script.google.com/macros/s/AKfycbxzlCAZzhaEM68jRqqekW8InrtbSiZrtiiIjgCKOInUvyBG43wLY29MYY6PrbHijpO6/exec",
-                                      "https://script.googleusercontent.com/macros/echo",
-                                      "https://docs.google.com/forms/d/e/1FAIpQLSd7NiGDUahnwpaestosEcDxPJoAkYXzVRUa2yB5EiXkLPSWvQ/formResponse",
-                                      "https://he.wikipedia.org/api/rest_v1/page/summary",
-                                      "http://127.0.0.1:5000",
-                                      "http://127.0.0.1:5001",
-                                      "http://127.0.0.1:5002",
-                                      "http://127.0.0.1:5003",
-                                      "http://127.0.0.1:5004",
-                                      "http://127.0.0.1:5005",
-                                      "http://127.0.0.1:5006",
-                                      "http://127.0.0.1:5007",
-                                      "http://127.0.0.1:5008",
-                                      "http://127.0.0.1:5009",
-                                      "http://127.0.0.1:5010"
-                                  ]
-                },
-    "contributes":  {
-                        "background":  {
-                                           "entrypoint":  "background.html"
-                                       },
-                        "toolTab":  {
-                                        "title":  "עינים למקרא",
-                                        "order":  40,
-                                        "defaultPinned":  true,
-                                        "iconName":  "eye_24_regular"
-                                    }
-                    }
+  "id": "com.chadbedera.madaeihatanach",
+  "name": "עינים למקרא",
+  "version": "3.5.1",
+  "description": "מדריך מאוחד לתנ״ך ומשנה/תלמוד: אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, אנשים מהתלמוד ומסכתות — זיהוי אחיד בלחיצה ימנית, תמונות ומפה בלי אינטרנט.",
+  "author": "חד בדרא",
+  "homepage": "https://github.com/e0548433917-gif/madaei-hatanach",
+  "schemaVersion": 1,
+  "sdkVersion": "1.x",
+  "stability": "stable",
+  "minAppVersion": "0.9.96",
+  "icon": "icon/icon.png",
+  "entrypoint": "index.html",
+  "permissions": [
+    "reader.context_menu",
+    "reader.open",
+    "published_data.write",
+    "app.run_on_startup",
+    "notifications.send",
+    "ui.feedback",
+    "app.open_url",
+    "navigation.write",
+    "plugin.storage.read",
+    "plugin.storage.write",
+    "app.info.read",
+    "library.books.read",
+    "library.content.read",
+    "network.access",
+    "network.localhost",
+    "events.subscribe:theme.changed"
+  ],
+  "network": {
+    "enabled": true,
+    "allowlist": [
+      "https://raw.githubusercontent.com/e0548433917-gif/madaei-hatanach/main/manifest.json",
+      "https://api.github.com/repos/e0548433917-gif/madaei-hatanach/contents/manifest.json",
+      "https://github.com/e0548433917-gif/madaei-hatanach/releases",
+      "https://script.google.com/macros/s/AKfycbxzlCAZzhaEM68jRqqekW8InrtbSiZrtiiIjgCKOInUvyBG43wLY29MYY6PrbHijpO6/exec",
+      "https://script.googleusercontent.com/macros/echo",
+      "https://docs.google.com/forms/d/e/1FAIpQLSd7NiGDUahnwpaestosEcDxPJoAkYXzVRUa2yB5EiXkLPSWvQ/formResponse",
+      "https://he.wikipedia.org/api/rest_v1/page/summary",
+      "http://127.0.0.1:5000",
+      "http://127.0.0.1:5001",
+      "http://127.0.0.1:5002",
+      "http://127.0.0.1:5003",
+      "http://127.0.0.1:5004",
+      "http://127.0.0.1:5005",
+      "http://127.0.0.1:5006",
+      "http://127.0.0.1:5007",
+      "http://127.0.0.1:5008",
+      "http://127.0.0.1:5009",
+      "http://127.0.0.1:5010"
+    ]
+  },
+  "contributes": {
+    "background": {
+      "entrypoint": "background.html"
+    },
+    "toolTab": {
+      "title": "עינים למקרא",
+      "order": 40,
+      "defaultPinned": true,
+      "iconName": "eye_24_regular"
+    }
+  }
 }
