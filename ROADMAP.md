@@ -17,6 +17,90 @@
 
 ---
 
+## 📋 רשימת המשימות — כל התכנון הפתוח
+
+*כל שורה = פנייה ב-GitHub. לחיצה פותחת אותה. הפירוט המלא של כל נושא נמצא בסבבים שלמטה.*
+
+### 🔍 מנוע הזיהוי v2
+* [#38 — 3.1 — מנוע הזיהוי v2: תכנון 8 השכבות + סט בדיקות](https://github.com/e0548433917-gif/madaei-hatanach/issues/38)
+* [#39 — 3.2 — מנוע הזיהוי v2: יישום השכבות + כיול מול סט הבדיקות](https://github.com/e0548433917-gif/madaei-hatanach/issues/39)
+* [#40 — 3.3 — קציר הלקסיקון המנוקד משדות verses](https://github.com/e0548433917-gif/madaei-hatanach/issues/40)
+
+### 🐛 באגים ואימות על מכשיר
+* [#41 — באג: כפתור "יצירת קיצור דרך" בהגדרות אינו עובד בפועל](https://github.com/e0548433917-gif/madaei-hatanach/issues/41)
+* [#42 — אימות על מכשיר אמיתי: לחיצה ימנית, כפתור הסרגל, ו-reader.getCurrentState](https://github.com/e0548433917-gif/madaei-hatanach/issues/42)
+* [#43 — 4.5 — דף HTML מוסף לא נשאר נגיש מעמוד הבית אחרי סגירת אוצריא](https://github.com/e0548433917-gif/madaei-hatanach/issues/43)
+* [#44 — באג: לשונית "ניווט" ישנה שעדיין מופיעה בממשק](https://github.com/e0548433917-gif/madaei-hatanach/issues/44)
+* [#45 — באג: מספר גרסה ישן מוצג בלשונית "מה חדש"](https://github.com/e0548433917-gif/madaei-hatanach/issues/45)
+* [#46 — הדגשה ויזואלית של הטקסט ששונה ב-diff של כרטיס נערך](https://github.com/e0548433917-gif/madaei-hatanach/issues/46)
+
+### 🔌 SDK ותשתית
+* [#47 — 4.15 — network.fetchStream לקריאות הנקדן](https://github.com/e0548433917-gif/madaei-hatanach/issues/47)
+* [#48 — 4.11 — contributes.startup.toolbarItems בחבילה הראשית](https://github.com/e0548433917-gif/madaei-hatanach/issues/48)
+* [#49 — 4.16 — מעבר לחבילה אחת ב-0.9.98](https://github.com/e0548433917-gif/madaei-hatanach/issues/49)
+* [#50 — 4.10 — background.entrypoint: כבר הוחזר (v3.5.0); נשאר אימות על מכשיר + pack-bgtest-variant שבור](https://github.com/e0548433917-gif/madaei-hatanach/issues/50)
+* [#51 — 4.17 — הדגשות בטקסט הספר עצמו (reader.setHighlight)](https://github.com/e0548433917-gif/madaei-hatanach/issues/51)
+* [#52 — 4.18 — plugin.openSelf({param}) + plugin.page_opened במקום פולינג](https://github.com/e0548433917-gif/madaei-hatanach/issues/52)
+* [#53 — 4.13 — שפת ממשק (i18n) — להערכה מחדש, כנראה לא כדאי](https://github.com/e0548433917-gif/madaei-hatanach/issues/53)
+* [#54 — 2.11 — טעינה עצלה של הדאטה (19MB בפתיחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/54)
+* [#55 — 5.3 (שארית) — ולידציה בלי פרסום גם על ענפים ו-PR-ים](https://github.com/e0548433917-gif/madaei-hatanach/issues/55)
+* [#56 — ממסר הדיווחים: doGet חסר בפריסה החיה + לאמת איזה מסלול פעיל](https://github.com/e0548433917-gif/madaei-hatanach/issues/56)
+
+### ✨ פיצ׳רים
+* [#57 — העלאת "עינים למקרא+" (מפות אופליין) לחנות כתוסף נפרד](https://github.com/e0548433917-gif/madaei-hatanach/issues/57)
+* [#59 — 2.6 — עץ משפחה אינטראקטיבי (חסום)](https://github.com/e0548433917-gif/madaei-hatanach/issues/59)
+* [#60 — ו.2 — "ערך היום" להרחבה לש״ס (בבלי וירושלמי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/60)
+* [#61 — ציר זמן כעץ (במקום רשימה) במדריך אישים ואנשי התלמוד](https://github.com/e0548433917-gif/madaei-hatanach/issues/61)
+* [#62 — יצוא כרטסת/עמוד עם בחירה חלקית (לא הכל-או-כלום)](https://github.com/e0548433917-gif/madaei-hatanach/issues/62)
+* [#63 — קישור בין "מה מתוכנן" ל"שליחת הצעה" באזור האישי](https://github.com/e0548433917-gif/madaei-hatanach/issues/63)
+* [#64 — כפתור ℹ️ במפה — לפתוח את מיקום התיקייה לאריחים, לא רק להסביר](https://github.com/e0548433917-gif/madaei-hatanach/issues/64)
+* [#65 — תמיכה ב-PDF כמדריך מלא (לא רק קישור חיצוני לצד קיים)](https://github.com/e0548433917-gif/madaei-hatanach/issues/65)
+* [#66 — שאיבת הגדרות המרת שמות הקדושה מהתוסף "שומר השם"](https://github.com/e0548433917-gif/madaei-hatanach/issues/66)
+* [#90 — מדריכים/קטגוריות בהגדרת משתמש (הרחבה של Issue #24)](https://github.com/e0548433917-gif/madaei-hatanach/issues/90)
+
+### 🎨 עיצוב — נספח ב׳
+* [#58 — עיצוב נספח ב׳ — בורר גופנים מסונן + בורר תצוגת שם ה׳ (לא בוצע)](https://github.com/e0548433917-gif/madaei-hatanach/issues/58)
+
+### 📖 תוכן ודאטה — סבב ת׳
+* [#67 — ת.1ב — מזהה id ייחודי לכל רשומה (חוסם את עץ המשפחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/67)
+* [#68 — ת.1א (שארית) — 45 מראי מקום "דורש עין אנושית"](https://github.com/e0548433917-gif/madaei-hatanach/issues/68)
+* [#69 — ת.2 — מחקר מאורעות התנ״ך לפי תאריך](https://github.com/e0548433917-gif/madaei-hatanach/issues/69)
+* [#70 — ת.3 — העשרה מספרי פליקס (זכויות יוצרים)](https://github.com/e0548433917-gif/madaei-hatanach/issues/70)
+* [#71 — ת.4 — השלמת תמונות ל-163 ערכים (דומם 90% חסר, בית המקדש 73%)](https://github.com/e0548433917-gif/madaei-hatanach/issues/71)
+* [#72 — ת.5.1 — תצלומי אוויר למקומות היסטוריים וארכיאולוגיים](https://github.com/e0548433917-gif/madaei-hatanach/issues/72)
+* [#73 — ת.5.2 — הכרעה: תצלומי לוויין לערים מודרניות (3 חלופות)](https://github.com/e0548433917-gif/madaei-hatanach/issues/73)
+* [#74 — ת.6 — 17 תקופות מפורטות במדריך אישים](https://github.com/e0548433917-gif/madaei-hatanach/issues/74)
+* [#75 — ת.7 — סריקה מחדש של התנ״ך והמפרשים: ערכים חסרים וכפילויות שם](https://github.com/e0548433917-gif/madaei-hatanach/issues/75)
+* [#76 — ת.8 — סינון מקומות לפי שיוך לשבט (יהושע יג–כא)](https://github.com/e0548433917-gif/madaei-hatanach/issues/76)
+* [#77 — ⚠️ כלל מקדים לכל משימת תוכן — סגנון כתיבה ומעבר ביקורת](https://github.com/e0548433917-gif/madaei-hatanach/issues/77)
+* [#78 — פיצול "בהט, שש, דר וסוחרת" לארבעה ערכים נפרדים](https://github.com/e0548433917-gif/madaei-hatanach/issues/78)
+
+### 📚 תלמוד — סבב מ׳
+* [#79 — מ.1 — מפרט ref תלמודי (מסכת + דף + עמוד)](https://github.com/e0548433917-gif/madaei-hatanach/issues/79)
+* [#80 — מ.2 — סריקת 63 מסכתות התלמוד ותיוג מקורות](https://github.com/e0548433917-gif/madaei-hatanach/issues/80)
+* [#81 — מ.3 — מפרט ותבנית למדריך מסכת (משנה · בבלי · ירושלמי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/81)
+* [#95 — מדריך מסכת כלים — הפיילוט לתבנית מדריכי המסכתות](https://github.com/e0548433917-gif/madaei-hatanach/issues/95)
+
+### 📥 תוכן ממתין
+* [#82 — ת.11 — סריקת ספרות מחקר וזיהוי (6 תתי-סעיפים)](https://github.com/e0548433917-gif/madaei-hatanach/issues/82)
+* [#83 — תוכן ממתין: השלמת-ערכים-מורחבת-פי-22.docx — טרם חולץ](https://github.com/e0548433917-gif/madaei-hatanach/issues/83)
+* [#84 — תוכן ממתין: ניקוי 218 הערכים שנכנסו ב-3.2.7 (מיון מחדש + identification אמיתי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/84)
+* [#86 — תוכן ממתין: תיקיית "חומרים להרחבה" — תוכן AI שדורש אימות](https://github.com/e0548433917-gif/madaei-hatanach/issues/86)
+
+### 🏺 ארכיאולוגיה
+* [#87 — ארכיאולוגיה: השלמת המדריך — ערכים חסרים ו-4 תמונות חסומות](https://github.com/e0548433917-gif/madaei-hatanach/issues/87)
+
+### 🔧 מדריכי תלמוד קיימים
+* [#89 — ד.1ד — איחוד ובדיקת עיצוב/הגדרות/זיהוי בשלושת המדריכים המומרים](https://github.com/e0548433917-gif/madaei-hatanach/issues/89)
+
+### ⚙️ CI ושחרור
+* [#92 — CI: להוסיף timeout-minutes ל-publish.yml — ריצות תקועות רצות 6 שעות](https://github.com/e0548433917-gif/madaei-hatanach/issues/92)
+
+### נוספות
+* [#94 — i18n: שכבת שפת ממשק אנגלית (ROADMAP 4.13)](https://github.com/e0548433917-gif/madaei-hatanach/issues/94)
+
+---
+
 ## 🥇 סדר העדיפויות — נקבע 01/09/2026
 
 **זה הסדר הקובע. מי שמתחיל שיחה חדשה מתחיל מכאן, ולא בוחר משימה לפי מה שנוח.**

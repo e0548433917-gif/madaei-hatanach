@@ -38,3 +38,6 @@ guides/*/view.html
 guides/places/css/app.css
 guides/places/js/app.js
 guides/places/README.md
+
+# אריחי מפה — נכנסים רק לווריאנט offlinemaps, לא לחבילה הבסיסית
+guides/places/tiles/
