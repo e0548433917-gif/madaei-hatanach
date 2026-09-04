@@ -388,9 +388,11 @@ const dailyEventBody = document.getElementById('dailyEventBody');
 // (refs.js, "משנה, X Y, Z" / "בבלי, X Y" וכו' - מקורות חז״ל/הלכה חוץ-מקראיים,
 // כמו "משנה, בכורות ט, ה"). "תלמוד בבלי, ..." (בניגוד ל"בבלי, ...") לא נתפס ע"י
 // אף אחד מהשניים בכוונה - ר' הערת הכותב בראש dates.js.
-// כפתור העריכה (✏️) יושב בתוך אותה שורה לחיצה שפותחת בספרייה - stopPropagation
-// ב-wireDateEventLinks מונע פתיחה כפולה. __origKey/__addedIdx (allDateEvents,
-// dates.js) מסומנים כ-data-* כדי שהכפתור ידע איזו רשומה לפתוח לעריכה.
+// כפתורי העריכה (✏️) והדיווח (🚩) יושבים בתוך אותה שורה לחיצה שפותחת בספרייה -
+// stopPropagation ב-wireDateEventLinks מונע פתיחה כפולה. __origKey/__addedIdx
+// (allDateEvents, dates.js) מסומנים כ-data-* כדי שהכפתורים ידעו על איזו רשומה
+// לפעול. 🚩 הוא אותו דפוס בדיוק כמו entryReportBtn שבכותרת כרטיס ערך
+// (entry-detail.js): דיווח ממוקד על נתון שגוי, בלי לפתוח עריכה.
 function dateEventRow(ev, monthLabel){
   const parsed = parseColonVerseRef(ev.source) || parseMidrashRef(ev.source);
   const openAttr = parsed ? ` data-vbook="${esc(parsed.bookId)}" data-vref="${esc(parsed.ref)}"` : '';
@@ -402,6 +404,7 @@ function dateEventRow(ev, monthLabel){
   return `<div class="src-item${parsed ? ' clickable' : ''}"${openAttr}>
     <div class="src-source">${esc(ev.day)}' ${esc(monthLabel)} — ${esc(ev.event)}${badge}
       <button type="button" class="date-ev-edit-btn"${editAttr} title="עריכת מאורע">✏️</button>
+      <button type="button" class="date-ev-report-btn"${editAttr} title="דיווח על מאורע שגוי (בלי לערוך)">🚩</button>
     </div>
     ${ev.source ? `<div class="src-note">${esc(ev.source)}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>` : ''}
   </div>`;
@@ -409,18 +412,46 @@ function dateEventRow(ev, monthLabel){
 function wireDateEventLinks(container){
   container.querySelectorAll('.src-item.clickable[data-vbook]').forEach(el => {
     el.addEventListener('click', (e) => {
-      if (e.target.closest('.date-ev-edit-btn')) return;
+      if (e.target.closest('.date-ev-edit-btn') || e.target.closest('.date-ev-report-btn')) return;
       openInReader(el.dataset.vbook, el.dataset.vref);
     });
   });
+  // איתור הרשומה מתוך ה-data-* שעל הכפתור - אותו חישוב לשני הכפתורים
+  const evOf = (btn) => {
+    const key = btn.dataset.editKey, idx = btn.dataset.editIdx;
+    return (idx !== undefined)
+      ? allDateEvents().find(x => x.__addedIdx === Number(idx))
+      : allDateEvents().find(x => x.__origKey === key);
+  };
   container.querySelectorAll('.date-ev-edit-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const key = btn.dataset.editKey, idx = btn.dataset.editIdx;
-      const ev = (idx !== undefined)
-        ? allDateEvents().find(x => x.__addedIdx === Number(idx))
-        : allDateEvents().find(x => x.__origKey === key);
+      const ev = evOf(btn);
       if (ev) openDateEventForm(ev);
+    });
+  });
+  // 🚩 — דיווח ממוקד על מאורע שגוי, בלי לפתוח עריכה. אותה תבנית שלושת-המקרים
+  // כמו entryReportBtn (entry-detail.js:565), מותאמת למאורע תאריך. פאנל הדיווח
+  // (personal.js) מצורף ל-body אחרי הצומת הסטטי של dailyEventOverlay ושניהם
+  // .panel-overlay באותו z-index, ולכן הוא נפתח *מעליו* - אין צורך לסגור כאן
+  // את פאנל "ערך היום" (בשונה מ-dailyEventReportLink, שפותח מסך אחר לגמרי).
+  container.querySelectorAll('.date-ev-report-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof openReportPanel !== 'function') return;
+      const ev = evOf(btn);
+      if (!ev) return;
+      const when = ev.day + "' " + ev.month;
+      openReportPanel({
+        kind: 'טעות בתוכן',
+        title: 'דיווח על מאורע ב״ערך היום״ — ' + when,
+        details: 'המאורע: ' + when + ' — ' + ev.event
+          + (ev.source ? '\nמקור: ' + ev.source : '') + '\n\n'
+          + 'סמנו מה רלוונטי (מחקו את השאר) ופרטו:\n'
+          + '[ ] התאריך שגוי — התאריך הנכון:\n'
+          + '[ ] המאורע כולו שגוי או אינו שייך לכאן — מדוע:\n'
+          + '[ ] המקור שגוי או לא מדויק — המקור הנכון:\n'
+      });
     });
   });
 }
@@ -429,9 +460,11 @@ function wireDateEventLinks(container){
 // שמשמש את עורך הכרטיסים (edit-forms.js), כדי לא לבנות פאנל נפרד. ev=null → הוספה
 // חדשה; ev.__origKey → עריכת רשומה מובנית (עם שחזור-למקור, בלי מחיקה - הסתרת רשומה
 // מובנית בלי דרך לראות/לבטל את זה היא מלכודת UX); ev.__addedIdx → עריכת/מחיקת
-// תוספת של המשתמש עצמו. השמירה תמיד "במכשיר זה" (localStorage, dates.js) - כאן
-// אין ערוץ "שליחה למפתח" כמו בעורך הכרטיסים, כי מאורע-תאריך אינו "כרטיס" עם מדריך
-// ו-catId שהצינור הזה (sendToDev, personal.js) בנוי סביבם.
+// תוספת של המשתמש עצמו. השמירה היא "במכשיר זה" (localStorage, dates.js), ולצידה
+// - כמו בעורך הכרטיסים - "📨 שליחה למפתח" (sendToDev, personal.js). עד 3.5 לא היה
+// כאן ערוץ שליחה, בטענה שמאורע-תאריך אינו "כרטיס" עם מדריך ו-catId; בפועל sendToDev
+// מקבל נושא וגוף טקסט חופשיים ואינו דורש כרטיס, והתוצאה הייתה שתיקון שמשתמש טרח
+// לכתוב נשאר תקוע במכשיר שלו במקום להגיע לכולם (Issue #93).
 function openDateEventForm(ev){
   const isBuiltin = !!(ev && ev.__origKey != null);
   const isCustom = !!(ev && ev.__custom);
@@ -456,6 +489,7 @@ function openDateEventForm(ev){
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
       <button class="nf-btn" id="dateEvSave">💾 שמירה במכשיר</button>
+      <button class="nf-btn" id="dateEvSend">📨 שליחה למפתח</button>
       <button class="nf-btn secondary" id="dateEvCancel">ביטול</button>
       ${isCustom ? '<button class="nf-btn secondary danger-link" id="dateEvDelete">🗑 מחיקה</button>' : ''}
       ${isBuiltin && ev.__edited ? '<button class="nf-btn secondary" id="dateEvRestore">↺ שחזור למקור</button>' : ''}
@@ -475,19 +509,80 @@ function openDateEventForm(ev){
 
   document.getElementById('dateEvCancel').addEventListener('click', () => entryOverlay.classList.remove('open'));
 
-  document.getElementById('dateEvSave').addEventListener('click', () => {
+  // איסוף השדות + ולידציה, משותף לשמירה ולשליחה. מחזיר null אם חסר שדה חובה.
+  function collectDateEv(){
     const day = document.getElementById('dateEvDay').value.trim();
     const month = document.getElementById('dateEvMonth').value;
     const event = document.getElementById('dateEvText').value.trim();
     const source = document.getElementById('dateEvSource').value.trim();
-    if (!day || !event){ window.alert('יש למלא יום ותיאור מאורע.'); return; }
-    const newEv = { day, month, event, source };
-    const ok = isBuiltin ? saveDateEventEdit(ev.__origKey, newEv)
+    if (!day || !event){ window.alert('יש למלא יום ותיאור מאורע.'); return null; }
+    return { day, month, event, source };
+  }
+  // שמירה במכשיר - אותה פעולה לשני הכפתורים, כדי שמה שנשלח לא ייעלם מהמסך
+  function persistDateEv(newEv){
+    return isBuiltin ? saveDateEventEdit(ev.__origKey, newEv)
       : isCustom ? saveCustomDateEvent(ev.__addedIdx, newEv)
       : addCustomDateEvent(newEv);
+  }
+
+  document.getElementById('dateEvSave').addEventListener('click', () => {
+    const newEv = collectDateEv();
+    if (!newEv) return;
+    const ok = persistDateEv(newEv);
     entryOverlay.classList.remove('open');
     if (!ok) window.alert('השמירה נכשלה (ייתכן שאחסון הדפדפן מלא).');
     renderDailyEventBody();
+  });
+
+  // 📨 שליחה למפתח - אותו צינור בדיוק כמו genEditSend בעורך הכרטיסים
+  // (edit-forms.js:241): diff "לפני ← אחרי", הגנת כפילות על חתימת ה-diff דרך
+  // editDiffHash/getEntryEditSent/markEntryEditSent (data.js) תחת מזהה מדריך
+  // מדומה 'dates', ושליחה שקטה בממסר הדיווחים. השליחה שומרת גם במכשיר, כדי
+  // שהמשתמש לא יישאר בלי מה שכתב עד שהתיקון ייכנס לכולם.
+  document.getElementById('dateEvSend').addEventListener('click', async () => {
+    const newEv = collectDateEv();
+    if (!newEv) return;
+    const when = newEv.day + "' " + newEv.month;
+    const label = ev ? 'הצעת תיקון למאורע' : 'הצעת מאורע חדש';
+    const lines = [];
+    if (ev){
+      if (ev.day !== newEv.day || ev.month !== newEv.month) lines.push('תאריך: ' + ev.day + "' " + ev.month + ' ← ' + when);
+      if (ev.event !== newEv.event) lines.push('המאורע: ' + ev.event + ' ← ' + newEv.event);
+      if ((ev.source || '') !== newEv.source) lines.push('מקור: ' + (ev.source || '—') + ' ← ' + (newEv.source || '—'));
+    } else {
+      lines.push('תאריך: ' + when);
+      lines.push('המאורע: ' + newEv.event);
+      lines.push('מקור: ' + (newEv.source || '—'));
+    }
+    const diff = lines.join('\n') || '(לא זוהה שינוי)';
+    // מזהה הרשומה לצורך "כבר נשלח": המפתח המובנה, אינדקס התוספת, או תוכן המאורע החדש
+    const sentKey = isBuiltin ? ev.__origKey
+      : isCustom ? 'added|' + ev.__addedIdx
+      : 'new|' + when + '|' + newEv.event;
+    const diffHash = editDiffHash(diff);
+    const alreadySent = getEntryEditSent('dates', sentKey);
+    if (alreadySent && alreadySent.hash === diffHash){
+      window.alert('ההצעה הזו כבר נשלחה' + (alreadySent.at ? ' (' + new Date(alreadySent.at).toLocaleDateString('he-IL') + ')' : '')
+        + '. אם שיניתם משהו נוסף — ערכו ושלחו שוב.');
+      return;
+    }
+    persistDateEv(newEv);
+    entryOverlay.classList.remove('open');
+    renderDailyEventBody();
+    const sentOk = await sendToDev(
+      label + ' — ' + when,
+      ['## ' + label + ': **' + when + '**',
+       '',
+       '* **מקור הרשומה:** ' + (isBuiltin ? 'רשומה מובנית בתוסף' : isCustom ? 'תוספת של המשתמש' : 'מאורע חדש'),
+       '',
+       '### מה השתנה',
+       '',
+       diff].join('\n'),
+      label
+    );
+    // רק שליחה שבאמת יצאה מסומנת. "נכנס לתור" מחזיר false, ולכן הצעה שנשמרה
+    // לשליחה מאוחרת עדיין ניתנת לשליחה חוזרת ולא נחסמת בטעות.
+    if (sentOk) markEntryEditSent('dates', sentKey, diffHash);
   });
 
   if (isCustom) document.getElementById('dateEvDelete').addEventListener('click', () => {
@@ -514,7 +609,10 @@ function renderDailyEventBody(){
   }
   html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;">
     <div class="field-label" style="margin:0;">כל מאורעות התנ״ך והתלמוד לפי חודש</div>
-    <button type="button" class="nf-btn secondary" id="dateEventAddBtn" style="padding:4px 10px;font-size:13px;">＋ הוספת מאורע</button>
+    <div style="display:flex;gap:6px;">
+      <button type="button" class="nf-btn secondary" id="dateEventAddBtn" style="padding:4px 10px;font-size:13px;">＋ הוספת מאורע</button>
+      <button type="button" class="nf-btn secondary" id="dateEventPrintAllBtn" style="padding:4px 10px;font-size:13px;" title="הדפסת כל המאורעות לפי חודש">🖨️</button>
+    </div>
   </div>`;
   const all = allDateEvents();
   HEBREW_MONTHS_ORDER.forEach(month => {
@@ -545,6 +643,8 @@ function renderDailyEventBody(){
   wireDateEventLinks(dailyEventBody);
   const addBtn = dailyEventBody.querySelector('#dateEventAddBtn');
   if (addBtn) addBtn.addEventListener('click', () => openDateEventForm(null));
+  const printAllBtn = dailyEventBody.querySelector('#dateEventPrintAllBtn');
+  if (printAllBtn) printAllBtn.addEventListener('click', printAllDateEvents);
   // "שלחו לנו דיווח" — לשונית הדיווחים באזור האישי, אותו דפוס כמו הבאנר
   // ב-talmud.js. הפאנל נסגר קודם, אחרת הוא נשאר פתוח מעל האזור האישי.
   const reportLink = dailyEventBody.querySelector('#dailyEventReportLink');
@@ -593,6 +693,8 @@ if (dailyEventCard) dailyEventCard.addEventListener('click', () => {
   updateTempleTimer();
   if (!templeTimerInterval) templeTimerInterval = setInterval(updateTempleTimer, 1000);
 });
+const dailyEventPrintBtn = document.getElementById('dailyEventPrintBtn');
+if (dailyEventPrintBtn) dailyEventPrintBtn.addEventListener('click', printDailyToday);
 document.getElementById('dailyEventClose').addEventListener('click', () => {
   dailyEventOverlay.classList.remove('open');
   if (templeTimerInterval){ clearInterval(templeTimerInterval); templeTimerInterval = null; }

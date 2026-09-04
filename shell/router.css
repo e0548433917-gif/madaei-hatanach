@@ -980,11 +980,11 @@ html, body {
 /* כפתור עריכת מאורע ב"ערך היום" (home.js, dateEventRow) - צף בתוך שורת .src-source
    שעלולה להיות לחיצה כשלעצמה (פתיחה בספרייה); float במקום flex כדי לא לשבור את
    הרוחב המלא הקיים של .src-source בשאר השימושים (entry-detail.js וכו'). */
-.date-ev-edit-btn {
+.date-ev-edit-btn, .date-ev-report-btn {
   float: left; border: none; background: none; cursor: pointer;
   font-size: .85em; padding: 0 2px; line-height: 1; opacity: .6;
 }
-.date-ev-edit-btn:hover { opacity: 1; }
+.date-ev-edit-btn:hover, .date-ev-report-btn:hover { opacity: 1; }
 /* יושב בתוך .verse-ref שכבר מוקטן - גודל מוחלט כדי שלא יצטבר */
 #entryModalInner .open-hint, .result-row-detail .open-hint { font-size: calc(.78 * var(--fs)); color: var(--color-primary); font-weight: 400; }
 #entryModalInner .verse-text, .result-row-detail .verse-text { font-size: 1em; line-height: 1.85; }

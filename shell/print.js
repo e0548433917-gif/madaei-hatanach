@@ -163,11 +163,82 @@ async function printBookmarks(){
   printItems('הסימניות שלי', items);
 }
 
+// "ערך היום" (Issue #93). מאורע תאריך אינו entry ואין לו renderEntryDetailHTML,
+// ולכן לא עובר ב-printItems/printableEntryEl - אבל כן משתמש באותה תשתית עמוד
+// (printRoot, print-head, runPrintSheet) כדי שההדפסה תיראה זהה ותנקה אחריה.
+function buildDateEventsSheet(sourceLabel, events){
+  printRoot.innerHTML = '';
+  const head = document.createElement('header');
+  head.className = 'print-head';
+  head.innerHTML = '<div class="print-brand">עינים למקרא</div>'
+    + '<div class="print-meta">' + esc(sourceLabel) + ' · ' + esc(printDateStr())
+    + ' · ' + events.length + ' מאורעות</div>';
+  printRoot.appendChild(head);
+  const box = document.createElement('article');
+  box.className = 'print-entry';
+  box.innerHTML = events.map(ev =>
+    '<div class="src-item"><div class="src-source">' + esc(ev.day) + "' " + esc(ev.month)
+    + ' — ' + esc(ev.event) + '</div>'
+    + (ev.source ? '<div class="src-note">' + esc(ev.source) + '</div>' : '')
+    + '</div>').join('');
+  printRoot.appendChild(box);
+}
+function printDateEvents(sourceLabel, events){
+  if (!events.length){ window.alert('אין מאורעות להדפסה.'); return; }
+  buildDateEventsSheet(sourceLabel, events);
+  runPrintSheet();
+}
+// מאורעות היום בלבד - הכפתור 🖨️ שבכותרת פאנל "ערך היום"
+function todayEventsLabel(){
+  const t = todayHebrew();
+  return 'ערך היום — ' + t.dayLetters + "' " + t.monthName + ' ' + hebYearStr(t.raw.year) + ' (' + gregDateStr() + ')';
+}
+// ברוב ימות השנה אין מאורע רשום להיום, ואז "אין מה להדפיס" היה כפתור מת. במקום
+// הודעת שגיאה - מציעים את הרשימה המלאה, שהיא ממילא מה שהמשתמש רואה מתחת.
+function printDailyToday(){
+  const evs = eventsForToday();
+  if (!evs.length){
+    if (window.confirm('אין מאורע רשום לתאריך של היום.\n\nלהדפיס במקום זאת את כל המאורעות לפי תאריך?')) printAllDateEvents();
+    return;
+  }
+  printDateEvents(todayEventsLabel(), evs);
+}
+// כל הרשימה, ממוינת לפי חודש ואז לפי יום - אותו סדר שמוצג במסך (renderDailyEventBody)
+function orderedDateEvents(){
+  const all = allDateEvents();
+  const dayOrder = (d) => {
+    const parts = String(d || '').split('-').map(gematriaValue).filter(n => n > 0);
+    return parts.length ? Math.min.apply(null, parts) : 999;
+  };
+  const ordered = [];
+  HEBREW_MONTHS_ORDER.forEach(month => {
+    all.filter(e => e.month === month).slice()
+       .sort((x, y) => dayOrder(x.day) - dayOrder(y.day))
+       .forEach(e => ordered.push(e));
+  });
+  return ordered;
+}
+function printAllDateEvents(){
+  const ordered = orderedDateEvents();
+  if (ordered.length > PRINT_CONFIRM_OVER &&
+      !window.confirm('הדפסת ' + ordered.length + ' מאורעות תפיק דף הדפסה ארוך.\n\nלהמשיך?')) return;
+  printDateEvents('כל מאורעות התנ״ך והתלמוד לפי תאריך', ordered);
+}
+
 // ---- Ctrl+P ידני ----
 // בלי זה, לחיצה על Ctrl+P בלי אחד הכפתורים הייתה מדפיסה עמוד ריק (כל הממשק מוסתר
 // ב-@media print ו-#printRoot עדיין ריק). לכן ממלאים לפי מה שפתוח כרגע על המסך.
 window.addEventListener('beforeprint', () => {
   if (printRoot.children.length) return;
+  // "ערך היום" קודם לכל השאר: הפאנל שלו נפתח *מעל* המדריך/התוצאות, ולכן כשהוא
+  // פתוח הוא מה שהמשתמש רואה ומה שהוא מתכוון להדפיס ב-Ctrl+P.
+  if (dailyEventOverlay && dailyEventOverlay.classList.contains('open')){
+    const evs = eventsForToday();
+    if (evs.length){ buildDateEventsSheet(todayEventsLabel(), evs); return; }
+    // אין מאורע להיום - Ctrl+P יפיק את הרשימה המלאה, לא עמוד ריק
+    const all = orderedDateEvents();
+    if (all.length){ buildDateEventsSheet('כל מאורעות התנ״ך והתלמוד לפי תאריך', all); return; }
+  }
   if (entryOverlay.classList.contains('open') && printCtxEntry){
     buildPrintSheet('כרטיס ערך', [{ entry: printCtxEntry, catId: catIdOfEntry(printCtxEntry) }]);
     return;
