@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>קורא PDF — עינים למקרא</title>
+<style>
+  :root{
+    --color-primary:#6750A4; --color-on-primary:#FFFFFF;
+    --color-secondary:#625B71; --color-on-secondary:#FFFFFF;
+    --color-surface:#FFFBFE; --color-on-surface:#1C1B1F;
+    --color-surface-container:#F3EDF7;
+    --color-surface-container-high:#ECE6F0;
+    --color-surface-container-highest:#E6E0E9;
+    --color-error:#B3261E; --color-on-error:#FFFFFF;
+    --color-outline:#79747E; --color-outline-variant:#CAC4D0;
+    --color-primary-subtle:rgba(103,80,164,0.12);
+    --color-secondary-subtle:rgba(98,91,113,0.12);
+    --color-shadow-sm:rgba(0,0,0,.15); --color-shadow-md:rgba(0,0,0,.18); --color-shadow-lg:rgba(0,0,0,.2);
+    --color-scrim:rgba(0,0,0,.55);
+    --color-canvas-bg:#fff;
+    --color-capture-bg:#000;
+    --font-main:'Frank Ruhl Libre','David',sans-serif;
+    --font-size-base:13px; --line-height:1.5;
+    --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;width:100%;font-family:var(--font-main);
+    font-size:var(--font-size-base);line-height:var(--line-height);
+    background:var(--color-surface);color:var(--color-on-surface);}
+  #app{display:flex;flex-direction:column;height:100vh;width:100vw;overflow:hidden;}
+
+  /* פס כותרת + סרגל כלים ממוזגים לרצועה אחת - לפי בקשת המשתמש, לחסוך את שורת
+     הכותרת הנפרדת שהייתה מעל סרגל הכלים. אין עוד height קבוע: ברוחב צר זה
+     נשבר לכמה שורות בתוך אותה רצועה אחת, במקום שתי רצועות נפרדות. */
+  .topbar{display:flex;align-items:center;gap:6px;padding:8px 10px;
+    background:var(--color-surface-container-high);flex-shrink:0;flex-wrap:wrap;}
+  .topbar h1{margin:0;font-size:calc(var(--font-size-base) + 3px);font-weight:600;
+    color:var(--color-on-surface);white-space:nowrap;}
+  .topbar .topbar-actions{margin-inline-start:auto;display:flex;gap:6px;}
+
+  #toolbar .filename{font-weight:600;max-width:220px;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;font-size:0.85em;}
+  #page-info{font-size:0.85em;white-space:nowrap;padding:0 4px;}
+
+  button{font-family:var(--font-main);font-size:0.8em;border:1px solid var(--color-outline);
+    background:var(--color-secondary-subtle);color:var(--color-on-surface);
+    padding:7px 11px;border-radius:var(--radius-pill);cursor:pointer;white-space:nowrap;
+    transition:opacity .15s;}
+  button:hover{opacity:0.85;}
+  button:disabled{opacity:0.4;cursor:default;}
+  button.primary{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary);}
+  button.secondary{background:var(--color-surface-container-high);color:var(--color-on-surface);}
+  button.compact{padding:5px 12px;font-size:0.78em;}
+  button.icon-only{padding:7px 9px;border-radius:var(--radius-sm);}
+
+  #body{flex:1;display:flex;overflow:hidden;position:relative;}
+  #viewer-area{flex:1;overflow:auto;display:flex;justify-content:center;
+    background:var(--color-surface-container-highest);padding:16px;}
+  #pdf-canvas{background:var(--color-canvas-bg);box-shadow:0 2px 10px var(--color-shadow-md);max-width:100%;height:fit-content;}
+
+  #dropzone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:12px;text-align:center;padding:24px;
+    border:2px dashed var(--color-outline);margin:14px;border-radius:var(--radius-lg);
+    color:var(--color-secondary);}
+  #dropzone.dragover{background:var(--color-primary-subtle);border-color:var(--color-primary);}
+  #dropzone .icon{font-size:calc(var(--font-size-base) * 3);}
+  #dropzone .hint{font-size:0.8em;opacity:.75;}
+
+  #textpanel{width:0;overflow:hidden;background:var(--color-surface);
+    border-inline-start:1px solid var(--color-outline);transition:width .18s ease;
+    flex-shrink:0;display:flex;flex-direction:column;}
+  #textpanel.open{width:320px;}
+  #textpanel .panel-header{padding:10px 12px;font-weight:700;font-size:0.85em;
+    border-bottom:1px solid var(--color-outline);display:flex;align-items:center;gap:8px;}
+  #textpanel .panel-header .spacer{flex:1;}
+  #text-output{flex:1;overflow-y:auto;padding:12px;font-size:0.85em;white-space:pre-wrap;
+    user-select:text;direction:rtl;}
+  #text-empty{padding:14px;font-size:0.8em;color:var(--color-secondary);text-align:center;}
+
+  #about-panel{position:fixed;top:0;left:-320px;width:300px;height:100%;background:var(--color-surface);
+    border-inline-end:1px solid var(--color-outline);box-shadow:2px 0 12px var(--color-shadow-sm);
+    transition:left .2s ease;z-index:19;padding:20px;overflow-y:auto;font-size:0.85em;}
+  #about-panel.open{left:0;}
+  #about-panel h3{margin-top:0;}
+  .whats-new-box{background:var(--color-primary-subtle);border:1px solid var(--color-primary);
+    border-radius:var(--radius-md);padding:10px 12px;margin-bottom:16px;}
+  .whats-new-box h4{margin:0 0 6px;font-size:0.95em;color:var(--color-primary);}
+  .whats-new-box ul{margin:4px 0;padding-inline-start:18px;font-size:0.92em;}
+  .whats-new-box .changelog-version{font-weight:700;font-size:0.85em;margin-top:8px;display:block;}
+  .whats-new-box .changelog-version:first-of-type{margin-top:0;}
+  .about-section{background:var(--color-surface-container);border-radius:var(--radius-md);
+    padding:12px;margin:14px 0;}
+  .about-section h4{margin:0 0 8px;font-size:0.9em;}
+  #feedback-text{width:100%;font-family:var(--font-main);font-size:0.85em;border:1px solid var(--color-outline-variant);
+    border-radius:var(--radius-sm);padding:8px;resize:vertical;background:var(--color-surface);
+    color:var(--color-on-surface);margin-bottom:8px;}
+  #feedback-status{font-size:0.8em;opacity:.8;margin-top:6px;}
+  #diag-box{font-size:0.85em;background:var(--color-surface-container-highest);
+    border:1px solid var(--color-outline);border-radius:var(--radius-sm);padding:10px;
+    white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;}
+  .setup-box{font-size:0.8em;background:var(--color-surface-container-highest);
+    border:1px solid var(--color-outline);border-radius:var(--radius-sm);padding:10px;
+    word-break:break-all;margin:6px 0;}
+  .setup-box code{user-select:all;}
+
+  .popover-anchor{position:relative;display:inline-block;}
+  #recent-popover{position:absolute;top:calc(100% + 6px);right:0;width:280px;
+    background:var(--color-surface-container-highest);border-radius:var(--radius-md);
+    box-shadow:0 4px 20px var(--color-shadow-sm);border:1px solid var(--color-outline);
+    padding:10px;z-index:200;opacity:0;transform:translateY(-6px) scale(.97);
+    pointer-events:none;transition:opacity .15s,transform .15s;max-height:320px;overflow-y:auto;}
+  #recent-popover.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  #recent-popover .rec-header{display:flex;align-items:center;font-size:0.8em;font-weight:700;margin-bottom:6px;}
+  #recent-popover .rec-header .spacer{flex:1;}
+  #recent-popover .rec-header button{padding:3px 8px;font-size:0.85em;}
+  #recent-list{list-style:none;margin:0;padding:0;}
+  #recent-list li{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius-sm);
+    cursor:pointer;background:var(--color-surface);border:1px solid var(--color-outline);margin-bottom:4px;}
+  #recent-list li:hover{background:var(--color-secondary-subtle);}
+  #recent-list li .rec-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.8em;}
+  #recent-list li button{padding:2px 6px;font-size:0.75em;}
+  #recent-empty{font-size:0.8em;color:var(--color-secondary);text-align:center;padding:10px;}
+
+  #status{position:fixed;bottom:14px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--color-on-surface);color:var(--color-surface);padding:8px 16px;
+    border-radius:var(--radius-md);font-size:0.8em;opacity:0;
+    transition:opacity .2s ease,transform .2s ease;pointer-events:none;z-index:30;}
+  #status.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  #ocr-progress{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+    background:var(--color-primary);color:var(--color-on-primary);padding:8px 16px;
+    border-radius:var(--radius-md);font-size:0.8em;z-index:31;display:none;}
+
+  #custom-ctx-menu{position:fixed;z-index:100;background:var(--color-surface);
+    border:1px solid var(--color-outline);border-radius:var(--radius-sm);
+    box-shadow:0 4px 16px var(--color-shadow-lg);padding:4px;display:none;min-width:150px;}
+  #custom-ctx-menu button{display:block;width:100%;text-align:right;border:none;background:none;
+    padding:8px 10px;border-radius:var(--radius-sm);font-size:0.85em;}
+  #custom-ctx-menu button:hover{background:var(--color-secondary-subtle);}
+
+  input[type="file"]{display:none;}
+  #capture-overlay{position:fixed;inset:0;background:var(--color-capture-bg);z-index:100;display:none;
+    align-items:center;justify-content:center;cursor:crosshair;user-select:none;}
+  #capture-overlay.open{display:flex;}
+  #capture-img-wrap{position:relative;max-width:100vw;max-height:100vh;line-height:0;}
+  #capture-img{display:block;max-width:100vw;max-height:100vh;pointer-events:none;}
+  #capture-sel{position:absolute;border:2px solid var(--color-primary);
+    background:var(--color-primary-subtle);display:none;box-shadow:0 0 0 4000px var(--color-scrim);}
+  #capture-hint{position:fixed;top:16px;left:50%;transform:translateX(-50%);
+    background:var(--color-surface-container-high);color:var(--color-on-surface);
+    padding:8px 16px;border-radius:var(--radius-pill);font-size:0.85em;z-index:101;white-space:nowrap;}
+  #capture-actions{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    display:none;gap:10px;z-index:101;}
+  #capture-actions.show{display:flex;}
+
+  /* חלק מסרגל הכלים עצמו (לא רצועה נפרדת) - מופיע/נעלם עם class show, בלי
+     לתפוס שורה/מקום נוסף מעבר לסרגל הקיים. */
+  #capture-armed-banner{display:none;align-items:center;gap:6px;background:var(--color-primary);
+    color:var(--color-on-primary);padding:4px 4px 4px 10px;border-radius:var(--radius-pill);
+    font-size:0.78em;white-space:nowrap;}
+  #capture-armed-banner.show{display:flex;}
+  #capture-armed-banner button{padding:5px 9px;font-size:0.9em;}
+  #capture-armed-banner button.primary{background:var(--color-on-primary);color:var(--color-primary);border-color:var(--color-on-primary);}
+  /* עינים למקרא: פקדים שאינם רלוונטיים בגרסה המוטמעת (OCR, צילום מסך,
+     ואודות של התוסף המקורי). הלוגיקה נשארת במקומה — רק מוסתרת. */
+  #btn-capture-select, #btn-paste-extract, #btn-ocr, #btn-save-embedded,
+  #capture-armed-banner, #capture-overlay, #about-toggle, #about-panel { display:none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar" id="toolbar">
+    <h1>קורא PDF</h1>
+    <button class="primary" id="btn-open">📂 פתיחת קובץ</button>
+    <button id="btn-capture-select" class="icon-only" title="צלם ובחר כאן — פותח שיתוף מסך; אפשר לעבור בינתיים לעמוד אחר באוצריא ואז לחזור וללחוץ 'צלם עכשיו'">🖥️</button>
+    <button id="btn-paste-extract" class="icon-only" title="הדבק גזרת מסך וחלץ — גזרו קודם עם כלי הגזירה של המערכת (למשל Win+Shift+S), ואז לחצו כאן - הגזרה תיטען ותיחלץ ממנה טקסט אוטומטית">✂️</button>
+    <span class="popover-anchor">
+      <button id="btn-recent" title="קבצים אחרונים">🕘 אחרונים</button>
+      <div id="recent-popover">
+        <div class="rec-header"><span>קבצים אחרונים</span><div class="spacer"></div><button id="btn-recent-clear">נקה</button></div>
+        <ul id="recent-list"></ul>
+        <div id="recent-empty">אין עדיין קבצים אחרונים</div>
+      </div>
+    </span>
+    <span class="filename" id="current-name">לא נבחר קובץ</span>
+    <button id="btn-prev" class="icon-only" disabled>▶</button>
+    <span id="page-info">-</span>
+    <button id="btn-next" class="icon-only" disabled>◀</button>
+    <button id="btn-zoom-out" class="icon-only" disabled>🔍-</button>
+    <button id="btn-zoom-in" class="icon-only" disabled>🔍+</button>
+    <button id="btn-embedded-text" class="icon-only" disabled title="טקסט מוטבע">📝</button>
+    <button id="btn-ocr" class="icon-only" disabled title="OCR לעמוד">🔎</button>
+    <button id="btn-save-embedded" class="icon-only" disabled title="שמירה עם טקסט מוטבע — בתכנון: שמירת PDF עם הטקסט שזוהה ב-OCR מוטבע בו כשכבת טקסט נסתרת (PDF ניתן לחיפוש)">💾</button>
+    <div id="capture-armed-banner" title="עברו עכשיו לעמוד הרצוי באוצריא - הצילום יתבצע אוטומטית">
+      <span>📡 בעוד <span id="capture-countdown">5</span> ש'</span>
+      <button id="btn-capture-extend" class="secondary icon-only" title="עוד 5 שניות">+5</button>
+      <button id="btn-capture-now" class="primary icon-only" title="צלם מיד">📸</button>
+      <button id="btn-capture-arm-cancel" class="secondary icon-only" title="ביטול">✕</button>
+    </div>
+    <div class="topbar-actions">
+      <button id="about-toggle" class="secondary compact">💡 אודות</button>
+    </div>
+  </header>
+
+  <div id="body">
+    <div id="viewer-area">
+      <canvas id="pdf-canvas" style="display:none;"></canvas>
+      <iframe id="html-frame" sandbox="" style="display:none;width:100%;height:100%;border:none;background:var(--color-canvas-bg);"></iframe>
+      <div id="dropzone">
+        <div class="icon">📄</div>
+        <div><strong>גרור לכאן קובץ</strong> או לחץ על "פתיחת קובץ" למעלה</div>
+        <div class="hint">אפשר לפתוח PDF, תמונה או קובץ טקסט ישירות, בלי להוסיף אותו לספרייה</div>
+      </div>
+    </div>
+    <div id="textpanel">
+      <div class="panel-header">
+        <span id="text-panel-title">טקסט</span>
+        <div class="spacer"></div>
+        <button id="btn-copy-text">העתקה</button>
+        <button id="btn-close-panel" class="icon-only">✕</button>
+      </div>
+      <div id="text-output"></div>
+      <div id="text-empty">אין עדיין טקסט להצגה</div>
+    </div>
+  </div>
+
+  <div id="about-panel">
+    <div class="whats-new-box">
+      <h4>🆕 מה חדש</h4>
+      <span class="changelog-version">v2.6.3</span>
+      <ul>
+        <li>פס הכותרת וסרגל הכלים מוזגו לרצועה אחת - חוסך שורת כותרת נפרדת ומפנה עוד מקום למסך.</li>
+      </ul>
+      <span class="changelog-version">v2.6.2</span>
+      <ul>
+        <li>פקדי הצילום עברו לרווח הפנוי שבסרגל העליון (ליד הכותרת), בלי להסתיר או להזיז שום כפתור בסרגל הכלים.</li>
+      </ul>
+      <span class="changelog-version">v2.6.0</span>
+      <ul>
+        <li>פקדי "צלם ובחר כאן" עברו לתוך סרגל הכלים העליון - כבר לא תופסים שורה נוספת על המסך.</li>
+      </ul>
+      <span class="changelog-version">v2.5.7</span>
+      <ul>
+        <li>תוקן: "צלם עכשיו" תפס את התוסף עצמו במקום את העמוד היעד (כי חזרה לתוסף כדי ללחוץ שינתה את מה שמוצג). עכשיו הצילום קורה אוטומטית אחרי ספירה לאחור, בלי צורך לחזור לתוסף.</li>
+      </ul>
+      <span class="changelog-version">v2.5.6</span>
+      <ul>
+        <li>🖥️ "צלם ובחר כאן" כבר לא צולם מיד - השיתוף נשאר פעיל כדי לאפשר לעבור לעמוד אחר באוצריא ואז לחזור וללחוץ "📸 צלם עכשיו" (ניסיוני - אם לא עובד אצלכם, "✂️ הדבק גזרת מסך וחלץ" הוא החלופה הבטוחה).</li>
+      </ul>
+      <span class="changelog-version">v2.5.5</span>
+      <ul>
+        <li>תוקן באג בכלי "🖥️ צלם ובחר כאן": מלבן הבחירה המשיך לזוז עם העכבר גם אחרי שחרור הכפתור, מה שמנע לחיצה נוחה על "חלץ" עם עכבר (עבד רק במגע). עכשיו הבחירה ננעלת במקומה מיד עם שחרור העכבר.</li>
+      </ul>
+      <span class="changelog-version">v2.5.4</span>
+      <ul>
+        <li>סרגל הכלים צומצם: כפתורים משניים (הדבק גזרת מסך, צלם ובחר כאן, טקסט מוטבע, OCR לעמוד, שמירה עם טקסט מוטבע) הפכו לאיקונים בלבד עם תיאור מלא ב-tooltip - כדי שהסרגל לא ישבור לכמה שורות בפאנל צר.</li>
+        <li>עבר לגרסה יציבה.</li>
+      </ul>
+      <span class="changelog-version">v2.5.3</span>
+      <ul>
+        <li>ניקוי עיצוב: הוסרו צבעים מקודדים בקוד ה-CSS לטובת עקיבה מלאה אחרי ערכת הנושא של אוצריא (כולל תיקון הדגשת הבחירה בכלי צילום המסך שהייתה נשארת בצבע קבוע).</li>
+        <li>נוקו מה-manifest הרשאות שממילא ניתנות אוטומטית לכל תוסף - ללא שינוי בפועל.</li>
+      </ul>
+      <span class="changelog-version">v2.5.2</span>
+      <ul>
+        <li>התוסף עבר לניהול גרסאות במאגר גיט ציבורי עם פרסום אוטומטי לחנות - שינוי תשתיתי, ללא השפעה על השימוש.</li>
+      </ul>
+      <span class="changelog-version">v2.4.0</span>
+      <ul>
+        <li>כפתור הסרגל (✂️) בספר PDF בספרייה חזר לנסות קודם טקסט מאונדקס של אוצריא (כמו במקור) - ורק אם אין, מציע לגזור. שני המקרים מוצגים כהתראה בספרייה עצמה, בלי לעבור לתוסף (אלא אם לוחצים על ההתראה).</li>
+        <li>נוסף כפתור "🖥️ צלם ובחר כאן" - צילום מסך ובחירת אזור עם גרירה בתוך התוסף עצמו, כאלטרנטיבה לכלי הגזירה של המערכת.</li>
+      </ul>
+      <span class="changelog-version">v2.3.1</span>
+      <ul>
+        <li>כפתור הסרגל (✂️) בספר PDF בספרייה כבר לא מנסה טקסט מאונדקס שכמעט תמיד ריק - עכשיו מפעיל ישירות את חילוץ הטקסט מגזרת המסך שבלוח, ומנחה לגזור אם הלוח ריק.</li>
+      </ul>
+      <span class="changelog-version">v2.3.0</span>
+      <ul>
+        <li>נוסף כפתור "✂️ הדבק גזרת מסך וחלץ" - גוזרים עם כלי הגזירה של המערכת (Win+Shift+S) כל חלון שרואים, ומדביקים בתוסף (בכפתור או ב-Ctrl+V) כדי לחלץ ממנו טקסט - כולל עמוד PDF מהספרייה שאין לתוסף גישה ישירה לקובץ שלו.</li>
+        <li>אייקון כפתור סרגל הכלים בקורא הוחלף למספריים (✂️) בהתאם.</li>
+      </ul>
+      <span class="changelog-version">v2.2.2</span>
+      <ul>
+        <li>תוקן קישור ה-GitHub בפאנל אודות (github.com/Otzaria במקום המאגר הישן github.com/Sivan22).</li>
+        <li>הובהר בבקשת הפיצ'ר #3 שאין דרך "לייצא" עמוד PDF מספר בספרייה לתוך התוסף - זו מגבלה מכוונת של אוצריא (ראו שם).</li>
+      </ul>
+      <span class="changelog-version">v2.2.1</span>
+      <ul>
+        <li>עודכנה כתובת המייל לשליחת משוב.</li>
+      </ul>
+      <span class="changelog-version">v2.2.0</span>
+      <ul>
+        <li>נוסף כפתור "חלץ טקסט" בסרגל הכלים של הקורא - עובד גם בספרי PDF בספרייה (בניגוד לתפריט לחיצה ימנית, שאוצריא לא מפעילה במסך PDF).</li>
+        <li>הרישום עבר להצהרה ישירה ב-manifest.json - התוסף פעיל תמיד בספרייה, ואין יותר צורך ב"הרצה ברקע" (ההרשאה הרגישה app.run_on_startup הוסרה).</li>
+        <li>הודעת "לא נמצא טקסט" בספרי PDF בספרייה עודכנה להסביר את הסיבה האמיתית (ראו "בקשות פיצ'ר" למטה) במקום לרמוז בטעות שמדובר בעמוד סרוק.</li>
+        <li>כפתור המשוב עבר לתוך "אודות" כטופס קבוע במקום חלון prompt.</li>
+        <li>עיצוב מרענן: פס כותרת קבוע כמו במסכי הספרים של אוצריא, לפי DESIGN_GUIDE.md.</li>
+      </ul>
+    </div>
+    <h3>צופה PDF עם OCR</h3>
+    <p>פתיחת קבצי PDF, תמונה או טקסט באוצריא ישירות, ללא צורך להוסיף אותם לספרייה. לתמונות ולעמודי PDF סרוקים ללא שכבת טקסט - ניתן להריץ זיהוי טקסט (OCR) בעברית לפי דרישה.</p>
+    <p>🖱️ לחיצה ימנית על עמוד PDF/תמונה פתוח בתוסף מציגה קיצור "חלץ טקסט" - מנסה טקסט מוטבע קודם, ואם אין נופל אוטומטית ל-OCR.</p>
+    <p>📚 בנוסף, בכל הספרייה של אוצריא (בספרי טקסט) - לחיצה ימנית על הקורא מציגה גם היא פריט "חלץ טקסט".</p>
+    <p>📄 בספרי PDF בספרייה - כפתור ✂️ בסרגל הכלים של הקורא מנסה קודם טקסט שאוצריא כבר אינדקסה לספר (ומעתיק אותו ללוח אם נמצא) - ההודעה מופיעה ישירות בספרייה, בלי לצאת ממנה. אם לא נמצא טקסט מאונדקס (המצב הנפוץ לספרי PDF סרוקים, שכן לתוסף אין גישה לקובץ עצמו) - תופיע התראה שמציעה לגזור את האזור הרצוי עם כלי הגזירה של המערכת (Win+Shift+S בחלונות, Cmd+Shift+4 ב-Mac), עם אפשרות ללחוץ על ההתראה כדי לפתוח את התוסף. בתוך התוסף אפשר להדביק את הגזרה עם "✂️ הדבק גזרת מסך וחלץ" (או Ctrl+V), או לצלם ולבחור אזור בתוך התוסף עצמו עם "🖥️ צלם ובחר כאן" - בשני המקרים ינסה קודם טקסט מוטבע ואם אין יפעיל OCR אוטומטית.</p>
+    <p style="font-size:0.75em;opacity:.75;">💡 שיטת הגזירה עובדת עם כל תוכנה שמציגה PDF (לא רק אוצריא), ולא רק עבור ספרי PDF בספרייה - אפשר להשתמש בה בכל מצב שבו קשה לפתוח את הקובץ המקורי ישירות בתוסף.</p>
+    <div id="ctxmenu-status" style="font-size:0.8em;opacity:.8;"></div>
+    <div class="about-section">
+      <h4>💡 משוב על התוסף</h4>
+      <textarea id="feedback-text" rows="3" placeholder="מה תרצה לשתף לגבי התוסף?"></textarea>
+      <button id="btn-send-feedback" class="primary" style="width:100%;">שליחת משוב</button>
+      <div id="feedback-status"></div>
+    </div>
+    <p style="font-size:0.85em;opacity:.7;">נוצר באמצעות Claude ע"י חד בדרא</p>
+    <hr style="border:none;border-top:1px solid var(--color-outline);margin:16px 0;">
+    <p style="font-size:0.8em;">מנוע ה-OCR ושפת העברית כלולים בתוסף - זיהוי טקסט (OCR) מוכן לשימוש ללא צורך בהתקנה נוספת.</p>
+    <p style="font-size:0.75em;opacity:.75;">אם רוצים גישה למנוע ה-OCR המובנה של Windows בעתיד, זה ידרוש בקשת פיצ'ר לאוצריא עצמה (התוסף לא יכול לעשות את זה בכוחות עצמו) — שהיא תוסיף permission חדשה שקוראת ל-OCR הנייטיבי מצד ה-Dart/Flutter וחושפת אותה כ-API לתוספים. בינתיים Tesseract.js הוא האפשרות היחידה שזמינה לתוסף.</p>
+    <p style="font-size:0.75em;opacity:.75;">🛠️ בתכנון: שמירת קובץ PDF עם הטקסט שזוהה ב-OCR מוטבע בו כשכבת טקסט נסתרת (PDF ניתן לחיפוש), בדומה לתוכנות OCR מסחריות.</p>
+    <hr style="border:none;border-top:1px solid var(--color-outline);margin:16px 0;">
+    <h3 style="font-size:1em;">🌐 שפות OCR</h3>
+    <p style="font-size:0.8em;">עברית מובנית בתוסף. אפשר להוסיף שפות נוספות (כמו אנגלית) בלי לבנות גרסה חדשה של התוסף:</p>
+    <ol style="font-size:0.78em;padding-right:18px;margin:4px 0;">
+      <li>מורידים קובץ שפה (סיומת <code>.traineddata</code>) מהמאגר הרשמי של Tesseract, למשל עבור אנגלית:<br>
+        <div class="setup-box"><code>https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata</code></div>
+        (אפשר להחליף <code>eng</code> בקוד כל שפה אחרת מאותו מאגר)</li>
+      <li>לוחצים כאן ובוחרים את הקובץ שהורד:</li>
+    </ol>
+    <button id="btn-add-lang" style="width:100%;">➕ הוספת שפה</button>
+    <input type="file" id="lang-file-input" accept=".traineddata" style="display:none;">
+    <div id="lang-list" style="font-size:0.8em;margin-top:8px;"></div>
+    <hr style="border:none;border-top:1px solid var(--color-outline);margin:16px 0;">
+    <details id="feature-requests-details">
+      <summary style="cursor:pointer;font-weight:600;font-size:0.85em;">🔧 בקשות פיצ'ר פתוחות לאוצריא</summary>
+      <p style="font-size:0.78em;opacity:.85;margin-top:8px;">דברים שהתוסף לא יכול לפתור בכוחות עצמו - דורשים שינוי באוצריא עצמה. אפשר לפתוח עליהם Issue ב-<code>github.com/Otzaria/otzaria</code>:</p>
+      <p style="font-size:0.78em;font-weight:600;margin-bottom:2px;">1. תמיכה בפריטי תוסף בתפריט הקשר במסך PDF</p>
+      <p style="font-size:0.75em;opacity:.8;">לפי DESIGN_GUIDE.md: "תפריט ההקשר מוצג במסכי טקסט בלבד (CombinedView ו-PageShape). מסך PDF אינו תומך בפריטי תוסף בתפריט ההקשר כרגע." אומת בפועל - פריט מהתוסף (למשל "חלץ טקסט") נרשם ועובד בספרי טקסט, אך לא מופיע בכלל בלחיצה ימנית על ספרי PDF בספרייה. מגרסה 2.1.0 יש עקיפה חלקית - כפתור בסרגל הכלים (`reader.addToolbarItem`) כן נתמך במסך PDF - אבל עדיין כדאי לבקש תמיכה מלאה גם בתפריט ההקשר, לעקביות עם ספרי טקסט.</p>
+      <p style="font-size:0.78em;font-weight:600;margin-bottom:2px;margin-top:10px;">2. גישה למנוע ה-OCR המובנה של Windows</p>
+      <p style="font-size:0.75em;opacity:.8;">תוספים רצים בדף מבודד ללא גישה ל-API נייטיביים, ולכן חייבים להטמיע מנוע OCR מבוסס-WASM (Tesseract.js) בתוך התוסף עצמו - כבד ופחות מדויק ממנוע נייטיבי. בקשה: הוספת permission ו-API (למשל <code>ocr.recognizeImage</code>) שמפעיל את מנוע ה-OCR המובנה של המערכת (Windows.Media.Ocr בחלונות) מצד ה-Dart/Flutter של אוצריא, ומחזיר את הטקסט המזוהה לתוסף.</p>
+      <p style="font-size:0.78em;font-weight:600;margin-bottom:2px;margin-top:10px;">3. גישה לקובץ/לתמונת עמוד של ספרי PDF בספרייה</p>
+      <p style="font-size:0.75em;opacity:.8;">אין כיום API שחושף לתוסף את בייטים של קובץ ה-PDF או תמונת עמוד עבור ספר PDF שמנוהל בספריית אוצריא (בשונה מ-<code>fs.pickUserFile</code>, שעובד רק על קובץ שהמשתמש בוחר ידנית). זה מכוון: גם <code>library.resolveBooks</code> מציינת מפורש "בלי לחשוף נתיבים". לכן, "חלץ טקסט" על ספר כזה יכול להחזיר רק טקסט שאוצריא כבר אינדקסה בעצמה - לא לקרוא את שכבת הטקסט המוטבעת בקובץ בזמן אמת, ובוודאי לא להריץ עליו OCR. <strong>מגרסה 2.3.0 יש עקיפה נוחה</strong> (גזירת מסך + הדבקה בתוסף - ראו למעלה) שהופכת את זה לפחות דחוף, אך עדיין כדאי לבקש API רשמי כמו <code>reader.getPdfPageImage</code> (או חשיפת נתיב/בייטים מוגבלת-הרשאה, בהסכמת המשתמש) לחוויה חלקה יותר בלי צורך בגזירה ידנית.</p>
+    </details>
+    <p style="font-size:0.78em;opacity:.85;">🐞 מגבלות ידועות ולא-באגים: קובץ TIFF מרובה-עמודים מציג רק את העמוד הראשון (מוצג בסטטוס בזמן פתיחה). גודל התוסף (כ-4.4MB) נובע ממנוע ה-OCR (Tesseract.js) המובנה בו לתמיכה מלאה במצב offline.</p>
+    <hr style="border:none;border-top:1px solid var(--color-outline);margin:16px 0;">
+    <details id="diag-details">
+      <summary style="cursor:pointer;font-weight:600;font-size:0.85em;">🔧 אבחון</summary>
+      <p style="font-size:0.8em;opacity:.8;margin-top:8px;">מצב מנוע ה-OCR:</p>
+      <div id="diag-box">טרם נבדק</div>
+      <button id="btn-diag-refresh" style="margin-top:8px;width:100%;">🔄 בדיקה מחדש</button>
+    </details>
+  </div>
+
+  <input type="file" id="file-input">
+  <div id="status"></div>
+  <div id="ocr-progress"></div>
+  <div id="custom-ctx-menu"><button id="ctx-extract-text">✂️ חלץ טקסט</button></div>
+</div>
+
+<div id="capture-overlay">
+  <div id="capture-hint">גררו לסימון האזור לחילוץ, ואז לחצו "✂️ חלץ מהבחירה" (Esc לביטול)</div>
+  <div id="capture-img-wrap">
+    <img id="capture-img" alt="צילום מסך">
+    <div id="capture-sel"></div>
+  </div>
+  <div id="capture-actions">
+    <button id="btn-capture-confirm" class="primary">✂️ חלץ מהבחירה</button>
+    <button id="btn-capture-cancel" class="secondary">ביטול</button>
+  </div>
+</div>
+
+<script src="./vendor/pdf.min.js"></script>
+<!-- עינים למקרא: tesseract/jszip/UTIF לא יובאו (OCR, אופיס, TIFF) — ר' tools/import-pdf-viewer.js -->
+<script>
+(function(){
+"use strict";
+pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
+
+const els = {
+  open: document.getElementById('btn-open'),
+  pasteExtract: document.getElementById('btn-paste-extract'),
+  captureSelect: document.getElementById('btn-capture-select'),
+  captureOverlay: document.getElementById('capture-overlay'),
+  captureImg: document.getElementById('capture-img'),
+  captureImgWrap: document.getElementById('capture-img-wrap'),
+  captureSel: document.getElementById('capture-sel'),
+  captureActions: document.getElementById('capture-actions'),
+  captureConfirm: document.getElementById('btn-capture-confirm'),
+  captureCancel: document.getElementById('btn-capture-cancel'),
+  toolbar: document.getElementById('toolbar'),
+  captureArmedBanner: document.getElementById('capture-armed-banner'),
+  captureCountdown: document.getElementById('capture-countdown'),
+  captureExtend: document.getElementById('btn-capture-extend'),
+  captureNow: document.getElementById('btn-capture-now'),
+  captureArmCancel: document.getElementById('btn-capture-arm-cancel'),
+  fileInput: document.getElementById('file-input'),
+  currentName: document.getElementById('current-name'),
+  prev: document.getElementById('btn-prev'),
+  next: document.getElementById('btn-next'),
+  pageInfo: document.getElementById('page-info'),
+  zoomOut: document.getElementById('btn-zoom-out'),
+  zoomIn: document.getElementById('btn-zoom-in'),
+  embeddedText: document.getElementById('btn-embedded-text'),
+  ocrBtn: document.getElementById('btn-ocr'),
+  canvas: document.getElementById('pdf-canvas'),
+  htmlFrame: document.getElementById('html-frame'),
+  dropzone: document.getElementById('dropzone'),
+  viewerArea: document.getElementById('viewer-area'),
+  textpanel: document.getElementById('textpanel'),
+  textPanelTitle: document.getElementById('text-panel-title'),
+  textOutput: document.getElementById('text-output'),
+  textEmpty: document.getElementById('text-empty'),
+  copyText: document.getElementById('btn-copy-text'),
+  closePanel: document.getElementById('btn-close-panel'),
+  aboutToggle: document.getElementById('about-toggle'),
+  aboutPanel: document.getElementById('about-panel'),
+  feedbackText: document.getElementById('feedback-text'),
+  sendFeedback: document.getElementById('btn-send-feedback'),
+  feedbackStatus: document.getElementById('feedback-status'),
+  diagBox: document.getElementById('diag-box'),
+  diagRefresh: document.getElementById('btn-diag-refresh'),
+  addLangBtn: document.getElementById('btn-add-lang'),
+  langFileInput: document.getElementById('lang-file-input'),
+  langList: document.getElementById('lang-list'),
+  status: document.getElementById('status'),
+  ocrProgress: document.getElementById('ocr-progress'),
+  recentBtn: document.getElementById('btn-recent'),
+  recentPopover: document.getElementById('recent-popover'),
+  recentList: document.getElementById('recent-list'),
+  recentEmpty: document.getElementById('recent-empty'),
+  recentClear: document.getElementById('btn-recent-clear')
+};
+
+function esc(s){ const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+function showStatus(msg){
+  els.status.textContent = msg;
+  els.status.classList.add('show');
+  clearTimeout(showStatus._t);
+  showStatus._t = setTimeout(() => els.status.classList.remove('show'), 2500);
+}
+
+// ===== Otzaria storage (small settings only, e.g. zoom level) =====
+function storageGet(key){
+  if (!(window.Otzaria && typeof Otzaria.call === 'function')) return Promise.resolve(null);
+  return Otzaria.call('storage.get', { key }).then(res => (res && res.data !== undefined ? res.data : null)).catch(() => null);
+}
+function storageSet(key, value){
+  if (!(window.Otzaria && typeof Otzaria.call === 'function')) return Promise.resolve();
+  return Otzaria.call('storage.set', { key, value }).catch(() => {});
+}
+
+// ===== Recent files (IndexedDB - stores file handles so real reopening works) =====
+const RECENTS_LIMIT = 10;
+let recentsDbPromise = null;
+function recentsDb(){
+  if (recentsDbPromise) return recentsDbPromise;
+  recentsDbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open('madaei-pdf-recents', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('files', { keyPath: 'id' });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return recentsDbPromise;
+}
+async function idbGetAll(){
+  try {
+    const db = await recentsDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readonly');
+      const req = tx.objectStore('files').getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch(e){ return []; }
+}
+async function idbPut(entry){
+  try {
+    const db = await recentsDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite');
+      tx.objectStore('files').put(entry);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch(e){}
+}
+async function idbDelete(id){
+  try {
+    const db = await recentsDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite');
+      tx.objectStore('files').delete(id);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch(e){}
+}
+async function idbClear(){
+  try {
+    const db = await recentsDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite');
+      tx.objectStore('files').clear();
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch(e){}
+}
+
+async function addRecent(name, size, handle){
+  const all = await idbGetAll();
+  const existing = all.find(r => r.name === name && r.size === size);
+  const id = existing ? existing.id : (Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+  await idbPut({ id, name, size, lastOpened: Date.now(), handle: handle || (existing && existing.handle) || null });
+  const updated = await idbGetAll();
+  if (updated.length > RECENTS_LIMIT){
+    updated.sort((a,b) => a.lastOpened - b.lastOpened);
+    for (const old of updated.slice(0, updated.length - RECENTS_LIMIT)) await idbDelete(old.id);
+  }
+  renderRecents();
+}
+
+function formatSize(bytes){
+  if (!bytes) return '';
+  if (bytes < 1024*1024) return Math.round(bytes/1024) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+async function renderRecents(){
+  const all = await idbGetAll();
+  all.sort((a,b) => b.lastOpened - a.lastOpened);
+  els.recentList.innerHTML = '';
+  els.recentEmpty.style.display = all.length ? 'none' : 'block';
+  all.forEach(entry => {
+    const li = document.createElement('li');
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'rec-name';
+    nameSpan.textContent = entry.name + (entry.size ? ' (' + formatSize(entry.size) + ')' : '');
+    nameSpan.title = entry.name;
+    li.appendChild(nameSpan);
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', async ev => {
+      ev.stopPropagation();
+      await idbDelete(entry.id);
+      renderRecents();
+    });
+    li.appendChild(delBtn);
+    li.addEventListener('click', () => openRecentEntry(entry));
+    els.recentList.appendChild(li);
+  });
+}
+
+async function openRecentEntry(entry){
+  els.recentPopover.classList.remove('open');
+  if (!entry.handle){
+    showStatus('יש לבחור את "' + entry.name + '" מחדש בבורר הקבצים');
+    els.fileInput.value = '';
+    els.fileInput.click();
+    return;
+  }
+  try {
+    if ((await entry.handle.queryPermission({ mode: 'read' })) !== 'granted'){
+      if ((await entry.handle.requestPermission({ mode: 'read' })) !== 'granted'){
+        showStatus('הגישה לקובץ נדחתה');
+        return;
+      }
+    }
+    const file = await entry.handle.getFile();
+    openFileObject(file, entry.handle);
+  } catch(e){
+    showStatus('לא ניתן לפתוח את הקובץ (אולי הוזז/נמחק) - נסה לבחור מחדש');
+  }
+}
+
+els.recentBtn.addEventListener('click', ev => {
+  ev.stopPropagation();
+  els.recentPopover.classList.toggle('open');
+});
+document.addEventListener('click', () => els.recentPopover.classList.remove('open'));
+els.recentPopover.addEventListener('click', ev => ev.stopPropagation());
+els.recentClear.addEventListener('click', async () => { await idbClear(); renderRecents(); });
+
+// ===== Theme =====
+function applyTheme(theme){
+  if (!theme || !theme.colorScheme) return;
+  const cs = theme.colorScheme, r = document.documentElement.style;
+  r.setProperty('--color-primary', cs.primary);
+  r.setProperty('--color-on-primary', cs.onPrimary);
+  r.setProperty('--color-secondary', cs.secondary);
+  r.setProperty('--color-on-secondary', cs.onSecondary);
+  r.setProperty('--color-surface', cs.surface);
+  r.setProperty('--color-on-surface', cs.onSurface);
+  r.setProperty('--color-surface-container', cs.surfaceContainer);
+  r.setProperty('--color-surface-container-high', cs.surfaceContainerHigh);
+  r.setProperty('--color-surface-container-highest', cs.surfaceContainerHighest);
+  r.setProperty('--color-error', cs.error);
+  r.setProperty('--color-on-error', cs.onError);
+  r.setProperty('--color-outline', cs.outline);
+  r.setProperty('--color-outline-variant', cs.outlineVariant);
+  r.setProperty('--color-primary-subtle', hexToRgba(cs.primary, 0.12));
+  r.setProperty('--color-secondary-subtle', hexToRgba(cs.secondary, 0.12));
+  if (theme.typography){
+    const t = theme.typography;
+    r.setProperty('--font-main', `'${t.fontFamily}', 'David', sans-serif`);
+    r.setProperty('--font-size-base', `${Math.max(12, Math.round(t.fontSize * 0.85))}px`);
+    r.setProperty('--line-height', String(t.lineHeight));
+  }
+}
+function hexToRgba(hex, a){
+  const n = hex.replace('#','');
+  const r = parseInt(n.slice(0,2),16), g = parseInt(n.slice(2,4),16), b = parseInt(n.slice(4,6),16);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+// ===== Document state (mode: 'pdf' | 'image' | 'text') =====
+let mode = null, pdfDoc = null, currentImg = null, currentPage = 1, scale = 1.4, currentFileName = '';
+let renderTask = null;
+
+async function renderPage(num){
+  if (!pdfDoc) return;
+  if (renderTask) { try { renderTask.cancel(); } catch(e){} }
+  const page = await pdfDoc.getPage(num);
+  const viewport = page.getViewport({ scale });
+  const dpr = window.devicePixelRatio || 1;
+  els.canvas.width = Math.floor(viewport.width * dpr);
+  els.canvas.height = Math.floor(viewport.height * dpr);
+  els.canvas.style.width = viewport.width + 'px';
+  els.canvas.style.height = viewport.height + 'px';
+  els.canvas.style.display = 'block';
+  const ctx = els.canvas.getContext('2d');
+  const transform = dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null;
+  renderTask = page.render({ canvasContext: ctx, viewport, transform });
+  try { await renderTask.promise; } catch(e){ if (e && e.name !== 'RenderingCancelledException') throw e; }
+  els.pageInfo.textContent = `עמוד ${num} מתוך ${pdfDoc.numPages}`;
+  els.prev.disabled = num <= 1;
+  els.next.disabled = num >= pdfDoc.numPages;
+}
+
+function renderImage(){
+  if (!currentImg) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = currentImg.naturalWidth * scale, h = currentImg.naturalHeight * scale;
+  els.canvas.width = Math.floor(w * dpr);
+  els.canvas.height = Math.floor(h * dpr);
+  els.canvas.style.width = w + 'px';
+  els.canvas.style.height = h + 'px';
+  els.canvas.style.display = 'block';
+  const ctx = els.canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(currentImg, 0, 0, w, h);
+}
+
+function resetToolbarForMode(){
+  els.prev.disabled = mode !== 'pdf' || currentPage <= 1;
+  els.next.disabled = mode !== 'pdf' || (pdfDoc && currentPage >= pdfDoc.numPages);
+  els.zoomOut.disabled = mode === 'text' || mode === 'html' || !mode;
+  els.zoomIn.disabled = mode === 'text' || mode === 'html' || !mode;
+  els.embeddedText.disabled = mode !== 'pdf';
+  els.ocrBtn.disabled = !(mode === 'pdf' || mode === 'image');
+}
+
+function hideAllViewers(){
+  els.canvas.style.display = 'none';
+  els.htmlFrame.style.display = 'none';
+  els.htmlFrame.srcdoc = '';
+}
+
+async function loadPdf(arrayBuffer, name){
+  let doc;
+  try {
+    doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  } catch(err){
+    showStatus('שגיאה בפתיחת הקובץ: ' + (err && err.message ? err.message : 'קובץ לא תקין'));
+    return;
+  }
+  hideAllViewers();
+  mode = 'pdf'; pdfDoc = doc; currentImg = null;
+  currentFileName = name || 'קובץ.pdf';
+  els.currentName.textContent = currentFileName;
+  els.dropzone.style.display = 'none';
+  currentPage = 1;
+  clearTextPanel();
+  await renderPage(currentPage);
+  resetToolbarForMode();
+  showStatus('הקובץ נפתח בהצלחה');
+}
+
+async function loadImage(dataUrl, name){
+  const img = new Image();
+  try {
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('קובץ תמונה לא תקין'));
+      img.src = dataUrl;
+    });
+  } catch(err){
+    showStatus(err.message);
+    return;
+  }
+  hideAllViewers();
+  mode = 'image'; pdfDoc = null; currentImg = img;
+  currentFileName = name;
+  els.currentName.textContent = currentFileName;
+  els.dropzone.style.display = 'none';
+  els.pageInfo.textContent = 'תמונה';
+  clearTextPanel();
+  renderImage();
+  resetToolbarForMode();
+  showStatus('התמונה נפתחה בהצלחה');
+}
+
+async function loadText(text, name){
+  hideAllViewers();
+  mode = 'text'; pdfDoc = null; currentImg = null;
+  currentFileName = name;
+  els.currentName.textContent = currentFileName;
+  els.dropzone.style.display = 'none';
+  els.pageInfo.textContent = '-';
+  showTextPanel(currentFileName, text);
+  resetToolbarForMode();
+  showStatus('קובץ הטקסט נפתח בהצלחה');
+}
+
+async function loadHtml(html, name){
+  hideAllViewers();
+  mode = 'html'; pdfDoc = null; currentImg = null;
+  currentFileName = name;
+  els.currentName.textContent = currentFileName;
+  els.dropzone.style.display = 'none';
+  els.pageInfo.textContent = '-';
+  clearTextPanel();
+  els.htmlFrame.style.display = 'block';
+  els.htmlFrame.srcdoc = html;
+  resetToolbarForMode();
+  showStatus('הקובץ נפתח בהצלחה');
+}
+
+async function loadTiff(arrayBuffer, name){
+  let img;
+  try {
+    const ifds = UTIF.decode(arrayBuffer);
+    UTIF.decodeImage(arrayBuffer, ifds[0]);
+    const rgba = UTIF.toRGBA8(ifds[0]);
+    const w = ifds[0].width, h = ifds[0].height;
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    off.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(rgba), w, h), 0, 0);
+    const dataUrl = off.toDataURL();
+    img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('קובץ TIFF לא תקין'));
+      img.src = dataUrl;
+    });
+    if (ifds.length > 1) showStatus('קובץ TIFF עם ' + ifds.length + ' עמודים - מוצג רק העמוד הראשון');
+  } catch(err){
+    showStatus('שגיאה בפתיחת קובץ TIFF: ' + (err && err.message ? err.message : String(err)));
+    return;
+  }
+  hideAllViewers();
+  mode = 'image'; pdfDoc = null; currentImg = img;
+  currentFileName = name;
+  els.currentName.textContent = currentFileName;
+  els.dropzone.style.display = 'none';
+  els.pageInfo.textContent = 'תמונה';
+  clearTextPanel();
+  renderImage();
+  resetToolbarForMode();
+  showStatus('הקובץ נפתח בהצלחה');
+}
+
+// ===== ZIP-based office formats (DOCX/PPTX/XLSX/EPUB) - text extraction only via JSZip =====
+function decodeXmlEntities(s){
+  return (s || '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'");
+}
+
+async function extractDocxText(zip){
+  const entry = zip.file('word/document.xml');
+  if (!entry) throw new Error('word/document.xml לא נמצא בקובץ');
+  const xml = await entry.async('string');
+  const lines = xml.split(/<\/w:p>/).map(p => {
+    let text = '', m;
+    const re = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    while ((m = re.exec(p))) text += m[1];
+    return decodeXmlEntities(text);
+  }).filter(l => l.length);
+  return lines.join('\n');
+}
+
+async function extractPptxText(zip){
+  const files = Object.keys(zip.files)
+    .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+    .sort((a, b) => parseInt(a.match(/slide(\d+)/)[1], 10) - parseInt(b.match(/slide(\d+)/)[1], 10));
+  const slides = [];
+  for (const name of files){
+    const xml = await zip.file(name).async('string');
+    let text = '', m;
+    const re = /<a:t[^>]*>([^<]*)<\/a:t>/g;
+    while ((m = re.exec(xml))) text += m[1] + ' ';
+    slides.push('--- שקופית ' + (slides.length + 1) + ' ---\n' + decodeXmlEntities(text).trim());
+  }
+  return slides.join('\n\n');
+}
+
+async function extractXlsxText(zip){
+  let shared = [];
+  const sharedEntry = zip.file('xl/sharedStrings.xml');
+  if (sharedEntry){
+    const xml = await sharedEntry.async('string');
+    let m;
+    const siRe = /<si>([\s\S]*?)<\/si>/g;
+    while ((m = siRe.exec(xml))){
+      let text = '', tm;
+      const tRe = /<t[^>]*>([^<]*)<\/t>/g;
+      while ((tm = tRe.exec(m[1]))) text += tm[1];
+      shared.push(decodeXmlEntities(text));
+    }
+  }
+  const sheetFiles = Object.keys(zip.files)
+    .filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n))
+    .sort((a, b) => parseInt(a.match(/sheet(\d+)/)[1], 10) - parseInt(b.match(/sheet(\d+)/)[1], 10));
+  const sheets = [];
+  for (const name of sheetFiles){
+    const xml = await zip.file(name).async('string');
+    const rows = [];
+    let rm;
+    const rowRe = /<row\b[^>]*>([\s\S]*?)<\/row>/g;
+    while ((rm = rowRe.exec(xml))){
+      const cells = [];
+      let cm;
+      const cellRe = /<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g;
+      while ((cm = cellRe.exec(rm[1]))){
+        const attrs = cm[1] || '', inner = cm[2] || '';
+        let val = '';
+        if (/\st="inlineStr"/.test(attrs)){
+          let tm;
+          const tRe = /<t[^>]*>([^<]*)<\/t>/g;
+          while ((tm = tRe.exec(inner))) val += tm[1];
+        } else {
+          const vm = /<v>([^<]*)<\/v>/.exec(inner);
+          if (vm) val = /\st="s"/.test(attrs) ? (shared[parseInt(vm[1], 10)] || '') : vm[1];
+        }
+        cells.push(decodeXmlEntities(val));
+      }
+      rows.push(cells.join('\t'));
+    }
+    sheets.push('--- גליון ' + (sheets.length + 1) + ' ---\n' + rows.join('\n'));
+  }
+  return sheets.join('\n\n');
+}
+
+async function extractEpubText(zip){
+  const containerXml = await zip.file('META-INF/container.xml').async('string');
+  const opfPathMatch = /full-path="([^"]+)"/.exec(containerXml);
+  if (!opfPathMatch) throw new Error('לא נמצא קובץ OPF ב-EPUB');
+  const opfPath = opfPathMatch[1];
+  const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/') + 1) : '';
+  const opfXml = await zip.file(opfPath).async('string');
+  const manifest = {};
+  let mm;
+  const itemRe = /<item\b([^>]*)\/?>/g;
+  while ((mm = itemRe.exec(opfXml))){
+    const idM = /\sid="([^"]+)"/.exec(mm[1]);
+    const hrefM = /\shref="([^"]+)"/.exec(mm[1]);
+    if (idM && hrefM) manifest[idM[1]] = hrefM[1];
+  }
+  const spine = [];
+  let sm;
+  const spineRe = /<itemref\b([^>]*)\/?>/g;
+  while ((sm = spineRe.exec(opfXml))){
+    const idrefM = /\sidref="([^"]+)"/.exec(sm[1]);
+    if (idrefM && manifest[idrefM[1]]) spine.push(opfDir + manifest[idrefM[1]]);
+  }
+  const chapters = [];
+  for (const path of spine){
+    const entry = zip.file(path);
+    if (!entry) continue;
+    const html = await entry.async('string');
+    const stripped = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
+    const text = decodeXmlEntities(stripped.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')).trim();
+    if (text) chapters.push(text);
+  }
+  return chapters.join('\n\n---\n\n');
+}
+
+async function extractZipText(file, kind){
+  const buf = await file.arrayBuffer();
+  const zip = await JSZip.loadAsync(buf);
+  if (kind === 'docx') return extractDocxText(zip);
+  if (kind === 'pptx') return extractPptxText(zip);
+  if (kind === 'xlsx') return extractXlsxText(zip);
+  return extractEpubText(zip);
+}
+
+function getFileKind(file){
+  const lower = (file.name || '').toLowerCase();
+  const type = file.type || '';
+  if (lower.endsWith('.pdf') || type === 'application/pdf') return 'pdf';
+  if (lower.endsWith('.docx')) return 'docx';
+  if (lower.endsWith('.pptx')) return 'pptx';
+  if (lower.endsWith('.xlsx')) return 'xlsx';
+  if (lower.endsWith('.epub')) return 'epub';
+  if (/\.tiff?$/.test(lower) || type === 'image/tiff') return 'tiff';
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(lower) || type.startsWith('image/')) return 'image';
+  if (/\.(html?)$/.test(lower) || type === 'text/html') return 'html';
+  if (/\.(txt|md|csv|json|log|xml|ini)$/.test(lower) || type.startsWith('text/')) return 'text';
+  return null;
+}
+
+function openFileObject(file, handle){
+  if (!file) return;
+  const kind = getFileKind(file);
+  if (!kind){
+    showStatus('סוג קובץ לא נתמך - ניתן לפתוח PDF, תמונה או קובץ טקסט');
+    return;
+  }
+  if (kind === 'docx' || kind === 'pptx' || kind === 'xlsx' || kind === 'epub'){
+    showStatus('מחלץ טקסט מהקובץ...');
+    extractZipText(file, kind)
+      .then(text => { loadText(text || '(לא נמצא טקסט בקובץ)', file.name); addRecent(file.name, file.size, handle || null); })
+      .catch(err => showStatus('שגיאה בפתיחת הקובץ: ' + (err && err.message ? err.message : String(err))));
+    return;
+  }
+  if (kind === 'tiff'){
+    file.arrayBuffer()
+      .then(buf => { loadTiff(buf, file.name); addRecent(file.name, file.size, handle || null); })
+      .catch(() => showStatus('שגיאה בקריאת הקובץ'));
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => showStatus('שגיאה בקריאת הקובץ');
+  if (kind === 'pdf'){
+    reader.onload = async () => { await loadPdf(reader.result, file.name); addRecent(file.name, file.size, handle || null); };
+    reader.readAsArrayBuffer(file);
+  } else if (kind === 'image'){
+    reader.onload = async () => { await loadImage(reader.result, file.name); addRecent(file.name, file.size, handle || null); };
+    reader.readAsDataURL(file);
+  } else if (kind === 'html'){
+    reader.onload = async () => { await loadHtml(reader.result, file.name); addRecent(file.name, file.size, handle || null); };
+    reader.readAsText(file);
+  } else {
+    reader.onload = async () => { await loadText(reader.result, file.name); addRecent(file.name, file.size, handle || null); };
+    reader.readAsText(file);
+  }
+}
+
+const supportsFilePicker = typeof window.showOpenFilePicker === 'function';
+
+async function openFileDialog(){
+  if (supportsFilePicker){
+    try {
+      const [handle] = await window.showOpenFilePicker();
+      const file = await handle.getFile();
+      openFileObject(file, handle);
+    } catch(e){
+      // user cancelled the picker - nothing to do
+    }
+    return;
+  }
+  els.fileInput.value = '';
+  els.fileInput.click();
+}
+
+els.open.addEventListener('click', openFileDialog);
+els.fileInput.addEventListener('change', e => { if (e.target.files[0]) openFileObject(e.target.files[0]); });
+els.dropzone.addEventListener('click', openFileDialog);
+['dragenter','dragover'].forEach(evt => els.viewerArea.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation(); els.dropzone.classList.add('dragover'); els.dropzone.style.display = 'flex';
+}));
+['dragleave'].forEach(evt => els.viewerArea.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation(); els.dropzone.classList.remove('dragover');
+  if (mode) els.dropzone.style.display = 'none';
+}));
+els.viewerArea.addEventListener('drop', e => {
+  e.preventDefault(); e.stopPropagation(); els.dropzone.classList.remove('dragover');
+  const dt = e.dataTransfer;
+  if (dt && dt.files && dt.files[0]) openFileObject(dt.files[0]);
+  else if (mode) els.dropzone.style.display = 'none';
+});
+
+function rerender(){ if (mode === 'pdf') renderPage(currentPage); else if (mode === 'image') renderImage(); }
+els.prev.addEventListener('click', () => { if (mode === 'pdf' && currentPage > 1) { currentPage--; renderPage(currentPage); clearTextPanel(); } });
+els.next.addEventListener('click', () => { if (mode === 'pdf' && pdfDoc && currentPage < pdfDoc.numPages) { currentPage++; renderPage(currentPage); clearTextPanel(); } });
+els.zoomIn.addEventListener('click', () => { scale = Math.min(scale + 0.2, 4); rerender(); storageSet('madaei_pdf_scale', scale); });
+els.zoomOut.addEventListener('click', () => { scale = Math.max(scale - 0.2, 0.4); rerender(); storageSet('madaei_pdf_scale', scale); });
+
+// ===== Text panel =====
+function clearTextPanel(){
+  els.textOutput.textContent = '';
+  els.textOutput.style.display = 'none';
+  els.textEmpty.style.display = 'block';
+}
+function showTextPanel(title, text){
+  els.textPanelTitle.textContent = title;
+  els.textOutput.textContent = text;
+  els.textOutput.style.display = text ? 'block' : 'none';
+  els.textEmpty.style.display = text ? 'none' : 'block';
+  els.textpanel.classList.add('open');
+}
+els.closePanel.addEventListener('click', () => els.textpanel.classList.remove('open'));
+els.copyText.addEventListener('click', async () => {
+  const text = els.textOutput.textContent;
+  if (!text) { showStatus('אין טקסט להעתקה'); return; }
+  try { await navigator.clipboard.writeText(text); showStatus('הטקסט הועתק'); }
+  catch(e){ showStatus('שגיאה בהעתקה'); }
+});
+
+// ===== Embedded text extraction =====
+async function getEmbeddedTextForCurrentPage(){
+  const page = await pdfDoc.getPage(currentPage);
+  const content = await page.getTextContent();
+  return content.items.map(it => it.str).join(' ').trim();
+}
+
+els.embeddedText.addEventListener('click', async () => {
+  if (mode !== 'pdf' || !pdfDoc) return;
+  showStatus('קורא טקסט מוטבע...');
+  const text = await getEmbeddedTextForCurrentPage();
+  if (!text) {
+    showTextPanel('טקסט מוטבע - עמוד ' + currentPage, '');
+    showStatus('לא נמצא טקסט מוטבע בעמוד זה (כנראה עמוד סרוק) - נסה OCR');
+  } else {
+    showTextPanel('טקסט מוטבע - עמוד ' + currentPage, text);
+    showStatus('טקסט מוטבע נטען');
+  }
+});
+
+// ===== OCR =====
+let tesseractWorker = null;
+let workerBundlePromise = null;
+function loadWorkerBundle(){
+  if (workerBundlePromise) return workerBundlePromise;
+  workerBundlePromise = new Promise((resolve, reject) => {
+    // עינים למקרא: מנוע ה-OCR (vendor/ocr-worker-loader.js, 10MB) לא יובא.
+    // חילוץ טקסט *מוטבע* (📝) עובד רגיל — הוא pdf.js טהור.
+    reject(new Error('חילוץ טקסט מסריקה (OCR) אינו כלול בקורא שבתוך עינים למקרא. לטקסט מוטבע יש את הכפתור 📝; ל-OCR מלא יש את התוסף הנפרד "צופה PDF+OCR".'));
+  });
+  return workerBundlePromise;
+}
+
+// ---- extra OCR languages added by the user after installation (stored in IndexedDB, per-file base64) ----
+let langsDbPromise = null;
+function langsDb(){
+  if (langsDbPromise) return langsDbPromise;
+  langsDbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open('pdfviewer-ocr-langs', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('langs', { keyPath: 'code' });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return langsDbPromise;
+}
+async function getExtraLanguages(){
+  try {
+    const db = await langsDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('langs', 'readonly');
+      const req = tx.objectStore('langs').getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch(e){ return []; }
+}
+async function putExtraLanguage(code, b64){
+  const db = await langsDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('langs', 'readwrite');
+    tx.objectStore('langs').put({ code, b64 });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function deleteExtraLanguage(code){
+  const db = await langsDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('langs', 'readwrite');
+    tx.objectStore('langs').delete(code);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+function bytesToBase64(bytes){
+  let binary = '';
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function getTesseractWorker(){
+  if (tesseractWorker) return tesseractWorker;
+  await loadWorkerBundle();
+  const extraLangs = await getExtraLanguages();
+  const assets = Object.assign({}, window.__OTZ_BASE_ASSETS_B64__);
+  const langCodes = ['heb'];
+  for (const lang of extraLangs) {
+    assets[lang.code + '.traineddata'] = lang.b64;
+    langCodes.push(lang.code);
+  }
+  const assetsJs = 'self.__OTZ_OCR_B64__ = ' + JSON.stringify(assets) + ';\n';
+
+  const bundleBin = atob(window.__OTZ_WORKER_BUNDLE_B64__);
+  const bundleBytes = new Uint8Array(bundleBin.length);
+  for (let i = 0; i < bundleBin.length; i++) bundleBytes[i] = bundleBin.charCodeAt(i);
+  const blobUrl = URL.createObjectURL(new Blob([assetsJs, bundleBytes.buffer], { type: 'text/javascript' }));
+
+  tesseractWorker = await Tesseract.createWorker(langCodes.join('+'), 1, {
+    workerPath: blobUrl,
+    workerBlobURL: false,
+    corePath: './vendor/tesseract-core-simd-lstm.wasm.js',
+    langPath: './vendor/lang-data/',
+    gzip: false,
+    logger: m => {
+      if (m.status === 'recognizing text' && typeof m.progress === 'number'){
+        els.ocrProgress.style.display = 'block';
+        els.ocrProgress.textContent = 'מזהה טקסט... ' + Math.round(m.progress * 100) + '%';
+      }
+    }
+  });
+  return tesseractWorker;
+}
+
+async function runOcr(label){
+  els.ocrBtn.disabled = true;
+  els.ocrProgress.style.display = 'block';
+  els.ocrProgress.textContent = 'טוען מנוע OCR...';
+  try {
+    const worker = await getTesseractWorker();
+    els.ocrProgress.textContent = 'מזהה טקסט...';
+    const { data } = await worker.recognize(els.canvas);
+    showTextPanel('טקסט מזוהה (OCR) - ' + label, data.text.trim());
+    showStatus('זיהוי הטקסט הושלם');
+  } catch(err){
+    const msg = (err && err.message) || String(err);
+    showTextPanel('שגיאת OCR', 'אירעה שגיאה בהפעלת ה-OCR: ' + msg + '\n\nניתן לבדוק את הפרטים המלאים תחת "💡 אודות" ← "🔧 אבחון".');
+    showStatus('שגיאה בהפעלת OCR');
+  } finally {
+    els.ocrBtn.disabled = false;
+    els.ocrProgress.style.display = 'none';
+  }
+}
+
+els.ocrBtn.addEventListener('click', () => {
+  if (mode !== 'pdf' && mode !== 'image') return;
+  runOcr(mode === 'pdf' ? ('עמוד ' + currentPage) : currentFileName);
+});
+
+// ===== Extract text via right-click on the open PDF/image page =====
+async function extractTextSmart(){
+  if (mode === 'pdf' && pdfDoc){
+    showStatus('קורא טקסט מוטבע...');
+    const text = await getEmbeddedTextForCurrentPage();
+    if (text){
+      showTextPanel('טקסט מוטבע - עמוד ' + currentPage, text);
+      showStatus('טקסט מוטבע נטען');
+      return;
+    }
+    showStatus('אין טקסט מוטבע - מריץ OCR...');
+    await runOcr('עמוד ' + currentPage);
+    return;
+  }
+  if (mode === 'image'){
+    await runOcr(currentFileName);
+    return;
+  }
+  showStatus('אין עמוד גלוי לחילוץ טקסט - יש לפתוח קובץ PDF או תמונה');
+}
+
+// ===== גל 6: הדבקת גזרת מסך (Snipping Tool וכדומה) וחילוץ טקסט ממנה =====
+// רעיון: כשאין לתוסף גישה לקובץ עצמו (למשל ספר PDF בספרייה), המשתמש גוזר
+// ידנית את מה שהוא רואה על המסך (Win+Shift+S / Cmd+Shift+4 וכדומה - זה מעתיק
+// תמונה ללוח), והתוסף טוען את הגזרה מהלוח כתמונה ומריץ עליה חילוץ/OCR - בלי
+// להזדקק לשום API של אוצריא.
+async function loadPastedBlobAndExtract(blob){
+  if (!blob) return;
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('שגיאה בקריאת התמונה מהלוח'));
+    reader.readAsDataURL(blob);
+  });
+  await loadImage(dataUrl, 'גזרת מסך.png');
+  showStatus('הגזרה נטענה - מחלץ טקסט...');
+  await extractTextSmart();
+}
+
+// ===== צילום מסך ובחירת אזור בתוך התוסף (getDisplayMedia) =====
+// אם "צלם עכשיו" נלחץ רק אחרי שחוזרים לתוסף, הצילום תופס את התוסף עצמו (מה
+// שרואים באותו רגע) ולא את העמוד שרצינו - כי הזרם משקף את מה שמוצג *עכשיו*
+// בחלון המשותף, לא הקפאה של מה שהיה כשהתחלנו. הפתרון: צילום אוטומטי אחרי
+// ספירה לאחור, כדי שהלחיצה על "עכשיו" בפועל לא נדרשת בכלל - עוברים לעמוד
+// הרצוי ומחכים, בלי לחזור לתוסף. תלוי בכך שה-setTimeout ממשיך לרוץ כשה-
+// webview של התוסף ברקע (לא הופסק/הושמד) - זה נראה תקין (הבאנר עצמו נשאר
+// חי כשחוזרים), אבל טיימר ברקע לא נבדק לעומק.
+let captureSourceCanvas = null, captureDrag = null;
+let armedStream = null, armedVideo = null, armedTimerId = null, armedSecondsLeft = 0;
+
+async function startScreenCaptureSelect(){
+  if (armedStream){ els.captureArmedBanner.classList.add('show'); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+    showStatus('הסביבה הזו לא תומכת בצילום מסך בתוך התוסף - אפשר להשתמש בכפתור "הדבק גזרת מסך וחלץ" עם כלי הגזירה של המערכת (Win+Shift+S)');
+    return;
+  }
+  let stream;
+  try {
+    // displaySurface:'monitor' הוא רמז (לא מובטח) לבקש מסך שלם ולא רק חלון/לשונית -
+    // ניסיון אחרון להימנע ממצב שבו נתפס רק המשטח של התוסף עצמו.
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor', cursor: 'never' } });
+  } catch(e){
+    return; // המשתמש ביטל את דיאלוג ההרשאה
+  }
+  const video = document.createElement('video');
+  video.srcObject = stream;
+  video.muted = true;
+  try { await video.play(); } catch(e){}
+  armedStream = stream;
+  armedVideo = video;
+  els.captureArmedBanner.classList.add('show');
+  startArmedCountdown(5);
+  // אם המשתמש עוצר את השיתוף מתפריט המערכת/הדפדפן במקום מהתוסף עצמו
+  const track = stream.getVideoTracks()[0];
+  if (track) track.addEventListener('ended', cancelArmedCapture);
+}
+
+function startArmedCountdown(seconds){
+  armedSecondsLeft = seconds;
+  els.captureCountdown.textContent = String(armedSecondsLeft);
+  clearInterval(armedTimerId);
+  armedTimerId = setInterval(() => {
+    armedSecondsLeft -= 1;
+    if (armedSecondsLeft <= 0){
+      clearInterval(armedTimerId);
+      armedTimerId = null;
+      captureArmedFrameNow();
+      return;
+    }
+    els.captureCountdown.textContent = String(armedSecondsLeft);
+  }, 1000);
+}
+
+function cancelArmedCapture(){
+  clearInterval(armedTimerId);
+  armedTimerId = null;
+  if (armedStream) armedStream.getTracks().forEach(t => t.stop());
+  armedStream = null;
+  armedVideo = null;
+  els.captureArmedBanner.classList.remove('show');
+}
+
+function captureArmedFrameNow(){
+  if (!armedStream || !armedVideo) return;
+  const video = armedVideo;
+  if (!video.videoWidth || !video.videoHeight){
+    showStatus('השיתוף נעצר או שאין עדיין תמונה - נסו שוב');
+    cancelArmedCapture();
+    return;
+  }
+  const cap = document.createElement('canvas');
+  cap.width = video.videoWidth;
+  cap.height = video.videoHeight;
+  cap.getContext('2d').drawImage(video, 0, 0);
+  captureSourceCanvas = cap;
+  els.captureImg.src = cap.toDataURL('image/png');
+  cancelArmedCapture();
+  openCaptureOverlay();
+}
+
+function openCaptureOverlay(){
+  els.captureSel.style.display = 'none';
+  els.captureActions.classList.remove('show');
+  els.captureOverlay.classList.add('open');
+}
+function closeCaptureOverlay(){
+  els.captureOverlay.classList.remove('open');
+  captureSourceCanvas = null;
+  captureDrag = null;
+}
+
+els.captureImgWrap.addEventListener('mousedown', (e) => {
+  const rect = els.captureImgWrap.getBoundingClientRect();
+  captureDrag = { x0: e.clientX - rect.left, y0: e.clientY - rect.top, rect };
+  els.captureSel.style.left = captureDrag.x0 + 'px';
+  els.captureSel.style.top = captureDrag.y0 + 'px';
+  els.captureSel.style.width = '0px';
+  els.captureSel.style.height = '0px';
+  els.captureSel.style.display = 'block';
+  els.captureActions.classList.remove('show');
+});
+els.captureImgWrap.addEventListener('mousemove', (e) => {
+  if (!captureDrag) return;
+  const x1 = e.clientX - captureDrag.rect.left, y1 = e.clientY - captureDrag.rect.top;
+  const x = Math.min(captureDrag.x0, x1), y = Math.min(captureDrag.y0, y1);
+  const w = Math.abs(x1 - captureDrag.x0), h = Math.abs(y1 - captureDrag.y0);
+  els.captureSel.style.left = x + 'px';
+  els.captureSel.style.top = y + 'px';
+  els.captureSel.style.width = w + 'px';
+  els.captureSel.style.height = h + 'px';
+});
+window.addEventListener('mouseup', () => {
+  if (!captureDrag) return;
+  const w = parseFloat(els.captureSel.style.width) || 0;
+  const h = parseFloat(els.captureSel.style.height) || 0;
+  if (w > 5 && h > 5) els.captureActions.classList.add('show');
+  // מפסיק את הגרירה בפועל - בלי זה mousemove ממשיך "לגרור" את המלבן אחרי
+  // העכבר גם בלי שהכפתור לחוץ, כי הוא רק בדק truthy ולא באמת נעצר.
+  captureDrag = null;
+});
+
+els.captureCancel.addEventListener('click', closeCaptureOverlay);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && els.captureOverlay.classList.contains('open')) closeCaptureOverlay();
+});
+
+els.captureConfirm.addEventListener('click', async () => {
+  if (!captureSourceCanvas) return;
+  const selRect = els.captureSel.getBoundingClientRect();
+  const imgRect = els.captureImg.getBoundingClientRect();
+  const scaleX = captureSourceCanvas.width / imgRect.width;
+  const scaleY = captureSourceCanvas.height / imgRect.height;
+  const sx = (selRect.left - imgRect.left) * scaleX;
+  const sy = (selRect.top - imgRect.top) * scaleY;
+  const sw = selRect.width * scaleX;
+  const sh = selRect.height * scaleY;
+  const out = document.createElement('canvas');
+  out.width = Math.max(1, Math.round(sw));
+  out.height = Math.max(1, Math.round(sh));
+  out.getContext('2d').drawImage(captureSourceCanvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
+  const blob = await new Promise(resolve => out.toBlob(resolve, 'image/png'));
+  closeCaptureOverlay();
+  if (blob) await loadPastedBlobAndExtract(blob);
+});
+
+els.captureSelect.addEventListener('click', startScreenCaptureSelect);
+els.captureNow.addEventListener('click', captureArmedFrameNow);
+els.captureArmCancel.addEventListener('click', cancelArmedCapture);
+els.captureExtend.addEventListener('click', () => { if (armedStream) startArmedCountdown(armedSecondsLeft + 5); });
+
+async function pasteAndExtractFromClipboard(){
+  if (!navigator.clipboard || !navigator.clipboard.read){
+    showStatus('הסביבה לא תומכת בקריאת תמונה מהלוח בדרך זו - ניתן לנסות להדביק עם Ctrl+V בתוך התוסף');
+    return false;
+  }
+  try {
+    const items = await navigator.clipboard.read();
+    let blob = null;
+    for (const item of items){
+      const type = item.types.find(t => t.startsWith('image/'));
+      if (type){ blob = await item.getType(type); break; }
+    }
+    if (!blob){
+      showStatus('לא נמצאה תמונה בלוח - יש לגזור קודם עם כלי הגזירה של המערכת (למשל Win+Shift+S) ואז ללחוץ כאן');
+      return false;
+    }
+    await loadPastedBlobAndExtract(blob);
+    return true;
+  } catch(e){
+    showStatus('שגיאה בקריאת הלוח: ' + ((e && e.message) || String(e)) + ' - אפשר לנסות במקום זאת Ctrl+V בתוך התוסף');
+    return false;
+  }
+}
+
+els.pasteExtract.addEventListener('click', pasteAndExtractFromClipboard);
+
+// גיבוי רחב-תאימות: הדבקה ישירה עם Ctrl+V בתוך התוסף (לא תלוי בהרשאת ה-Clipboard API)
+document.addEventListener('paste', async (e) => {
+  if (!e.clipboardData || !e.clipboardData.items) return;
+  for (const item of e.clipboardData.items){
+    if (item.type && item.type.startsWith('image/')){
+      const blob = item.getAsFile();
+      if (blob){ e.preventDefault(); await loadPastedBlobAndExtract(blob); }
+      return;
+    }
+  }
+});
+
+const ctxMenu = document.getElementById('custom-ctx-menu');
+function showCtxMenu(x, y){
+  ctxMenu.style.left = Math.min(x, window.innerWidth - 160) + 'px';
+  ctxMenu.style.top = Math.min(y, window.innerHeight - 50) + 'px';
+  ctxMenu.style.display = 'block';
+}
+function hideCtxMenu(){ ctxMenu.style.display = 'none'; }
+els.canvas.addEventListener('contextmenu', e => {
+  if (mode !== 'pdf' && mode !== 'image') return;
+  e.preventDefault();
+  showCtxMenu(e.clientX, e.clientY);
+});
+document.addEventListener('click', hideCtxMenu);
+document.getElementById('ctx-extract-text').addEventListener('click', e => {
+  e.stopPropagation();
+  hideCtxMenu();
+  extractTextSmart();
+});
+
+// ===== Extract text via right-click / toolbar button in Otzaria's own library reader (any book, incl. PDF) =====
+const LIB_CTX_MENU_ITEM_ID = 'chadbedera-extract-text';
+const LIB_TOOLBAR_ITEM_ID = 'chadbedera-extract-text-toolbar';
+
+// גל 5 (v2.2.0): הרישום עבר להצהרה דקלרטיבית ב-manifest.json
+// (contributes.startup.contextMenuItems / toolbarItems) לפי מדריך המעבר
+// ב-plugin-sdk README ("ריצת רקע (app.run_on_startup) - מיושן"). כך הפריטים
+// זמינים תמיד בספרייה - כולל ספרי PDF, דרך כפתור סרגל הכלים החדש עם
+// contexts:['reader-pdf'] - בלי להזדקק יותר ל-app.run_on_startup (מוסרת
+// ב-0.9.98) ובלי צורך ב"הרצה ברקע". הרישום היזום הישן נשמר כאן בהערה:
+// async function registerLibraryMenuItem(){
+//   const statusEl = document.getElementById('ctxmenu-status');
+//   try {
+//     await Otzaria.call('reader.addContextMenuItem', {
+//       id: LIB_CTX_MENU_ITEM_ID,
+//       label: 'חלץ טקסט',
+//       icon: 'copy_24_regular'
+//     });
+//     if (statusEl) statusEl.textContent = '✅ הפריט "חלץ טקסט" נרשם בתפריט לחיצה ימנית של הקורא';
+//   } catch(e){
+//     if (statusEl) statusEl.textContent = '⚠️ רישום פריט התפריט נכשל: ' + ((e && e.message) || String(e));
+//   }
+// }
+
+async function extractLibraryTextAndShow(bookId, ref, book, selectedText, bookType){
+  let text = (selectedText && selectedText.trim()) ? selectedText.trim() : null;
+  const source = text ? 'בחירה מסומנת' : 'הקטע הנוכחי';
+  let label = book || '';
+  if (ref) label += (label ? ' - ' : '') + ref;
+  try {
+    if (!text){
+      const res = await Otzaria.call('library.getBookContent', { bookId: bookId, section: ref || '', limit: 5000 });
+      text = (res && res.data) || '';
+    }
+    if (!text){
+      const msg = (bookType === 'pdf')
+        ? 'לא נמצא טקסט מאונדקס עבור ספר ה-PDF הזה במאגר של אוצריא. לתוסף אין גישה לקובץ ה-PDF עצמו של ספרי הספרייה, ולכן אינו יכול לקרוא את שכבת הטקסט המוטבעת בו או להריץ OCR (בשונה מקובץ שנפתח ישירות דרך "פתיחת קובץ" בתוסף). ראו פירוט בטאב אודות.'
+        : 'לא נמצא טקסט לחילוץ במיקום זה';
+      await Otzaria.call('notifications.showInApp', { message: msg, type: 'error' });
+      return;
+    }
+    showTextPanel('חלץ טקסט (' + source + ') - ' + (label || 'ללא כותרת'), text);
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; } catch(e){}
+    await Otzaria.call('notifications.showInApp', {
+      message: copied ? ('הטקסט חולץ והועתק ללוח (' + label + ')') : 'הטקסט חולץ - ניתן להעתיק מהחלונית שנפתחה בתוסף',
+      type: 'success'
+    });
+  } catch(e){
+    await Otzaria.call('notifications.showInApp', { message: 'שגיאה בחילוץ הטקסט: ' + ((e && e.message) || String(e)), type: 'error' });
+  }
+}
+
+async function handleLibraryMenuClick(data){
+  if (!data || data.itemId !== LIB_CTX_MENU_ITEM_ID) return;
+  await extractLibraryTextAndShow(data.currentBookId, data.currentRef, data.currentBook, data.selectedText, data.currentType);
+}
+
+// גל 7: כפתור הסרגל בספר PDF בספרייה מנסה קודם את הטקסט המאונדקס של אוצריא
+// (כמו בעבר), ורק אם לא נמצא - מציע את זרימת גזירת המסך. openPlugin:false
+// (עם app.run_on_startup) גורם לשני המקרים לקרות במופע רקע שקט, כך שההודעה
+// (הישנה או החדשה) מוצגת בספרייה עצמה - בלי לעבור לדף התוסף. tapOpenPlugin
+// מאפשר למשתמש לפתוח את התוסף ביוזמתו אם ירצה, בלחיצה על ההתראה עצמה.
+async function handleLibraryToolbarClick(data){
+  if (!data || data.itemId !== LIB_TOOLBAR_ITEM_ID) return;
+
+  let label = data.currentBook || '';
+  if (data.currentRef) label += (label ? ' - ' : '') + data.currentRef;
+
+  let text = null;
+  try {
+    const res = await Otzaria.call('library.getBookContent', { bookId: data.currentBookId, section: data.currentRef || '', limit: 5000 });
+    text = (res && res.data) || '';
+  } catch(e){ text = null; }
+
+  if (text){
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; } catch(e){}
+    await Otzaria.call('notifications.showInApp', {
+      message: copied ? ('הטקסט חולץ והועתק ללוח (' + label + ')') : 'הטקסט חולץ - פתחו את התוסף כדי לראות ולהעתיק אותו',
+      type: 'success',
+      tapOpenPlugin: !copied
+    });
+    return;
+  }
+
+  await Otzaria.call('notifications.showInApp', {
+    message: 'לא נמצא טקסט מאונדקס עבור ' + (label || 'הספר הזה') + '. גזרו את האזור הרצוי עם כלי הגזירה של המערכת (Win+Shift+S), ואז לחצו כאן לפתיחת התוסף - שם יש כפתור להדבקה וחילוץ, וגם אפשרות לצלם ולבחור אזור בתוך התוסף עצמו.',
+    type: 'error',
+    tapOpenPlugin: true
+  });
+}
+
+// ===== About / diagnostics =====
+els.aboutToggle.addEventListener('click', () => els.aboutPanel.classList.toggle('open'));
+
+async function runDiagnostics(){
+  const lines = [];
+  lines.push('Otzaria API זמין: ' + (window.Otzaria && typeof Otzaria.call === 'function' ? 'כן' : 'לא'));
+  lines.push('תמיכת WebAssembly: ' + (typeof WebAssembly !== 'undefined' ? 'כן ✅' : 'לא ❌'));
+  lines.push('תמיכת Web Worker: ' + (typeof Worker !== 'undefined' ? 'כן ✅' : 'לא ❌'));
+  const extraLangsForDiag = await getExtraLanguages();
+  lines.push('שפות OCR פעילות: heb' + (extraLangsForDiag.length ? '+' + extraLangsForDiag.map(l => l.code).join('+') : ''));
+  let stage = 'התחלה';
+  const render = (extra) => {
+    els.diagBox.textContent = lines.concat(extra ? [extra] : []).join('\n');
+  };
+  render('בודק... שלב נוכחי: ' + stage);
+  const t0 = performance.now();
+  const TIMEOUT_MS = 30000;
+  try {
+    const result = await Promise.race([
+      (async () => {
+        stage = 'טעינת קובץ מנוע ה-OCR ואתחולו (createWorker)';
+        render('בודק... שלב נוכחי: ' + stage);
+        const worker = await getTesseractWorker();
+        stage = 'זיהוי טקסט על תמונת בדיקה (recognize)';
+        render('בודק... שלב נוכחי: ' + stage);
+        const testCanvas = document.createElement('canvas');
+        testCanvas.width = 200; testCanvas.height = 70;
+        const ctx = testCanvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 200, 70);
+        ctx.fillStyle = '#000'; ctx.font = '36px sans-serif'; ctx.direction = 'rtl';
+        ctx.fillText('שלום', 160, 46);
+        const { data } = await worker.recognize(testCanvas);
+        return data;
+      })(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('חריגה מזמן ההמתנה (' + (TIMEOUT_MS/1000) + ' שניות) בשלב: ' + stage)), TIMEOUT_MS))
+    ]);
+    const ms = Math.round(performance.now() - t0);
+    lines.push('מנוע OCR - בדיקת קצה-לקצה: הצליח ✅ (' + ms + ' מ"ש, זוהה: "' + result.text.trim().slice(0, 30) + '")');
+  } catch(e){
+    const ms = Math.round(performance.now() - t0);
+    lines.push('מנוע OCR - בדיקת קצה-לקצה: נכשל ❌ (' + ms + ' מ"ש, שלב אחרון: ' + stage + ')');
+    lines.push('שגיאה מלאה: ' + ((e && e.message) || String(e)));
+  }
+  lines.push('קובץ נוכחי: ' + (currentFileName || 'אין'));
+  els.diagBox.textContent = lines.join('\n');
+}
+els.diagRefresh.addEventListener('click', runDiagnostics);
+document.getElementById('diag-details').addEventListener('toggle', function(){
+  if (this.open) runDiagnostics();
+});
+
+// ===== OCR language management =====
+async function renderLangList(){
+  els.langList.textContent = '';
+  const builtin = document.createElement('div');
+  builtin.textContent = '🇮🇱 עברית (מובנית)';
+  els.langList.appendChild(builtin);
+  const extra = await getExtraLanguages();
+  for (const lang of extra) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:4px;';
+    const label = document.createElement('span');
+    label.style.flex = '1';
+    label.textContent = '🌐 ' + lang.code;
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'icon-only';
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'הסרת השפה';
+    removeBtn.addEventListener('click', async () => {
+      await deleteExtraLanguage(lang.code);
+      if (tesseractWorker) { try { await tesseractWorker.terminate(); } catch(e){} tesseractWorker = null; }
+      showStatus('השפה "' + lang.code + '" הוסרה');
+      renderLangList();
+    });
+    row.appendChild(label);
+    row.appendChild(removeBtn);
+    els.langList.appendChild(row);
+  }
+}
+els.addLangBtn.addEventListener('click', () => els.langFileInput.click());
+els.langFileInput.addEventListener('change', async () => {
+  const file = els.langFileInput.files && els.langFileInput.files[0];
+  els.langFileInput.value = '';
+  if (!file) return;
+  const code = file.name.replace(/\.traineddata$/i, '');
+  if (!/^[a-z_]+$/i.test(code)) {
+    showStatus('שם קובץ לא תקין - צריך להיות בפורמט קוד_שפה.traineddata (למשל eng.traineddata)');
+    return;
+  }
+  try {
+    showStatus('מוסיף שפה "' + code + '"...');
+    const buf = await file.arrayBuffer();
+    const b64 = bytesToBase64(new Uint8Array(buf));
+    await putExtraLanguage(code, b64);
+    if (tesseractWorker) { try { await tesseractWorker.terminate(); } catch(e){} tesseractWorker = null; }
+    showStatus('השפה "' + code + '" נוספה בהצלחה');
+    renderLangList();
+  } catch(e){
+    showStatus('שגיאה בהוספת השפה: ' + ((e && e.message) || String(e)));
+  }
+});
+renderLangList();
+
+// ===== Feedback (בתוך פאנל אודות) =====
+els.sendFeedback.addEventListener('click', async () => {
+  const msg = (els.feedbackText.value || '').trim();
+  if (!msg) { els.feedbackStatus.textContent = 'נא לכתוב הודעה לפני השליחה'; return; }
+  els.sendFeedback.disabled = true;
+  els.feedbackStatus.textContent = 'שולח...';
+  try {
+    await Otzaria.call('feedback.sendEmail', {
+      to: 'E0548433917@outlook.com',
+      subject: 'משוב על קורא ה-PDF בעינים למקרא',
+      body: msg,
+      includeSystemInfo: true
+    });
+    els.feedbackText.value = '';
+    els.feedbackStatus.textContent = 'המשוב נשלח, תודה!';
+  } catch(e){
+    els.feedbackStatus.textContent = 'שגיאה בשליחת המשוב: ' + ((e && e.message) || String(e));
+  } finally {
+    els.sendFeedback.disabled = false;
+  }
+});
+
+// ===== עינים למקרא: גשר הורה ← iframe (Issue #65) =====
+// הדף נטען כ-iframe same-origin מ-shell/home.js, ומקבל את בייטי ה-PDF
+// ב-postMessage במקום דרך בורר קבצים. הקובץ עצמו יושב ב-IndexedDB של
+// התוסף (madaei-hatanach-files) ולא ב-storage של אוצריא — ר' shell/data.js.
+window.addEventListener('message', async (ev) => {
+  const d = ev && ev.data;
+  if (!d || d.type !== 'madaei-pdf-open') return;
+  try {
+    let buf = d.bytes;
+    if (buf && typeof buf.arrayBuffer === 'function') buf = await buf.arrayBuffer();
+    if (!(buf instanceof ArrayBuffer)) throw new Error('לא התקבלו נתוני קובץ');
+    await loadPdf(buf, d.name || 'מדריך.pdf');
+  } catch(e){
+    showStatus('שגיאה בטעינת הקובץ: ' + ((e && e.message) || String(e)));
+  }
+});
+try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'madaei-pdf-ready' }, '*'); } catch(e){}
+
+// ===== Boot =====
+async function boot(){
+  const savedScale = await storageGet('madaei_pdf_scale');
+  if (typeof savedScale === 'number' && savedScale > 0) scale = savedScale;
+  // גל 5: הרישום עצמו קורה כבר ב-manifest.json (contributes.startup) -
+  // אין יותר צורך לקרוא ל-registerLibraryMenuItem() כאן.
+  const statusEl = document.getElementById('ctxmenu-status');
+  if (statusEl) statusEl.textContent = '✅ "חלץ טקסט" זמין תמיד בתפריט לחיצה ימנית ובכפתור סרגל הכלים של הקורא (נרשם ישירות מה-manifest, כולל ספרי PDF)';
+}
+
+renderRecents();
+
+function waitForOtzaria(elapsed){
+  if (window.Otzaria && typeof Otzaria.on === 'function'){
+    Otzaria.on('plugin.boot', payload => { applyTheme(payload && payload.theme); boot(); });
+    Otzaria.on('theme.changed', applyTheme);
+    Otzaria.on('reader.context_menu_item_clicked', handleLibraryMenuClick);
+    Otzaria.on('reader.toolbar_item_clicked', handleLibraryToolbarClick);
+    boot();
+    return;
+  }
+  if (elapsed > 4000 && !waitForOtzaria._warned){
+    waitForOtzaria._warned = true;
+    showStatus('ממתין לטעינת אוצריא...');
+  }
+  setTimeout(() => waitForOtzaria(elapsed + 200), 200);
+}
+waitForOtzaria(0);
+
+})();
+</script>
+</body>
+</html>
