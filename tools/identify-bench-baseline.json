@@ -1,0 +1,1570 @@
+{
+ "engine": "shell/identify.js",
+ "cases": 81,
+ "TP": 183,
+ "FP": 222,
+ "FN": 15,
+ "perfect": 6,
+ "P": 0.45185185185185184,
+ "R": 0.9242424242424242,
+ "F1": 0.6069651741293532,
+ "perTag": {
+  "מילה-נפוצה": {
+   "n": 24,
+   "tp": 61,
+   "fp": 61,
+   "fn": 1,
+   "perfect": 0
+  },
+  "כינוי-עם": {
+   "n": 14,
+   "tp": 20,
+   "fp": 32,
+   "fn": 0,
+   "perfect": 2
+  },
+  "שווי-שם": {
+   "n": 15,
+   "tp": 43,
+   "fp": 75,
+   "fn": 3,
+   "perfect": 0
+  },
+  "שרשרת-יחוס": {
+   "n": 1,
+   "tp": 7,
+   "fp": 0,
+   "fn": 1,
+   "perfect": 0
+  },
+  "recall": {
+   "n": 14,
+   "tp": 32,
+   "fp": 30,
+   "fn": 9,
+   "perfect": 3
+  },
+  "פועל": {
+   "n": 1,
+   "tp": 1,
+   "fp": 2,
+   "fn": 0,
+   "perfect": 0
+  },
+  "תלמוד": {
+   "n": 12,
+   "tp": 19,
+   "fp": 22,
+   "fn": 1,
+   "perfect": 1
+  }
+ },
+ "rows": [
+  {
+   "id": "A01",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ד, ח",
+   "hits": [
+    "people|קין",
+    "people|לאל",
+    "people|הבל",
+    "people|אחיו"
+   ],
+   "fp": [
+    "people|לאל",
+    "people|אחיו"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A02",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ד, ט",
+   "hits": [
+    "people|לאל",
+    "people|קין",
+    "people|הבל",
+    "people|שמר",
+    "people|שמיר",
+    "people|אחי"
+   ],
+   "fp": [
+    "people|לאל",
+    "people|שמר",
+    "people|שמיר",
+    "people|אחי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A03",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ג, כ",
+   "hits": [
+    "people|שם",
+    "people|חוה"
+   ],
+   "fp": [
+    "people|שם"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A04",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ד, יט",
+   "hits": [
+    "people|למך (בן מתושאל)",
+    "people|למך (אבי נח)",
+    "people|שם",
+    "people|עדה",
+    "people|צלה"
+   ],
+   "fp": [
+    "people|למך (אבי נח)",
+    "people|שם"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A05",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ט, יח",
+   "hits": [
+    "people|נח",
+    "domem|מן",
+    "people|שם",
+    "people|יפת",
+    "people|אבי",
+    "people|כנען"
+   ],
+   "fp": [
+    "domem|מן",
+    "people|אבי"
+   ],
+   "fn": [
+    "people|חם"
+   ]
+  },
+  {
+   "id": "A06",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית כה, ל",
+   "hits": [
+    "people|עשו",
+    "people|לאל",
+    "people|יעקב",
+    "domem|מן",
+    "domem|כן (כיור)",
+    "places|הר שעיר",
+    "domem|אדום"
+   ],
+   "fp": [
+    "people|לאל",
+    "domem|מן",
+    "domem|כן (כיור)",
+    "domem|אדום"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A07",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ד, כ",
+   "hits": [
+    "people|עדה",
+    "people|יבל",
+    "people|אבי",
+    "people|אהל"
+   ],
+   "fp": [
+    "people|אבי",
+    "people|אהל"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A08",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ד, כא",
+   "hits": [
+    "people|אחיו",
+    "people|יובל",
+    "people|אבי",
+    "domem|כנור",
+    "domem|עוגב"
+   ],
+   "fp": [
+    "people|אחיו",
+    "people|אבי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A09",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית כד, נג",
+   "hits": [
+    "people|עבד",
+    "people|עובד",
+    "domem|כסף",
+    "domem|דינר / זוז (כסף)",
+    "domem|זהב",
+    "people|רבקה",
+    "people|נתן"
+   ],
+   "fp": [
+    "people|עבד",
+    "people|עובד",
+    "domem|דינר / זוז (כסף)",
+    "people|נתן"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A10",
+   "tag": "מילה-נפוצה",
+   "ref": "שופטים ח, ו",
+   "hits": [
+    "people|שרה",
+    "people|שרי",
+    "people|זבח (מלך מדין)",
+    "people|צלמנע (מלך מדין)",
+    "people|נתן"
+   ],
+   "fp": [
+    "people|שרה",
+    "people|שרי",
+    "people|נתן"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A11",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית לו, לח",
+   "hits": [
+    "people|שאול",
+    "people|שאל",
+    "people|בעל",
+    "people|חנן בן עכבור"
+   ],
+   "fp": [
+    "people|שאל",
+    "people|בעל"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A12",
+   "tag": "מילה-נפוצה",
+   "ref": "שמואל א יד, נ",
+   "hits": [
+    "people|שאול",
+    "people|שאל",
+    "people|אחינעם",
+    "people|אחימעץ",
+    "people|אבינר",
+    "people|נר",
+    "domem|נר",
+    "people|דוד"
+   ],
+   "fp": [
+    "people|שאל",
+    "domem|נר",
+    "people|דוד"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A13",
+   "tag": "כינוי-עם",
+   "ref": "שופטים ג, ל",
+   "hits": [
+    "people|מואב",
+    "people|תחת",
+    "places|תחת",
+    "people|יעקב"
+   ],
+   "fp": [
+    "people|תחת",
+    "places|תחת",
+    "people|יעקב"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A14",
+   "tag": "מילה-נפוצה",
+   "ref": "שופטים ו, יא",
+   "hits": [
+    "people|תחת",
+    "places|תחת",
+    "flora|אלה",
+    "people|עפרה",
+    "places|עפרה (בנימין)",
+    "people|יואש אבי העזרי",
+    "people|גדעון (ירובעל)",
+    "people|מדין",
+    "places|מדין"
+   ],
+   "fp": [
+    "people|תחת",
+    "places|תחת",
+    "people|עפרה",
+    "places|עפרה (בנימין)"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A15",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ד, ב",
+   "hits": [
+    "people|אחיו",
+    "people|הבל",
+    "people|קין",
+    "people|עבד",
+    "people|עובד"
+   ],
+   "fp": [
+    "people|אחיו",
+    "people|עבד",
+    "people|עובד"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A16",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ט, כז",
+   "hits": [
+    "people|יפת",
+    "flora|אלה",
+    "people|שם",
+    "people|כנען",
+    "people|עבד",
+    "people|עובד"
+   ],
+   "fp": [
+    "flora|אלה",
+    "people|עבד",
+    "people|עובד"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A17",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית יז, טו",
+   "hits": [
+    "flora|אלה",
+    "people|לאל",
+    "people|אברהם",
+    "people|שרה",
+    "people|שרי",
+    "people|שריה"
+   ],
+   "fp": [
+    "flora|אלה",
+    "people|לאל",
+    "people|שריה"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A18",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית מט, כב",
+   "hits": [
+    "people|יוסף",
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי",
+    "animal|שור"
+   ],
+   "fp": [
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי",
+    "animal|שור"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A19",
+   "tag": "שווי-שם",
+   "ref": "שמואל א ב, יא",
+   "hits": [
+    "people|אלקנה",
+    "people|אלקנה בן יואל",
+    "people|אלקנה בן ירחם",
+    "people|אלקנה בן מחת",
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי"
+   ],
+   "fp": [
+    "people|אלקנה בן יואל",
+    "people|אלקנה בן ירחם",
+    "people|אלקנה בן מחת",
+    "people|עילי",
+    "domem|מכתש ועלי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A20",
+   "tag": "מילה-נפוצה",
+   "ref": "יחזקאל לח, ב",
+   "hits": [
+    "people|לאל",
+    "people|גוג",
+    "people|מגוג",
+    "people|ראש",
+    "flora|ראש",
+    "people|משך",
+    "people|תבל"
+   ],
+   "fp": [
+    "people|לאל",
+    "flora|ראש"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A21",
+   "tag": "שווי-שם",
+   "ref": "שופטים ט, נג",
+   "hits": [
+    "domem|ריחיים ופלח רכב",
+    "people|ראש",
+    "flora|ראש",
+    "people|אבימלך (מלך גרר)",
+    "people|אבימלך",
+    "people|אבימלך בן ירבשת",
+    "people|אבימלך בן ירבעל",
+    "people|אבימלך בן אביתר"
+   ],
+   "fp": [
+    "people|ראש",
+    "flora|ראש",
+    "people|אבימלך (מלך גרר)",
+    "people|אבימלך",
+    "people|אבימלך בן אביתר"
+   ],
+   "fn": [
+    "people|אבימלך בן גדעון"
+   ]
+  },
+  {
+   "id": "A22",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית לו, כ",
+   "hits": [
+    "people|שעיר",
+    "places|ארץ אדום",
+    "animal|שעיר",
+    "people|חרי",
+    "people|ישבי",
+    "people|לוטן",
+    "people|שובל",
+    "people|צבעון",
+    "people|ענה"
+   ],
+   "fp": [
+    "animal|שעיר",
+    "people|ישבי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A23",
+   "tag": "מילה-נפוצה",
+   "ref": "יחזקאל כז, ח",
+   "hits": [
+    "people|ישבי",
+    "people|צידון",
+    "places|צידון",
+    "people|ארוד",
+    "flora|שיטה",
+    "people|צור",
+    "places|צור"
+   ],
+   "fp": [
+    "people|ישבי",
+    "people|צידון",
+    "flora|שיטה",
+    "people|צור"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A24",
+   "tag": "שווי-שם",
+   "ref": "בראשית כ, ב",
+   "hits": [
+    "people|אברהם",
+    "people|לאל",
+    "people|שרה",
+    "people|שריה",
+    "people|אבימלך (מלך גרר)",
+    "people|אבימלך",
+    "people|אבימלך בן ירבשת",
+    "people|אבימלך בן ירבעל",
+    "people|אבימלך בן אביתר"
+   ],
+   "fp": [
+    "people|לאל",
+    "people|שריה",
+    "people|אבימלך",
+    "people|אבימלך בן ירבשת",
+    "people|אבימלך בן ירבעל",
+    "people|אבימלך בן אביתר"
+   ],
+   "fn": []
+  },
+  {
+   "id": "A25",
+   "tag": "כינוי-עם",
+   "ref": "שופטים ג, יז",
+   "hits": [
+    "people|עגלון",
+    "places|עגלון",
+    "people|מלוך",
+    "people|מואב"
+   ],
+   "fp": [
+    "places|עגלון",
+    "people|מלוך"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B01",
+   "tag": "כינוי-עם",
+   "ref": "ישעיהו מג, ג",
+   "hits": [
+    "people|יעקב",
+    "people|מצרים (בן חם)",
+    "people|כוש",
+    "people|סבא"
+   ],
+   "fp": [
+    "people|יעקב"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B02",
+   "tag": "שווי-שם",
+   "ref": "דברי הימים א ב, ד",
+   "hits": [
+    "people|תמר",
+    "flora|תמר",
+    "people|פרץ",
+    "people|זרח",
+    "people|זרח בן עדיה",
+    "people|זרח בן יהודה",
+    "people|יהודה",
+    "people|יהודה בן יואש",
+    "people|יהודה בן יהואש",
+    "places|יהודה (אזור)"
+   ],
+   "fp": [
+    "flora|תמר",
+    "people|זרח",
+    "people|זרח בן עדיה",
+    "people|יהודה בן יואש",
+    "people|יהודה בן יהואש",
+    "places|יהודה (אזור)"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B03",
+   "tag": "כינוי-עם",
+   "ref": "ישעיהו כ, ה",
+   "hits": [
+    "people|כוש",
+    "domem|מכוש",
+    "people|מצרים (בן חם)"
+   ],
+   "fp": [
+    "domem|מכוש"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B04",
+   "tag": "כינוי-עם",
+   "ref": "ישעיהו כ, א",
+   "hits": [
+    "people|תרתן",
+    "people|סרגון",
+    "people|מלוך",
+    "people|אשור",
+    "places|אשדוד"
+   ],
+   "fp": [
+    "people|מלוך"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B05",
+   "tag": "כינוי-עם",
+   "ref": "בראשית יט, לז",
+   "hits": [
+    "people|מואב",
+    "people|אבי"
+   ],
+   "fp": [
+    "people|אבי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B06",
+   "tag": "כינוי-עם",
+   "ref": "בראשית יט, לח",
+   "hits": [
+    "people|בן עמי",
+    "people|אבי",
+    "places|ארץ בני עמון"
+   ],
+   "fp": [
+    "people|אבי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B07",
+   "tag": "שרשרת-יחוס",
+   "ref": "דברי הימים א ה, יד",
+   "hits": [
+    "people|אביחיל",
+    "people|חורי",
+    "people|ירוח",
+    "people|גלעד בן מיכאל",
+    "people|ישישי",
+    "people|יחדו",
+    "people|בוז"
+   ],
+   "fp": [],
+   "fn": [
+    "people|מיכאל בן ישישי"
+   ]
+  },
+  {
+   "id": "B08",
+   "tag": "כינוי-עם",
+   "ref": "בראשית מט, יז",
+   "hits": [
+    "people|דן",
+    "places|דן",
+    "people|נחש",
+    "animal|נחש",
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי",
+    "people|ארח",
+    "animal|סוס"
+   ],
+   "fp": [
+    "places|דן",
+    "people|נחש",
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי",
+    "people|ארח"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B09",
+   "tag": "כינוי-עם",
+   "ref": "במדבר לד, כד",
+   "hits": [
+    "people|אפרים",
+    "people|קמואל",
+    "people|שפטן"
+   ],
+   "fp": [],
+   "fn": []
+  },
+  {
+   "id": "B10",
+   "tag": "כינוי-עם",
+   "ref": "בראשית י, יד",
+   "hits": [
+    "people|פתרסים",
+    "people|כסלחים",
+    "places|ארץ פלשתים",
+    "people|כפתורים"
+   ],
+   "fp": [],
+   "fn": []
+  },
+  {
+   "id": "B11",
+   "tag": "כינוי-עם",
+   "ref": "במדבר ב, כ",
+   "hits": [
+    "people|מנשה",
+    "people|מנשה בן יוסף",
+    "people|מנשה בן יחזקיהו",
+    "people|בני",
+    "people|גמליאל",
+    "amoraim|גמליאל",
+    "people|פדהצור"
+   ],
+   "fp": [
+    "people|מנשה בן יחזקיהו",
+    "people|בני",
+    "amoraim|גמליאל"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B12",
+   "tag": "כינוי-עם",
+   "ref": "שופטים כא, יג",
+   "hits": [
+    "people|עדה",
+    "people|לאל",
+    "people|בנימן",
+    "domem|סלע (חז״ל)",
+    "people|רמון",
+    "people|שלם",
+    "people|שלום",
+    "people|שלום בן הלוחש",
+    "people|שלום בן יביש",
+    "people|שלום בן קורא",
+    "people|שלום בן צדוק"
+   ],
+   "fp": [
+    "people|עדה",
+    "people|לאל",
+    "domem|סלע (חז״ל)",
+    "people|שלם",
+    "people|שלום",
+    "people|שלום בן הלוחש",
+    "people|שלום בן יביש",
+    "people|שלום בן קורא",
+    "people|שלום בן צדוק"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B13",
+   "tag": "כינוי-עם",
+   "ref": "יהושע יג, י",
+   "hits": [
+    "people|ערי",
+    "people|סיחון",
+    "people|סיחן",
+    "people|מלוך",
+    "places|חשבון",
+    "places|ארץ בני עמון"
+   ],
+   "fp": [
+    "people|ערי",
+    "people|מלוך"
+   ],
+   "fn": []
+  },
+  {
+   "id": "B14",
+   "tag": "שווי-שם",
+   "ref": "ירמיהו לט, יא",
+   "hits": [
+    "people|נבוכדראצר",
+    "people|מלוך",
+    "places|ארץ שנער",
+    "people|ירמיהו",
+    "people|ירמיהו בן חבצניה",
+    "people|ירמיהו בן חלקיהו",
+    "people|נבוזראדן",
+    "amoraim|רב",
+    "people|טבח"
+   ],
+   "fp": [
+    "people|מלוך",
+    "people|ירמיהו בן חבצניה",
+    "amoraim|רב",
+    "people|טבח"
+   ],
+   "fn": []
+  },
+  {
+   "id": "C01",
+   "tag": "שווי-שם",
+   "ref": "דברי הימים א ד, כה",
+   "hits": [
+    "people|שלם",
+    "people|שלום",
+    "people|שלם בן יאשיהו",
+    "people|שלם בן יבש",
+    "people|שלם בן בסודיה",
+    "people|שלם בן יועד",
+    "people|שלם בן צדוק",
+    "people|שלם בן תקוה",
+    "people|שלם בן משלמית",
+    "people|שלם בן ברכיה",
+    "people|שלם בן הודויה",
+    "people|שלם בן שפטיה",
+    "places|ירושלים",
+    "people|מבשם",
+    "people|משמע",
+    "people|שמע"
+   ],
+   "fp": [
+    "people|שלום",
+    "people|שלם בן יאשיהו",
+    "people|שלם בן יבש",
+    "people|שלם בן בסודיה",
+    "people|שלם בן יועד",
+    "people|שלם בן צדוק",
+    "people|שלם בן תקוה",
+    "people|שלם בן משלמית",
+    "people|שלם בן ברכיה",
+    "people|שלם בן הודויה",
+    "people|שלם בן שפטיה",
+    "places|ירושלים",
+    "people|שמע"
+   ],
+   "fn": []
+  },
+  {
+   "id": "C02",
+   "tag": "שווי-שם",
+   "ref": "במדבר יא, כח",
+   "hits": [
+    "animal|בת היענה",
+    "people|יהושע בן נון",
+    "people|משה"
+   ],
+   "fp": [
+    "animal|בת היענה"
+   ],
+   "fn": []
+  },
+  {
+   "id": "C03",
+   "tag": "שווי-שם",
+   "ref": "שופטים א, יב",
+   "hits": [
+    "people|כלב",
+    "people|כלוב",
+    "people|כלב בן יפנה",
+    "people|כלב בן חצרון",
+    "people|כלב בן חור",
+    "animal|כלב",
+    "places|דביר (קרית ספר)",
+    "people|עכסה"
+   ],
+   "fp": [
+    "people|כלוב",
+    "people|כלב בן חצרון",
+    "people|כלב בן חור",
+    "animal|כלב"
+   ],
+   "fn": []
+  },
+  {
+   "id": "C04",
+   "tag": "שווי-שם",
+   "ref": "בראשית ט, כו",
+   "hits": [
+    "people|ברוך",
+    "people|ברוך בן נריהו",
+    "people|ברוך בן נריה",
+    "people|שם",
+    "people|כנען",
+    "people|עבד",
+    "people|עובד"
+   ],
+   "fp": [
+    "people|ברוך",
+    "people|ברוך בן נריהו",
+    "people|ברוך בן נריה",
+    "people|עבד",
+    "people|עובד"
+   ],
+   "fn": []
+  },
+  {
+   "id": "C05",
+   "tag": "שווי-שם",
+   "ref": "בראשית יא, כז",
+   "hits": [
+    "flora|אלה",
+    "people|תרח",
+    "places|תרח",
+    "people|אברהם",
+    "people|אברם",
+    "people|נחור (בן שרוג)",
+    "people|נחור (בן תרח)",
+    "people|הרן",
+    "people|לוט",
+    "domem|לוט (בושם)"
+   ],
+   "fp": [
+    "flora|אלה",
+    "places|תרח",
+    "people|נחור (בן שרוג)",
+    "domem|לוט (בושם)"
+   ],
+   "fn": []
+  },
+  {
+   "id": "C06",
+   "tag": "שווי-שם",
+   "ref": "במדבר טז, א",
+   "hits": [
+    "people|קרח",
+    "people|יצהר",
+    "people|קהת",
+    "people|לוי",
+    "amoraim|לוי",
+    "people|דתן",
+    "people|אברם",
+    "people|אבירם",
+    "people|אליאב",
+    "people|אליאב בן ישי",
+    "people|אליאב בן ראובן",
+    "people|אליאב בן חלן",
+    "people|פלת",
+    "people|ראובן"
+   ],
+   "fp": [
+    "amoraim|לוי",
+    "people|אברם",
+    "people|אליאב בן ישי",
+    "people|אליאב בן חלן"
+   ],
+   "fn": [
+    "people|און"
+   ]
+  },
+  {
+   "id": "C07",
+   "tag": "שווי-שם",
+   "ref": "שופטים ט, ו",
+   "hits": [
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי",
+    "people|שכם",
+    "places|שכם",
+    "people|אבימלך (מלך גרר)",
+    "people|אבימלך",
+    "people|אבימלך בן ירבשת",
+    "people|אבימלך בן ירבעל",
+    "people|אבימלך בן אביתר",
+    "people|מלוך"
+   ],
+   "fp": [
+    "people|עלי",
+    "people|עילי",
+    "domem|מכתש ועלי",
+    "people|שכם",
+    "people|אבימלך (מלך גרר)",
+    "people|אבימלך",
+    "people|אבימלך בן אביתר",
+    "people|מלוך"
+   ],
+   "fn": [
+    "people|אבימלך בן גדעון"
+   ]
+  },
+  {
+   "id": "C08",
+   "tag": "שווי-שם",
+   "ref": "שמואל ב כג, כט",
+   "hits": [
+    "people|חלב",
+    "people|ענה",
+    "people|אתי",
+    "people|ריבי",
+    "people|בנימן"
+   ],
+   "fp": [
+    "people|ענה"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D01",
+   "tag": "recall",
+   "ref": "במדבר א, יב",
+   "hits": [
+    "people|אחיעזר",
+    "people|עמישדי"
+   ],
+   "fp": [],
+   "fn": []
+  },
+  {
+   "id": "D02",
+   "tag": "recall",
+   "ref": "בראשית מו, טז",
+   "hits": [
+    "people|גד",
+    "people|צפיון",
+    "people|שוני",
+    "people|אצבן",
+    "people|ערי",
+    "people|ארדי",
+    "people|אראלי"
+   ],
+   "fp": [],
+   "fn": [
+    "people|חגי"
+   ]
+  },
+  {
+   "id": "D03",
+   "tag": "recall",
+   "ref": "נחמיה יב, כח",
+   "hits": [
+    "domem|ככר",
+    "domem|ככר (חול)",
+    "places|ירושלים",
+    "people|חצרי"
+   ],
+   "fp": [
+    "domem|ככר",
+    "domem|ככר (חול)",
+    "people|חצרי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D04",
+   "tag": "recall",
+   "ref": "בראשית י, ג",
+   "hits": [
+    "people|גמר",
+    "people|אשכנז",
+    "places|אשכנז",
+    "people|ריפת",
+    "people|תגרמה"
+   ],
+   "fp": [],
+   "fn": [
+    "people|תוגרמה"
+   ]
+  },
+  {
+   "id": "D05",
+   "tag": "recall",
+   "ref": "יחזקאל ל, ה",
+   "hits": [
+    "people|כוש",
+    "people|פוט",
+    "people|לוד (בן שם)",
+    "places|לוד",
+    "domem|חרב"
+   ],
+   "fp": [],
+   "fn": []
+  },
+  {
+   "id": "D06",
+   "tag": "recall",
+   "ref": "מלכים ב יח, טו",
+   "hits": [
+    "people|חזקיה",
+    "domem|כסף",
+    "domem|דינר / זוז (כסף)",
+    "people|מלוך"
+   ],
+   "fp": [
+    "domem|דינר / זוז (כסף)",
+    "people|מלוך"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D07",
+   "tag": "פועל",
+   "ref": "בראשית יז, כב",
+   "hits": [
+    "animal|יעל",
+    "flora|אלה",
+    "people|אברהם"
+   ],
+   "fp": [
+    "animal|יעל",
+    "flora|אלה"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D08",
+   "tag": "שווי-שם",
+   "ref": "בראשית ה, יט",
+   "hits": [
+    "people|ירד",
+    "people|חנוך (בן קין)",
+    "people|חנוך (בן ירד)",
+    "people|חנוך (בן מדין)",
+    "domem|מנה"
+   ],
+   "fp": [
+    "people|חנוך (בן קין)",
+    "people|חנוך (בן מדין)",
+    "domem|מנה"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D09",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית ה, ז",
+   "hits": [
+    "people|שת",
+    "people|אנוש",
+    "people|שבע"
+   ],
+   "fp": [
+    "people|שבע"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D10",
+   "tag": "recall",
+   "ref": "בראשית י, כד",
+   "hits": [
+    "people|ארפכשד",
+    "people|שלח",
+    "people|עבר"
+   ],
+   "fp": [],
+   "fn": []
+  },
+  {
+   "id": "D11",
+   "tag": "מילה-נפוצה",
+   "ref": "בראשית טז, יא",
+   "hits": [
+    "people|ישמעאל",
+    "people|שמע",
+    "people|לאל"
+   ],
+   "fp": [
+    "people|שמע",
+    "people|לאל"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D12",
+   "tag": "recall",
+   "ref": "בראשית י, א",
+   "hits": [
+    "flora|אלה",
+    "people|נח",
+    "people|שם",
+    "people|חם",
+    "people|יפת",
+    "people|אחר"
+   ],
+   "fp": [
+    "flora|אלה",
+    "people|אחר"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D13",
+   "tag": "recall",
+   "ref": "בראשית י, כא",
+   "hits": [
+    "domem|לשם",
+    "people|אבי",
+    "people|עבר",
+    "people|אחי",
+    "people|יפת"
+   ],
+   "fp": [
+    "domem|לשם",
+    "people|אבי",
+    "people|אחי"
+   ],
+   "fn": [
+    "people|שם"
+   ]
+  },
+  {
+   "id": "D14",
+   "tag": "recall",
+   "ref": "בראשית י, כג",
+   "hits": [
+    "people|ארם",
+    "people|עוץ",
+    "people|עוץ (בן נחור)",
+    "people|חול",
+    "domem|ככר (חול)",
+    "people|גתר"
+   ],
+   "fp": [
+    "people|עוץ (בן נחור)",
+    "domem|ככר (חול)"
+   ],
+   "fn": [
+    "people|מש"
+   ]
+  },
+  {
+   "id": "D15",
+   "tag": "כינוי-עם",
+   "ref": "בראשית לז, לו",
+   "hits": [
+    "people|לאל",
+    "people|מצרים (בן חם)",
+    "people|פוטיפר",
+    "people|פרעה",
+    "people|טבח"
+   ],
+   "fp": [
+    "people|לאל",
+    "people|טבח"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D16",
+   "tag": "מילה-נפוצה",
+   "ref": "שמואל א א, ב",
+   "hits": [
+    "people|שם",
+    "people|חנה",
+    "people|פננה"
+   ],
+   "fp": [
+    "people|שם"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D17",
+   "tag": "שווי-שם",
+   "ref": "שופטים א, כ",
+   "hits": [
+    "people|כלב",
+    "people|כלוב",
+    "people|כלב בן יפנה",
+    "people|כלב בן חצרון",
+    "people|כלב בן חור",
+    "people|חברון",
+    "places|חברון",
+    "people|אשר",
+    "people|משה",
+    "people|ענק",
+    "domem|ענק"
+   ],
+   "fp": [
+    "people|כלוב",
+    "people|כלב בן חצרון",
+    "people|כלב בן חור",
+    "people|חברון",
+    "people|אשר",
+    "domem|ענק"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D18",
+   "tag": "recall",
+   "ref": "בראשית ה, ג",
+   "hits": [
+    "people|שת"
+   ],
+   "fp": [],
+   "fn": [
+    "people|אדם הראשון"
+   ]
+  },
+  {
+   "id": "D19",
+   "tag": "מילה-נפוצה",
+   "ref": "דברי הימים א ב, מה",
+   "hits": [
+    "people|שמי",
+    "places|מעון",
+    "people|אבי",
+    "places|בית צור"
+   ],
+   "fp": [
+    "people|אבי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "D20",
+   "tag": "recall",
+   "ref": "ישעיהו יא, יא",
+   "hits": [
+    "people|ידו",
+    "people|אשור",
+    "domem|מכוש",
+    "domem|הים (המוצק)"
+   ],
+   "fp": [
+    "people|ידו",
+    "domem|מכוש",
+    "domem|הים (המוצק)"
+   ],
+   "fn": [
+    "people|כוש",
+    "people|עילם"
+   ]
+  },
+  {
+   "id": "D21",
+   "tag": "recall",
+   "ref": "בראשית יד, יח",
+   "hits": [
+    "people|צדק",
+    "people|מלוך",
+    "people|שלם",
+    "people|שלום",
+    "people|שלם בן יאשיהו",
+    "people|שלם בן יבש",
+    "people|שלם בן בסודיה",
+    "people|שלם בן יועד",
+    "people|שלם בן צדוק",
+    "people|שלם בן תקוה",
+    "people|שלם בן משלמית",
+    "people|שלם בן ברכיה",
+    "people|שלם בן הודויה",
+    "people|שלם בן שפטיה",
+    "places|ירושלים",
+    "people|לאל"
+   ],
+   "fp": [
+    "people|צדק",
+    "people|מלוך",
+    "people|שלם",
+    "people|שלום",
+    "people|שלם בן יאשיהו",
+    "people|שלם בן יבש",
+    "people|שלם בן בסודיה",
+    "people|שלם בן יועד",
+    "people|שלם בן צדוק",
+    "people|שלם בן תקוה",
+    "people|שלם בן משלמית",
+    "people|שלם בן ברכיה",
+    "people|שלם בן הודויה",
+    "people|שלם בן שפטיה",
+    "people|לאל"
+   ],
+   "fn": [
+    "people|מלכי-צדק"
+   ]
+  },
+  {
+   "id": "D22",
+   "tag": "recall",
+   "ref": "בראשית ו, ח",
+   "hits": [],
+   "fp": [],
+   "fn": [
+    "people|נח"
+   ]
+  },
+  {
+   "id": "E01",
+   "tag": "תלמוד",
+   "ref": "משנה, בכורות ג, ד",
+   "hits": [
+    "domem|כור",
+    "people|בעל",
+    "animal|נשר",
+    "people|אחר",
+    "people|מהללאל",
+    "people|דברי",
+    "amoraim|רבי יהודה בר אלעאי"
+   ],
+   "fp": [
+    "domem|כור",
+    "people|בעל",
+    "animal|נשר",
+    "people|אחר",
+    "people|מהללאל",
+    "people|דברי"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E02",
+   "tag": "תלמוד",
+   "ref": "בבלי, בכורות ד ע\"ב",
+   "hits": [
+    "amoraim|רבא",
+    "amoraim|רבה"
+   ],
+   "fp": [
+    "amoraim|רבה"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E03",
+   "tag": "תלמוד",
+   "ref": "משנה, בכורות ד, ט",
+   "hits": [
+    "amoraim|רבי שמעון בן יוחאי",
+    "people|אומר",
+    "domem|בהט, שש, דר וסוחרת"
+   ],
+   "fp": [
+    "people|אומר",
+    "domem|בהט, שש, דר וסוחרת"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E04",
+   "tag": "תלמוד",
+   "ref": "בבלי, בכורות ד ע\"ב",
+   "hits": [
+    "people|איתמר",
+    "amoraim|רבי יוחנן",
+    "domem|כור",
+    "amoraim|רבי שמעון בן לקיש"
+   ],
+   "fp": [
+    "people|איתמר",
+    "domem|כור"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E05",
+   "tag": "תלמוד",
+   "ref": "משנה, בכורות ד, ג",
+   "hits": [
+    "amoraim|רבי מאיר",
+    "people|אומר"
+   ],
+   "fp": [
+    "people|אומר"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E06",
+   "tag": "תלמוד",
+   "ref": "משנה, בכורות א, ו",
+   "hits": [
+    "amoraim|רבי יהושע בן חנניה",
+    "amoraim|רבי צדוק",
+    "people|חמור",
+    "animal|חמור"
+   ],
+   "fp": [
+    "people|חמור"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E07",
+   "tag": "תלמוד",
+   "ref": "בבלי, יומא מד ע\"ב",
+   "hits": [
+    "amoraim|רב חסדא",
+    "domem|זהב",
+    "people|אופיר"
+   ],
+   "fp": [],
+   "fn": []
+  },
+  {
+   "id": "E08",
+   "tag": "תלמוד",
+   "ref": "בבלי, חגיגה יד ע\"ב",
+   "hits": [
+    "amoraim|רבי עקיבא",
+    "people|אצל",
+    "domem|בהט, שש, דר וסוחרת",
+    "people|לאל",
+    "flora|שום"
+   ],
+   "fp": [
+    "people|אצל",
+    "people|לאל",
+    "flora|שום"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E09",
+   "tag": "תלמוד",
+   "ref": "משנה, קידושין א א",
+   "hits": [
+    "domem|פרוטה",
+    "people|משמנה"
+   ],
+   "fp": [
+    "people|משמנה"
+   ],
+   "fn": [
+    "domem|איסר"
+   ]
+  },
+  {
+   "id": "E10",
+   "tag": "תלמוד",
+   "ref": "משנה, שקלים א ז",
+   "hits": [
+    "domem|מעה (חז״ל)",
+    "domem|מעה (גרה)",
+    "domem|כסף",
+    "domem|דינר / זוז (כסף)",
+    "people|דברי",
+    "amoraim|רבי מאיר",
+    "people|אומר"
+   ],
+   "fp": [
+    "domem|דינר / זוז (כסף)",
+    "people|דברי",
+    "people|אומר"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E11",
+   "tag": "תלמוד",
+   "ref": "משנה, קידושין א א",
+   "hits": [
+    "domem|כסף",
+    "domem|דינר / זוז (כסף)",
+    "amoraim|בית שמאי",
+    "people|אומר",
+    "domem|דינר (חז״ל)"
+   ],
+   "fp": [
+    "people|אומר"
+   ],
+   "fn": []
+  },
+  {
+   "id": "E12",
+   "tag": "תלמוד",
+   "ref": "בבלי, בכורות לז ע\"ב",
+   "hits": [
+    "domem|פונדיון האיטלקי",
+    "people|דומה"
+   ],
+   "fp": [
+    "people|דומה"
+   ],
+   "fn": []
+  }
+ ]
+}
