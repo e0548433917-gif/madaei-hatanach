@@ -158,6 +158,14 @@ if (-not $NoChangelog) {
     [void]$entry.AppendLine("")
     foreach ($n in $body) { [void]$entry.AppendLine("* $n") }
   }
+  # מי ארז (בקשת בעל הפרויקט, 04/09/2026): בריפו עובדים כמה מפתחים במקביל,
+  # וכשמשהו בגרסה מסוימת מתנהג מוזר צריך לדעת את מי לשאול. השם נלקח מ-
+  # git config user.name של מי שמריץ את האריזה בפועל.
+  $packer = (& git -C $root config user.name 2>$null)
+  if ($packer) {
+    [void]$entry.AppendLine("")
+    [void]$entry.AppendLine("_נארז על ידי $packer._")
+  }
   [void]$entry.AppendLine("")
 
   $clRaw = if (Test-Path $changelogPath) { Get-Content $changelogPath -Raw -Encoding UTF8 } else { "# CHANGELOG — עינים למקרא`r`n`r`n" }

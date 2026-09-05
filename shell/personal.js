@@ -1594,7 +1594,9 @@ function renderChangelogInto(container, blocks, missingLabel, collapseAfter){
     `<details class="month-details"${open ? ' open' : ''}><summary>${esc(b.header)}</summary>${mdLiteToHtml(b.body)}</details>`;
   const recent = collapseAfter ? blocks.slice(0, collapseAfter) : blocks;
   const older = collapseAfter ? blocks.slice(collapseAfter) : [];
-  container.innerHTML = recent.map((b, i) => det(b, i < 3)).join('')
+  // כל הבלוקים סגורים כברירת מחדל (בקשת בעל הפרויקט, 04/09/2026): הלשונית
+  // נפתחת על רשימת כותרות קצרה וקריאה, והמשתמש פותח רק את מה שמעניין אותו.
+  container.innerHTML = recent.map(b => det(b, false)).join('')
     + (older.length
       ? `<details class="month-details"><summary>📜 ${older.length} גרסאות קודמות</summary>${older.map(b => det(b, false)).join('')}</details>`
       : '');
