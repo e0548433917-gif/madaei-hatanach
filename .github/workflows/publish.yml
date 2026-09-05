@@ -54,6 +54,9 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # #92: בלי זה ריצה שנתקעת מול שרת החנות רצה 6 שעות (ברירת המחדל של GitHub)
+    # וחוסמת את תור הפרסום שאחריה. 20 דקות מספיקות לולידציה + קיפול + פרסום.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
