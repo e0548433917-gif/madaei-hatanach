@@ -33,6 +33,7 @@
 * [#44 — באג: לשונית "ניווט" ישנה שעדיין מופיעה בממשק](https://github.com/e0548433917-gif/madaei-hatanach/issues/44)
 * [#45 — באג: מספר גרסה ישן מוצג בלשונית "מה חדש"](https://github.com/e0548433917-gif/madaei-hatanach/issues/45)
 * [#46 — הדגשה ויזואלית של הטקסט ששונה ב-diff של כרטיס נערך](https://github.com/e0548433917-gif/madaei-hatanach/issues/46)
+* [#98 — לוח שנה: וריאנט ״עינים למקרא+״ מזדהה כ״עינים למקרא״ בכל מקום](https://github.com/e0548433917-gif/madaei-hatanach/issues/98)
 
 ### 🔌 SDK ותשתית
 * [#47 — 4.15 — network.fetchStream לקריאות הנקדן](https://github.com/e0548433917-gif/madaei-hatanach/issues/47)
@@ -57,6 +58,8 @@
 * [#65 — תמיכה ב-PDF כמדריך מלא (לא רק קישור חיצוני לצד קיים)](https://github.com/e0548433917-gif/madaei-hatanach/issues/65)
 * [#66 — שאיבת הגדרות המרת שמות הקדושה מהתוסף "שומר השם"](https://github.com/e0548433917-gif/madaei-hatanach/issues/66)
 * [#90 — מדריכים/קטגוריות בהגדרת משתמש (הרחבה של Issue #24)](https://github.com/e0548433917-gif/madaei-hatanach/issues/90)
+* [#24 — אפשרות להוסיף קטגוריות](https://github.com/e0548433917-gif/madaei-hatanach/issues/24)
+* [#99 — לוח שנה: ״ערך היום״ נשלח בלי הסבר ובלי מקורות](https://github.com/e0548433917-gif/madaei-hatanach/issues/99)
 
 ### 🎨 עיצוב — נספח ב׳
 * [#58 — עיצוב נספח ב׳ — בורר גופנים מסונן + בורר תצוגת שם ה׳ (לא בוצע)](https://github.com/e0548433917-gif/madaei-hatanach/issues/58)
@@ -95,9 +98,13 @@
 
 ### ⚙️ CI ושחרור
 * [#92 — CI: להוסיף timeout-minutes ל-publish.yml — ריצות תקועות רצות 6 שעות](https://github.com/e0548433917-gif/madaei-hatanach/issues/92)
+* [#91 — פרסום לחנות תקוע (שרת otzaria.org לא יציב) + וריאנט + לא עודכן](https://github.com/e0548433917-gif/madaei-hatanach/issues/91)
+* [#100 — 0.9.9.7 יצאה: מעבר לחבילה אחת + אימוץ ה-API החדש — ✅ החלק הראשון בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/100)
 
 ### נוספות
 * [#94 — i18n: שכבת שפת ממשק אנגלית (ROADMAP 4.13)](https://github.com/e0548433917-gif/madaei-hatanach/issues/94)
+* [#37 — משימה פתוחה למצטרפים: עיצוב תואם אוצריא — שלבים 5–9](https://github.com/e0548433917-gif/madaei-hatanach/issues/37)
+* [#96 — שאלה ל-@Y-PLONI ו-@palmoni5: האם תרצו לקבל את ניהול הפרויקט?](https://github.com/e0548433917-gif/madaei-hatanach/issues/96)
 
 ---
 
