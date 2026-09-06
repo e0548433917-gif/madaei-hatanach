@@ -18,6 +18,19 @@ DESIGN_GUIDE, `otzaria_plugin.d.ts`) **ואימות מול קוד המקור ע�
 
 ---
 
+> 📌 **עדכון 06/09/2026 — הפיצול לשתי חבילות בוטל (3.7.0).**
+> אוצריא 0.9.97+769 שוחררה ב-6.9.26. uild/pack-997-variant.ps1 נמחק, וכל
+> ה-overlay שלו נכנס ל-manifest.json של חבילת הבסיס: minAppVersion: 0.9.97,
+> eader.toolbar, pp.startup_contributions ו-contributes.startup
+> (contextMenuItems + 	oolbarItems + ctivationEvents). המשמעות לסעיפים
+> שלמטה: **§א.1 — הפתרון של "בסיס בלי הסעיף, וריאנט אִתו" אינו רלוונטי יותר**,
+> ו-**§ב.4 (״מה יקרה ב-0.9.98״) בוצע מראש** — הרצפה כבר 0.9.97, ולכן מחיקת
+> מסלול הטעינה-בעלייה ב-0.9.98 לא תפגע ברישום פריט תפריט ההקשר.
+> ⚠️ **§ב.2 נפתח**: הטיעון ״
+etwork.fetchStream הוא API של 0.9.97 והמחרוזת
+> תחסום אריזה עם minAppVersion: 0.9.96״ בטל — אפשר לקרוא ישירות. ר׳ [#47](https://github.com/e0548433917-gif/madaei-hatanach/issues/47).
+> ⚠️ הביקורת הזו נכתבה מול התיעוד של 19–28/08. מאז היו **8 עדכוני SDK**
+> (25/08–05/09) שסעיף ג׳ אינו מכיר — הרשימה המלאה ב-[#100](https://github.com/e0548433917-gif/madaei-hatanach/issues/100).
 ## א. מה שהיה שבור — ותוקן ב-2.20.3
 
 ### א.1 🔴 `contributes.startup` בלי `app.startup_contributions` — חסם התקנה, וגם ניטרל את הפריט

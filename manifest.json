@@ -1,21 +1,23 @@
 {
   "id": "com.chadbedera.madaeihatanach",
   "name": "עינים למקרא",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "מדריך מאוחד לתנ״ך ומשנה/תלמוד: אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, אנשים מהתלמוד ומסכתות — זיהוי אחיד בלחיצה ימנית, תמונות ומפה בלי אינטרנט.",
   "author": "חד בדרא",
   "homepage": "https://github.com/e0548433917-gif/madaei-hatanach",
   "schemaVersion": 1,
   "sdkVersion": "1.x",
   "stability": "stable",
-  "minAppVersion": "0.9.96",
+  "minAppVersion": "0.9.97",
   "icon": "icon/icon.png",
   "entrypoint": "index.html",
   "permissions": [
     "reader.context_menu",
     "reader.open",
+    "reader.toolbar",
     "published_data.write",
     "app.run_on_startup",
+    "app.startup_contributions",
     "notifications.send",
     "ui.feedback",
     "app.open_url",
@@ -61,6 +63,36 @@
       "order": 40,
       "defaultPinned": true,
       "iconName": "eye_24_regular"
+    },
+    "startup": {
+      "contextMenuItems": [
+        {
+          "id": "madaei-hatanach-identify",
+          "type": "item",
+          "title": "זיהוי בעינים למקרא",
+          "icon": "search_24_regular",
+          "contexts": [
+            "reader-selection"
+          ]
+        }
+      ],
+      "toolbarItems": [
+        {
+          "id": "madaei-hatanach-open",
+          "type": "button",
+          "title": "עינים למקרא",
+          "icon": "eye_24_regular",
+          "contexts": [
+            "reader-text",
+            "reader-pdf"
+          ],
+          "openPlugin": true
+        }
+      ],
+      "activationEvents": [
+        "app.startup"
+      ],
+      "keepAlive": false
     }
   }
 }
