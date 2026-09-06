@@ -69,9 +69,18 @@ if (-not (Test-Path $distDir)) { New-Item -ItemType Directory -Path $distDir | O
 # מכוון: כל אריזה מחייבת מבט אמיתי בפלט למטה, כדי לראות שלא נשבר משהו חדש.
 $validateJs = Join-Path $root "tools\validate.js"
 if (Test-Path $validateJs) {
+  # ⚠️ 06/09/2026: ההודעה כאן תמיד הציעה -AllowValidationErrors, אבל הקוד זרק
+  # בלי קשר לדגל — כלומר על מכשיר בלי node אי אפשר היה לארוז בכלל. עכשיו הדגל
+  # באמת עוקף, עם אזהרה: האריזה יוצאת **בלי** שבדיקת השפיות רצה, ולכן ה-CI
+  # (.github/workflows/publish.yml) הוא זה שמריץ אותה לפני הפרסום לחנות.
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    throw "node אינו מותקן/בנתיב, ולכן אי אפשר להריץ את בדיקת השפיות (tools\validate.js). התקן Node, או הרץ עם -AllowValidationErrors אם אתה יודע מה אתה עושה."
+    if (-not $AllowValidationErrors) {
+      throw "node אינו מותקן/בנתיב, ולכן אי אפשר להריץ את בדיקת השפיות (tools\validate.js). התקן Node, או הרץ עם -AllowValidationErrors אם אתה יודע מה אתה עושה."
+    }
+    Write-Warning "node אינו מותקן — בדיקת השפיות (tools\validate.js) **לא רצה**. ממשיכים בגלל -AllowValidationErrors; הוולידציה תרוץ ב-CI לפני הפרסום."
+    $skipValidate = $true
   }
+  if (-not $skipValidate) {
   Write-Host "בדיקת שפיות: node tools/validate.js --strict" -ForegroundColor Cyan
   Push-Location $root
   try { & node "tools/validate.js" "--strict"; $validateExit = $LASTEXITCODE }
@@ -84,6 +93,7 @@ if (Test-Path $validateJs) {
     }
   } else {
     Write-Host "הוולידציה עברה נקי." -ForegroundColor Green
+  }
   }
 } else {
   Write-Warning "tools\validate.js לא נמצא — מדלגים על בדיקת השפיות."
