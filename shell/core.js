@@ -353,3 +353,30 @@ function guideIdFromProviderBook(d){
   const c = CATEGORIES[(Number(d.id) || 0) - 1];
   return c ? c.id : null;
 }
+
+// 4.2.0 — סימון כל הערכים שזוהו בדף הפתוח (reader.findTextOccurrences +
+// reader.setHighlight). רק כשהגדרת ההדגשה דלוקה, ועד 40 הדגשות לדף.
+async function highlightMatchesInSection(bookId, sectionIndex, matches){
+  try {
+    if (!bookId || !(window.Otzaria && Otzaria.call)) return;
+    if (!(await readOptFlag(READ_OPT_HIGHLIGHT, true))) return;
+    const words = Array.from(new Set(matches.map(m => m.matchedVia || m.name).filter(w => w && w.length > 1))).slice(0, 25);
+    let n = 0;
+    for (const q of words){
+      if (n >= 40) break;
+      const res = await Otzaria.call('reader.findTextOccurrences', {
+        bookId: bookId, sectionIndex: sectionIndex, query: q, layer: 'source', normalize: { profile: 'search' }, limit: 5
+      }).catch(() => null);
+      const d = res && (res.data !== undefined ? res.data : res);
+      for (const occ of ((d && d.results) || [])){
+        if (n >= 40 || !occ.range) break;
+        await Otzaria.call('reader.setHighlight', {
+          highlightId: 'mh-page-' + sectionIndex + '-' + (n++),
+          bookId: bookId, sectionIndex: sectionIndex, range: occ.range,
+          style: { backgroundColor: '#8FC1E3', opacity: 0.35, borderRadius: 3, priority: 4 },
+          metadata: { source: 'madaei-hatanach', term: q }
+        }).catch(() => {});
+      }
+    }
+  } catch(e){}
+}

@@ -61,7 +61,11 @@ function wireMentionsSearch(container, entry){
   const box = document.createElement('div');
   box.className = 'otz-mentions';
   box.style.marginTop = '12px';
-  box.innerHTML = `<button type="button" class="panel-btn secondary">🔎 היכן עוד מוזכר "${esc(name)}" בספרייה</button><div class="otz-mentions-list"></div>`;
+  box.innerHTML = `<button type="button" class="panel-btn secondary">🔎 היכן עוד מוזכר "${esc(name)}" בספרייה</button> <button type="button" class="panel-btn secondary otz-open-search">פתיחה בחיפוש של אוצריא ↗</button><div class="otz-mentions-list"></div>`;
+  // 4.2.0 — reader.openSearchTab: מעבר למסך החיפוש המלא עם השם, לעריכה לפני ההרצה
+  box.querySelector('.otz-open-search').addEventListener('click', () => {
+    Otzaria.call('reader.openSearchTab', { query: name, autoSearch: false }).catch(() => {});
+  });
   container.appendChild(box);
   const btn = box.querySelector('button');
   const list = box.querySelector('.otz-mentions-list');
@@ -170,6 +174,14 @@ function enrichEntryDetail(container, entry){
   }
   wireMentionsSearch(container, entry);
   wireVerseCommentaries(container, entry);
+  // 4.2.0 — tools.gematria: גימטריה של שם הערך
+  if (entry.name && !container.querySelector('.otz-gematria')){
+    Otzaria.call('tools.gematria', { text: String(entry.name) }).then(res => {
+      const d = otzData(res);
+      if (!d || !d.value || !container.isConnected || container.querySelector('.otz-gematria')) return;
+      container.insertAdjacentHTML('beforeend', `<p class="mini-note otz-gematria" style="margin-top:10px;">🔢 גימטריה: ${esc(entry.name)} = ${d.value}</p>`);
+    }).catch(() => {});
+  }
   markUnresolvedSources(container, entry);
 }
 

@@ -728,6 +728,7 @@ async function identifyReaderLocation(loc){
   const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
   closeBookChooser();
   showResults(matches, title);
+  if (matches.length) highlightMatchesInSection(loc.bookId, index, matches);   // 4.2.0
   return true;
 }
 
@@ -759,6 +760,18 @@ async function identifyOpenPage(){
 // נופלים ל-reader.getCurrentState.
 async function handleToolbarOpenClick(payload){
   try {
+    // 4.2.0 — אם יש טקסט מסומן בקורא, הכפתור מזהה אותו (כמו הלחיצה הימנית);
+    // רק בלי סימון הוא מזהה את כל הדף. reader.getSelection מחזיר null בלי בחירה.
+    try {
+      const sel = unwrapOtz(await Otzaria.call('reader.getSelection'));
+      const st = sel && String(sel.text || sel.renderedSelectedText || '').trim();
+      if (st){
+        const m = await identifyWithLiveContext(st);
+        if (m.length) highlightIdentifiedSelection({ selection: sel, currentBookId: sel.bookId, currentIndex: sel.sectionIndex });
+        showResults(m, st);
+        return;
+      }
+    } catch(e){}
     let loc = null;
     if (payload && (payload.currentBookId || payload.currentBook)){
       loc = {
