@@ -246,6 +246,9 @@ jobs:
             fs.writeFileSync(p, JSON.stringify(m, null, 2) + "\n");
           '
           sed -i "s/const LIBRARY_PROVIDER = 'einayim-lamikra';/const LIBRARY_PROVIDER = 'einayim-lamikra-plus';/" /tmp/plus/pkg/shell/core.js
+          # #98: שם התצוגה בכל התוסף (יומן, ספרייה, הדפסה, קיצור דרך, כותרת)
+          sed -i "s/^const PLUGIN_DISPLAY_NAME = 'עינים למקרא';/const PLUGIN_DISPLAY_NAME = 'עינים למקרא+';/" /tmp/plus/pkg/shell/core.js
+          grep -q "^const PLUGIN_DISPLAY_NAME = 'עינים למקרא+';" /tmp/plus/pkg/shell/core.js || { echo "::error::החלפת PLUGIN_DISPLAY_NAME בווריאנט נכשלה"; exit 1; }
           out="com.chadbedera.madaeihatanach-$VERSION-offlinemaps.otzplugin"
           (cd /tmp/plus/pkg && zip -qr "$GITHUB_WORKSPACE/$out" .)
           ls -la "$out"

@@ -380,7 +380,7 @@ function refreshShortcutGroup(){
     btn.textContent = 'יוצר…';
     try {
       const res = await callIfSupported(['shortcut', 'create'], '0.9.89', {
-        name: 'עינים למקרא',
+        name: PLUGIN_DISPLAY_NAME,
         description: 'מדריך מאוחד לתנ״ך ומשנה/תלמוד'
       });
       if (res == null){

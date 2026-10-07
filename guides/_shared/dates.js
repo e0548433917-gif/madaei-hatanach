@@ -515,14 +515,14 @@ async function publishUpcomingEventsInner(){
     const events = wantEvents ? allDateEvents().filter(ev => monthMatchesEventMonth(monthName, ev.month) && dayMatchesEventDay(raw.day, ev.day)) : [];
     events.forEach((ev, i) => items.push({
       key: 'madaei:dailyEvent:' + iso + ':' + i,
-      payload: { title: ev.event, startsAt, source: 'עינים למקרא', importance: 'low',
+      payload: { title: ev.event, startsAt, source: (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא'), importance: 'low',
         // #99 (4.0.0): התיאור נושא את המאורע עצמו ואת המקור, לא רק את התאריך
         description: ev.event + (ev.source ? '\nמקור: ' + ev.source : '') + '\n' + dayLabel
-          + '\nמתוך ״ערך היום״ בתוסף עינים למקרא' }
+          + '\nמתוך ״ערך היום״ בתוסף ' + (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא') }
     }));
     if (wantChurban) items.push({
       key: 'madaei:zChurban:' + iso,
-      payload: { title: churbanTxt, startsAt, source: 'עינים למקרא', importance: 'low',
+      payload: { title: churbanTxt, startsAt, source: (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא'), importance: 'low',
         description: dayLabel }
     });
   }

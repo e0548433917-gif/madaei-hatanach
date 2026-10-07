@@ -335,6 +335,13 @@ async function dictionaryLine(text){
 // (contributes.startup.libraryBooks + library.setProviderBooks). הרשימה נשמרת
 // אצל אוצריא, ולכן מספיק לשלוח אותה פעם בעלייה. id = מיקום ב-CATEGORIES + 1.
 const LIBRARY_PROVIDER = 'einayim-lamikra';
+// #98: שם התצוגה במקום אחד. בניית ״עינים למקרא+״ מחליפה את השורה הזאת (publish.yml).
+const PLUGIN_DISPLAY_NAME = 'עינים למקרא';
+if (typeof document !== 'undefined' && PLUGIN_DISPLAY_NAME !== 'עינים למקרא'){
+  document.title = PLUGIN_DISPLAY_NAME;
+  const h1 = document.querySelector('h1');
+  if (h1 && h1.textContent.trim() === 'עינים למקרא') h1.textContent = PLUGIN_DISPLAY_NAME;
+}
 const READ_OPT_IN_LIBRARY = 'mh_show_in_library';
 function publishGuidesToLibrary(){
   if (!(window.Otzaria && Otzaria.call) || typeof CATEGORIES === 'undefined') return;
@@ -342,9 +349,9 @@ function publishGuidesToLibrary(){
     provider: LIBRARY_PROVIDER,
     books: CATEGORIES.map((c, i) => ({
       id: i + 1,
-      title: 'עינים למקרא — ' + c.label,
-      author: 'מדריך עינים למקרא',
-      categoryPath: '/עינים למקרא'
+      title: PLUGIN_DISPLAY_NAME + ' — ' + c.label,
+      author: 'מדריך ' + PLUGIN_DISPLAY_NAME,
+      categoryPath: '/' + PLUGIN_DISPLAY_NAME
     }))
   }).catch(() => {});
 }

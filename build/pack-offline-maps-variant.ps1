@@ -82,12 +82,24 @@ try {
   $newName = $m.name + "+"
   $m.name = $newName
   if ($m.contributes -and $m.contributes.toolTab) { $m.contributes.toolTab.title = $newName }
+  # ספק הספרייה חייב להתאים ל-LIBRARY_PROVIDER שמוחלף ב-shell/core.js למטה (כמו ב-publish.yml)
+  if ($m.contributes -and $m.contributes.startup -and $m.contributes.startup.libraryBooks) {
+    foreach ($lb in $m.contributes.startup.libraryBooks) { $lb.provider = "einayim-lamikra-plus"; $lb.title = $newName }
+  }
   $m.description = "מדריך מאוחד לתנ״ך ומשנה/תלמוד עם מפת OpenStreetMap מפורטת מוטמעת (בלי אינטרנט) - אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, מסכתות."
   if ($m.description.Length -gt 150) { throw "description עדיין חורג מ-150 תווים ($($m.description.Length)) - תקן ידנית לפני אריזה." }
   if ($m.contributes.toolTab.title -ne $m.name) { throw "name/toolTab.title לא זהים - זו בדיוק התקלה שתוקנה, תקן ידנית." }
   $json = $m | ConvertTo-Json -Depth 10
   $json = [System.Text.RegularExpressions.Regex]::Unescape($json)
   [System.IO.File]::WriteAllText($variantManifestPath, $json, [System.Text.UTF8Encoding]::new($false))
+
+  # ---- #98: שם התצוגה בתוך הקוד (יומן, ספרייה, הדפסה, קיצור דרך, כותרת) ----
+  $coreJs = Join-Path $tmpDir "shell\core.js"
+  $coreTxt = [System.IO.File]::ReadAllText($coreJs, [System.Text.Encoding]::UTF8)
+  $coreTxt = $coreTxt.Replace("const PLUGIN_DISPLAY_NAME = 'עינים למקרא';", "const PLUGIN_DISPLAY_NAME = 'עינים למקרא+';")
+  $coreTxt = $coreTxt.Replace("const LIBRARY_PROVIDER = 'einayim-lamikra';", "const LIBRARY_PROVIDER = 'einayim-lamikra-plus';")
+  if ($coreTxt -notmatch "PLUGIN_DISPLAY_NAME = 'עינים למקרא\+'") { throw "החלפת PLUGIN_DISPLAY_NAME נכשלה - בדוק את shell/core.js." }
+  [System.IO.File]::WriteAllText($coreJs, $coreTxt, [System.Text.UTF8Encoding]::new($false))
 
   # ---- אריזה מחדש ----
   $variantZip = Join-Path $distDir "$($manifest.id)-$version-offlinemaps.otzplugin"
