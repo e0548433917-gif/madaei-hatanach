@@ -430,6 +430,12 @@ let _publishInFlight = false;
 // היומי מעולם לא נכתב, וכל עלייה התחילה את הכל מחדש. הג׳יטר מפזר את שני
 // המופעים כדי ששניהם לא יעברו את בדיקת ה-throttle באותה שנייה.
 const PUBLISH_STARTUP_DELAY_MS = 20000;
+// #99 — אותה הסתרת שם ה׳ שבתצוגת התוסף (maskDivineName, core.js), גם על הטקסט
+// שנשלח ליומן של אוצריא. core.js נטען גם ב-background.html; בלעדיו — הטקסט כלשונו.
+function calendarSafeText(t){
+  return (typeof maskDivineName === 'function') ? maskDivineName(String(t == null ? '' : t)) : t;
+}
+
 async function publishUpcomingEvents(){
   if (_publishInFlight) return;
   _publishInFlight = true;
@@ -515,9 +521,10 @@ async function publishUpcomingEventsInner(){
     const events = wantEvents ? allDateEvents().filter(ev => monthMatchesEventMonth(monthName, ev.month) && dayMatchesEventDay(raw.day, ev.day)) : [];
     events.forEach((ev, i) => items.push({
       key: 'madaei:dailyEvent:' + iso + ':' + i,
-      payload: { title: ev.event, startsAt, source: (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא'), importance: 'low',
+      payload: { title: calendarSafeText(ev.event), startsAt, source: (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא'), importance: 'low',
         // #99 (4.0.0): התיאור נושא את המאורע עצמו ואת המקור, לא רק את התאריך
-        description: ev.event + (ev.desc ? '\n\n' + ev.desc + '\n' : '') + (ev.source ? '\nמקור: ' + ev.source : '') + '\n' + dayLabel
+        // #99 (4.7): שם ה׳ מוסתר גם בטקסט שנשלח ליומן, כמו בתצוגה שבתוסף
+        description: calendarSafeText(ev.event + (ev.desc ? '\n\n' + ev.desc + '\n' : '') + (ev.source ? '\nמקור: ' + ev.source : '')) + '\n' + dayLabel
           + '\nמתוך ״ערך היום״ בתוסף ' + (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא') }
     }));
     if (wantChurban) items.push({
