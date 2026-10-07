@@ -1680,7 +1680,41 @@ function renderPersonalWhatsNew(){
   refreshBtn.addEventListener('click', refreshStatus);
   refreshStatus();
   loadChangelogBlocks().then(blocks => renderChangelogInto(changelogWrap, blocks, null, 5));
-  loadRoadmapBlocks().then(blocks => renderChangelogInto(roadmapWrap, blocks, 'מה מתוכנן (ROADMAP.md)'));
+  loadRoadmapBlocks().then(blocks => {
+    renderChangelogInto(roadmapWrap, blocks, 'מה מתוכנן (ROADMAP.md)');
+    wireRoadmapIdeas(roadmapWrap);
+  });
+}
+
+// #63 — ״💡 יש לי רעיון על זה״ ליד כל פריט ב״מה מתוכנן״: פותח את פאנל ההודעות
+// מסוג ״הצעה״ עם הפריט ממולא. המזהה היציב הוא מספר הפנייה (#NN) כשיש כזה —
+// הוא מה שהמפתח צריך כדי לחבר את ההצעה לפריט — ואחרת תחילת הטקסט.
+function wireRoadmapIdeas(container){
+  if (!container || typeof openReportPanel !== 'function') return;
+  container.querySelectorAll('li').forEach(li => {
+    if (li.querySelector(':scope > .rm-idea-btn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rm-idea-btn';
+    btn.textContent = '💡';
+    btn.title = 'יש לי רעיון על זה';
+    btn.setAttribute('aria-label', 'יש לי רעיון על הפריט הזה');
+    btn.style.cssText = 'margin-inline-start:6px;border:0;background:none;cursor:pointer;font-size:.95em;padding:0 2px;';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const clone = li.cloneNode(true);
+      clone.querySelectorAll('.rm-idea-btn, ul, ol').forEach(n => n.remove());
+      const text = clone.textContent.replace(/\s+/g, ' ').trim();
+      const issue = (text.match(/#(\d{1,4})\b/) || [])[1];
+      const short = text.length > 70 ? text.slice(0, 69) + '…' : text;
+      openReportPanel({
+        kind: 'הצעה',
+        title: 'רעיון על ' + (issue ? '#' + issue : '״' + short + '״'),
+        details: 'הפריט ב״מה מתוכנן״' + (issue ? ' (#' + issue + ')' : '') + ':\n' + text.slice(0, 400) + '\n\nהרעיון שלי:\n'
+      });
+    });
+    li.appendChild(btn);
+  });
 }
 
 // בפתיחת התוסף: אם נשארו דיווחים בתור מפעם קודמת — ניסיון שקט לשלוח אותם.
