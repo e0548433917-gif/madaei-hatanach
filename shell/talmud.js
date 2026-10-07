@@ -98,7 +98,7 @@ async function renderMasechtot(){
       if (tool && tool.guideId){ closeTalmudView(); openGuide(tool.guideId, null); }
       else if (tool) openExternalGuide(tool.path, tool.title);
       else if (page) openCustomHtmlPage(page.name);
-      else window.alert('מסכת ' + name + ' — אין עדיין מדריך למסכת זו. אי״ה ייבנה בעתיד, ומי שרוצה לעזור להגדיל תורה מוזמן להצטרף.');
+      else showMasechetAbout(name);   // 3.8.0: library.getBookDetails (shell/otzaria-extras.js)
     });
   });
 }

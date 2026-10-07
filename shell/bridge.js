@@ -51,12 +51,12 @@ async function isModernApp(){
   return modernAppCache;
 }
 
-function bringToFront(){
+// 3.8.0 — plugin.openSelf({param}) + plugin.page_opened (#52): הבקשה נמסרת
+// ישירות למופע הלשונית. המסירה דרך storage + הפולינג נשארים כרשת ביטחון בלבד,
+// והמופע שמקבל את ה-param מסמן את ה-ts כנצרך כדי שלא תוצג פעמיים.
+function bringToFront(param){
   if (window.Otzaria && Otzaria.call){
-    // שם המתודה מורכב בזמן ריצה - הוולידטור של אוצריא סורק את הקבצים סטטית ודוחה
-    // התקנה על 0.9.95 אם המחרוזת המלאה מופיעה, למרות שיש לנו בדיקת-גרסה בזמן ריצה.
-    const futureApiMethod = ['plugin', 'openSelf'].join('.');
-    Otzaria.call(futureApiMethod, {}).catch(()=>{});
+    Otzaria.call('plugin.openSelf', param ? { param: param } : {}).catch(()=>{});
   }
 }
 
@@ -155,7 +155,7 @@ function resumeBackgroundWork(){
 async function handoffAndShow(text, mode, canOpenSelf, showNow){
   if (canOpenSelf){
     await setPendingIdentify(text, mode);
-    bringToFront();
+    bringToFront({ kind: 'identify', text: text, mode: mode || 'results', ts: Date.now(), origin: INSTANCE_ID });
   }
   showNow();
   // אם המופע לא נטען מחדש — הטיימר הזה ירוץ וימחק את הבקשה. אם כן נטען, הוא מת
@@ -345,6 +345,16 @@ function waitForOtzaria(elapsed){
     Otzaria.on('theme.changed', onOtzariaTheme);
     // עצירה/חידוש של עבודה מתמשכת ביציאה מהלשונית ובחזרה אליה. שני האירועים
     // אינם דורשים הרשאת events.subscribe (README §אירועי מחזור חיים).
+    Otzaria.on('plugin.page_opened', (data) => {
+      const p = data && data.param;
+      if (!p || p.kind !== 'identify' || !p.text) return;
+      if (p.origin === INSTANCE_ID) return;              // המופע ששלח כבר הציג
+      if (p.ts && p.ts <= lastConsumedTs) return;
+      lastConsumedTs = p.ts || Date.now();
+      clearPendingIdentify();
+      if (p.mode === 'propose'){ openGenericProposeForm(p.text); return; }
+      identifyWithLiveContext(p.text).then(m => showResults(m, p.text));
+    });
     Otzaria.on('plugin.suspended', suspendBackgroundWork);
     Otzaria.on('plugin.resumed', resumeBackgroundWork);
     // גם משיכה יזומה — plugin.boot כבר עשוי היה לרוץ לפני שנרשמנו
@@ -360,7 +370,7 @@ function waitForOtzaria(elapsed){
       // במופע רקע: מסיימים מפורשות אחרי שהלחיצה טופלה, במקום להמתין לכיבוי
       // האוטומטי אחרי שלוש דקות חוסר פעילות.
       handleIdentifyClick(payload).finally(() => {
-        if (runMode === 'background') callIfSupported(['plugin', 'backgroundDone'], '0.9.97');
+        if (runMode === 'background') Otzaria.call('plugin.backgroundDone').catch(()=>{});
       });
     });
     // כפתור "עינים למקרא" בסרגל הקורא (contributes.startup.toolbarItems,

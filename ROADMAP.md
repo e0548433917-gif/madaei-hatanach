@@ -41,7 +41,7 @@
 * [#49 — 4.16 — מעבר לחבילה אחת — ✅ בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/49)
 * [#50 — 4.10 — background.entrypoint: כבר הוחזר (v3.5.0); נשאר אימות על מכשיר + pack-bgtest-variant שבור](https://github.com/e0548433917-gif/madaei-hatanach/issues/50)
 * [#51 — 4.17 — הדגשות בטקסט הספר עצמו (reader.setHighlight)](https://github.com/e0548433917-gif/madaei-hatanach/issues/51)
-* [#52 — 4.18 — plugin.openSelf({param}) + plugin.page_opened במקום פולינג](https://github.com/e0548433917-gif/madaei-hatanach/issues/52)
+* [#52 — 4.18 — plugin.openSelf({param}) + plugin.page_opened במקום פולינג — ✅ בוצע ב-3.8.0 (הפולינג נשאר כגיבוי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/52)
 * [#53 — 4.13 — שפת ממשק (i18n) — להערכה מחדש, כנראה לא כדאי](https://github.com/e0548433917-gif/madaei-hatanach/issues/53)
 * [#54 — 2.11 — טעינה עצלה של הדאטה (19MB בפתיחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/54)
 * [#55 — 5.3 (שארית) — ולידציה בלי פרסום גם על ענפים ו-PR-ים](https://github.com/e0548433917-gif/madaei-hatanach/issues/55)
@@ -189,7 +189,7 @@
 
 * 🟢 **4.17 — הדגשות בטקסט (`reader.setHighlight`).** [#51](https://github.com/e0548433917-gif/madaei-hatanach/issues/51) צביעת מה שזוהה בגוף הספר  עצמו. ה-API שהכי מתאים למהות התוסף ואינו בשימוש כלל. §ג.1.
 
-* 🟢 **4.18 — `plugin.openSelf({param})` + `plugin.page_opened`.** [#52](https://github.com/e0548433917-gif/madaei-hatanach/issues/52) מייתר כמעט  את כל מנגנון המסירה דרך `storage` + פולינג 1.5 שניות שב-`bridge.js`. §ג.2.
+* ✅ **4.18 — `plugin.openSelf({param})` + `plugin.page_opened` — בוצע ב-3.8.0.** הפולינג נשאר כרשת ביטחון; להסיר אחרי אימות על מכשיר. [#52](https://github.com/e0548433917-gif/madaei-hatanach/issues/52) מייתר כמעט  את כל מנגנון המסירה דרך `storage` + פולינג 1.5 שניות שב-`bridge.js`. §ג.2.
 
 * ⏸️ **4.10 — `contributes.background.entrypoint` [#50](https://github.com/e0548433917-gif/madaei-hatanach/issues/50): עמוד רקע רזה — ממומש אך מנוטרל (14.8.26).**  `background.html`/`shell/background.js` קיימים בריפו ועובדים במלואם בסימולציה. הוסרו מ-`manifest.json` אחרי דיווח משתמש ב-0.9.97 (״הפריט נמצא, לחיצה לא עשתה  כלום״). 
 📌 **עדכון 19.8.26:** הביקורת מצאה סיבה טובה בהרבה לאותו דיווח, שאינה  קשורה לשדה הזה — פריט תפריט ההקשר לא נרשם אז בשום מסלול (ר׳ §א.1/א.2 בתאימות-  SDK). כלומר החשד נגד `contributes.background.entrypoint` **לא הוכח**, וסביר  שהוא תקין. ⚠️ בכל זאת לא הוחזר כאן: התיקון של פריט התפריט צריך להתאמת קודם  לבדו על מכשיר אמיתי, בלי משתנה נוסף באותה אריזה. אחרי אימות כזה — להחזיר  `"background": {"entrypoint": "background.html"}` (החיסכון: Leaflet + 480KB  נתונים גאוגרפיים + 14 מודולי UI בכל הפעלת מנוע רקע). **לא למחוק את הקבצים.**

@@ -366,10 +366,14 @@ async function postViaOtzariaFeedback(item, env){
     markdownToPlain(item.details || ''),
     env ? ('\n---\n' + env) : ''
   ].filter(Boolean).join('\n');
-  const res = await callIfSupported(['feedback', 'report'], '0.9.97', {
-    details: body.slice(0, 5000),          // ה-API חותך ל-5000 ממילא
-    reportType: FEEDBACK_REPORT_TYPES[item.kind] || 'other'
-  });
+  // 3.8.0 — קריאה ישירה: הרצפה 0.9.98, ואין עוד צורך ב-callIfSupported.
+  let res = null;
+  try {
+    res = await Otzaria.call('feedback.report', {
+      details: body.slice(0, 5000),          // ה-API חותך ל-5000 ממילא
+      reportType: FEEDBACK_REPORT_TYPES[item.kind] || 'other'
+    });
+  } catch(e){ return null; }
   if (res == null) return null;
   const val = (res && (res.data !== undefined ? res.data : res));
   return (val === 'sent' || val === 'queued' || val === 'cancelled') ? val : null;

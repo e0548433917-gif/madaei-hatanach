@@ -108,6 +108,9 @@ function openGenericEditForm(entry, catIdOverride){
       ${editExists ? '<button class="nf-btn secondary danger-link" id="genEditRestore">↺ שחזור לגרסת המקור</button>' : ''}
     </div>`;
   entryOverlay.classList.add('open');
+  // 3.8.0 — ui.setUnsavedChanges: אזהרה לפני סגירת הלשונית באמצע עריכה.
+  // מתאפס ב-openEntryDetail (אחרי שמירה/שליחה/ביטול).
+  entryOverlay.addEventListener('input', () => setUnsaved(true, 'העריכה בכרטיס "' + (entry.name || '') + '" תאבד'), { once: true });
   attachRefCheck('editVersesTa', 'editVersesCheck', 'verses');
   attachRefCheck('editMidrashTa', 'editMidrashCheck', 'midrash');
 

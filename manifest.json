@@ -8,7 +8,7 @@
   "schemaVersion": 1,
   "sdkVersion": "1.x",
   "stability": "stable",
-  "minAppVersion": "0.9.97",
+  "minAppVersion": "0.9.98",
   "icon": "icon/icon.png",
   "entrypoint": "index.html",
   "permissions": [
@@ -19,17 +19,16 @@
     "app.run_on_startup",
     "app.startup_contributions",
     "notifications.send",
-    "ui.feedback",
     "app.open_url",
     "navigation.write",
     "plugin.storage.read",
-    "plugin.storage.write",
-    "app.info.read",
     "library.books.read",
     "library.content.read",
     "network.access",
     "network.localhost",
-    "events.subscribe:theme.changed"
+    "tools.read",
+    "search.fulltext.read",
+    "app.shortcuts"
   ],
   "network": {
     "enabled": true,
@@ -92,7 +91,15 @@
       "activationEvents": [
         "app.startup"
       ],
-      "keepAlive": false
+      "keepAlive": false,
+      "shortcuts": [
+        {
+          "id": "madaei-hatanach-identify-shortcut",
+          "label": "זיהוי בעינים למקרא",
+          "key": "ctrl+alt+i",
+          "contextMenuItemId": "madaei-hatanach-identify"
+        }
+      ]
     }
   }
 }

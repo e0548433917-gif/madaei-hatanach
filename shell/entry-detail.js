@@ -624,6 +624,8 @@ function wireEntryDetail(container, entry, onEdit){
       focusMainMap(lat, lng, zoom, el.dataset.name);
     });
   });
+  // 3.8.0 — ביוגרפיה מאוצריא, "היכן עוד מוזכר", סימון מקורות לא נפתרים
+  if (typeof enrichEntryDetail === 'function') enrichEntryDetail(container, entry);
 }
 
 // כרטיס עלול להיפתח לפני שכל המדריכים סיימו להיטען ברקע (preloadAllGuides טוען
@@ -699,12 +701,13 @@ async function focusMainMap(lat, lng, zoom, name){
 }
 
 function openEntryDetail(entry){
+  if (typeof setUnsaved === 'function') setUnsaved(false);
   printCtxEntry = entry;   // כדי ש-Ctrl+P ידני יידע איזה כרטיס להדפיס (print.js)
   entryModalInner.innerHTML = renderEntryDetailHTML(entry);
   wireEntryDetail(entryModalInner, entry);
   entryOverlay.classList.add('open');
 }
-entryCloseBtn.addEventListener('click', () => entryOverlay.classList.remove('open'));
+entryCloseBtn.addEventListener('click', () => { entryOverlay.classList.remove('open'); if (typeof setUnsaved === 'function') setUnsaved(false); });
 // לחיצה על הרקע (מחוץ לכרטיס) סוגרת - וגם Esc.
 entryOverlay.addEventListener('click', (ev) => { if (ev.target === entryOverlay) entryOverlay.classList.remove('open'); });
 document.addEventListener('keydown', (ev) => {
