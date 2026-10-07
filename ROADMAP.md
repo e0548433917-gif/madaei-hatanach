@@ -36,14 +36,15 @@
 ### 🔌 SDK ותשתית
 * [#47 — 4.15 — network.fetchStream לקריאות הנקדן — ✅ בוצע ב-3.7.1, נשאר אימות מול נקדן חי](https://github.com/e0548433917-gif/madaei-hatanach/issues/47)
 * [#48 — 4.11 — contributes.startup.toolbarItems בחבילה הראשית — ✅ בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/48)
-* [#49 — 4.16 — מעבר לחבילה אחת — ✅ בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/49)
 * [#50 — 4.10 — background.entrypoint: כבר הוחזר (v3.5.0); נשאר אימות על מכשיר + pack-bgtest-variant שבור](https://github.com/e0548433917-gif/madaei-hatanach/issues/50)
-* [#51 — 4.17 — הדגשות בטקסט הספר עצמו (reader.setHighlight) — ✅ בוצע ב-3.9.0 (הדגשת הקטע שזוהה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/51)
 * [#52 — 4.18 — plugin.openSelf({param}) + plugin.page_opened במקום פולינג — ✅ בוצע ב-3.8.0 (הפולינג נשאר כגיבוי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/52)
 * [#53 — 4.13 — שפת ממשק (i18n) — להערכה מחדש, כנראה לא כדאי](https://github.com/e0548433917-gif/madaei-hatanach/issues/53)
 * [#54 — 2.11 — טעינה עצלה של הדאטה (19MB בפתיחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/54)
 * [#55 — 5.3 (שארית) — ולידציה בלי פרסום גם על ענפים ו-PR-ים](https://github.com/e0548433917-gif/madaei-hatanach/issues/55)
 * [#56 — ממסר הדיווחים: doGet חסר בפריסה החיה + לאמת איזה מסלול פעיל](https://github.com/e0548433917-gif/madaei-hatanach/issues/56)
+* [#124 — 4.7 — אוצריא 0.9.99: לחיצה ימנית בלי סימון + הדפסת הפרק — ✅ בקוד, ממתין לשחרור 0.9.99 ולאימות](https://github.com/e0548433917-gif/madaei-hatanach/issues/124)
+* [#122 — קורא טקסט חלופי בכרטיסיית ספר (DEFAULT_TEXT_READER) — להערכה, דורש אישור](https://github.com/e0548433917-gif/madaei-hatanach/issues/122)
+* [#123 — feedback.submitBookCorrection (0.9.99) — להערכה, עדיפות נמוכה](https://github.com/e0548433917-gif/madaei-hatanach/issues/123)
 
 ### ✨ פיצ׳רים
 * [#57 — העלאת "עינים למקרא+" (מפות אופליין) לחנות כתוסף נפרד](https://github.com/e0548433917-gif/madaei-hatanach/issues/57)
@@ -184,7 +185,7 @@
 
 * ✅ **4.16 — מעבר לחבילה אחת — בוצע ב-3.7.0 (06/09/2026).** אוצריא 0.9.97 שוחררה (6.9.26), `build/pack-997-variant.ps1` נמחק, וכל תוכנו — `minAppVersion: 0.9.97`, `reader.toolbar`, `app.startup_contributions` ו-`contributes.startup` — נמצא עכשיו ב-`manifest.json` של חבילת הבסיס. הפנייה המקורית: [#100](https://github.com/e0548433917-gif/madaei-hatanach/issues/100). הנוסח המקורי:  🟠 **מעבר לחבילה אחת ב-0.9.98.** [#49](https://github.com/e0548433917-gif/madaei-hatanach/issues/49) כשמסלול הטעינה-בעלייה יימחק, וריאנט   0.9.97 חייב להפוך לחבילה הראשית — אחרת פריט תפריט ההקשר יירשם רק אחרי   שהמשתמש פתח את הלשונית באותו סשן. §ב.4.
 
-* 🟢 **4.17 — הדגשות בטקסט (`reader.setHighlight`).** [#51](https://github.com/e0548433917-gif/madaei-hatanach/issues/51) צביעת מה שזוהה בגוף הספר  עצמו. ה-API שהכי מתאים למהות התוסף ואינו בשימוש כלל. §ג.1.
+* ✅ **4.17 — הדגשות בטקסט (`reader.setHighlight`) — בוצע ב-3.9.0 (07/10/2026).** [#51](https://github.com/e0548433917-gif/madaei-hatanach/issues/51) מילה או ביטוי שזוהו מודגשים בגוף הספר עצמו (`shell/core.js`, עם `reader.findTextOccurrences`), והגדרה להדגשה אוטומטית תוך כדי קריאה, עד 40 הדגשות לדף. §ג.1.
 
 * ✅ **4.18 — `plugin.openSelf({param})` + `plugin.page_opened` — בוצע ב-3.8.0.** הפולינג נשאר כרשת ביטחון; להסיר אחרי אימות על מכשיר. [#52](https://github.com/e0548433917-gif/madaei-hatanach/issues/52) מייתר כמעט  את כל מנגנון המסירה דרך `storage` + פולינג 1.5 שניות שב-`bridge.js`. §ג.2.
 

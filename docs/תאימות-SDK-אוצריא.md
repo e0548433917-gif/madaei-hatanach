@@ -21,7 +21,8 @@ DESIGN_GUIDE, `otzaria_plugin.d.ts`) **ואימות מול קוד המקור ע�
 > 📌 **עדכון 06/09/2026 — הפיצול לשתי חבילות בוטל (3.7.0).**
 > אוצריא 0.9.97+769 שוחררה ב-6.9.26. uild/pack-997-variant.ps1 נמחק, וכל
 > ה-overlay שלו נכנס ל-manifest.json של חבילת הבסיס: minAppVersion: 0.9.97,
-> eader.toolbar, pp.startup_contributions ו-contributes.startup
+> 
+eader.toolbar, pp.startup_contributions ו-contributes.startup
 > (contextMenuItems + 	oolbarItems + ctivationEvents). המשמעות לסעיפים
 > שלמטה: **§א.1 — הפתרון של "בסיס בלי הסעיף, וריאנט אִתו" אינו רלוונטי יותר**,
 > ו-**§ב.4 (״מה יקרה ב-0.9.98״) בוצע מראש** — הרצפה כבר 0.9.97, ולכן מחיקת
@@ -201,7 +202,7 @@ etwork.fetchStream הוא API של 0.9.97 והמחרוזת
 
 מסודר לפי יחס תועלת/עלות עבור **התוסף הזה** דווקא, לא כרשימה גנרית.
 
-### ג.1 הדגשות בטקסט — `reader.setHighlight` ומשפחתו
+### ג.1 ✅ הדגשות בטקסט — `reader.setHighlight` ומשפחתו — בוצע ב-3.9.0
 הרשאה: `reader.highlight`. קיים מ-0.9.89 (`revealHighlight` מ-0.9.96).
 
 זה ה-API שהכי מתאים למהות התוסף ואינו בשימוש כלל: אחרי זיהוי, לצבוע **בטקסט
@@ -212,7 +213,7 @@ etwork.fetchStream הוא API של 0.9.97 והמחרוזת
 כדי לצבוע את כולם בבת אחת ולא רק את מה שסומן.
 ⚠️ ההדגשות זמניות בזיכרון — התוסף אחראי לשמור ב-`storage` ולהקים מחדש ב-`plugin.boot`.
 
-### ג.2 `plugin.openSelf({param})` + `plugin.page_opened`
+### ג.2 ✅ `plugin.openSelf({param})` + `plugin.page_opened` — בוצע ב-3.8.0
 הרשאה: `navigation.write` (כבר מוצהרת). קיים מ-0.9.96.
 
 היום `plugin.openSelf` נקרא **בלי `param`**, וכל מסירת הזיהוי בין המופעים
@@ -222,7 +223,7 @@ etwork.fetchStream הוא API של 0.9.97 והמחרוזת
 המנגנון. **ההמלצה: להוסיף את `plugin.page_opened` כמסלול ראשי ולהשאיר את
 האחסון כגיבוי** לגרסאות/מקרים שבהם האירוע לא הגיע.
 
-### ג.3 תאריך עברי ולוח שנה — `calendar.*`
+### ג.3 ✅ תאריך עברי ולוח שנה — `calendar.*` — בוצע ב-4.3.0
 הרשאה: `calendar.read` (לא מוצהרת). קיים מ-0.9.89.
 
 `guides/_shared/dates.js` מחשב תאריך עברי לבד. `calendar.getJewishDate`
@@ -230,17 +231,17 @@ etwork.fetchStream הוא API של 0.9.97 והמחרוזת
 **בחר** בלוח (ולא רק ״היום״), ו-`events.subscribe:calendar.date_changed`
 מאפשר ל״ערך היום״ להתעדכן כשהמשתמש מדפדף בלוח. שינוי קטן, התאמה גדולה לאפליקציה.
 
-### ג.4 כפתור בסרגל הקורא — `reader.toolbar`
+### ג.4 ✅ כפתור בסרגל הקורא — `reader.toolbar` — בוצע ב-3.7.0 (מזהה את מה שפתוח מ-3.7.1)
 כבר קיים בווריאנט 0.9.97 (`toolbarItems`), אבל רק כלחצן `openPlugin`. אפשר
 `type: "menu"` עם ילדים (״זהה בחירה״ / ״ערך היום״ / ״פרשת השבוע״) — עד שני
 פקדים עליונים לתוסף, עד 20 ילדים.
 
-### ג.5 חיפוש — `search.query` / `search.fullText`
+### ג.5 ✅ חיפוש — `search.query` / `search.fullText` — `search.query` בוצע ב-3.8.0
 הרשאה: `search.fulltext.read`. `search.query` מ-0.9.97, `AsyncIterable` עם
 עימוד ופאסטים. שימוש טבעי: ״היכן עוד מוזכר <שם הערך> בש״ס״ ישירות מהכרטיס,
 במקום מראי המקום הסטטיים בלבד.
 
-### ג.6 זיהוי ספר אמין — `library.resolveBooks` / `getBookMetadata`
+### ג.6 🟡 זיהוי ספר אמין — `library.resolveBooks` / `getBookMetadata` — חלקי: `library.resolveRef` בשימוש מ-3.8.0
 הרשאה: `library.books.read`. `resolveBooks` (0.9.97) פותר עד 100 ספרים בקריאה
 אחת ומחזיר `id`+`type`+`source`. היום `openInReader` שולח `bookId` מחרוזתי
 בלבד; שני ספרים באותו שם אינם ניתנים להבחנה, ופתיחה נכשלת בשקט. פתרון מראי
