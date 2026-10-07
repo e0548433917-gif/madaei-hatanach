@@ -107,8 +107,70 @@ function runPrintSheet(pdfName){
   }, 60);
 }
 
+// #62 — ייצוא עם בחירה חלקית. כשיש יותר מערך אחד, נפתח חלון עם תיבת סימון לכל
+// ערך (כולם מסומנים), ורק המסומנים מיוצאים. מעל PRINT_CHOOSER_MAX ערכים החלון
+// לא נפתח — רשימה כזו מצמצמים קודם בסינון של המדריך.
+const PRINT_CHOOSER_MAX = 300;
+
+function chooseItemsToExport(sourceLabel, items){
+  return new Promise(resolve => {
+    let ov = document.getElementById('printChooserOverlay');
+    if (!ov){
+      ov = document.createElement('div');
+      ov.className = 'panel-overlay';
+      ov.id = 'printChooserOverlay';
+      ov.setAttribute('dir', 'rtl');
+      document.body.appendChild(ov);
+    }
+    const label = it => esc(it.entry.name || '') + ((typeof catLabelOf === 'function' && it.catId)
+      ? ' <span class="mini-note" style="display:inline">· ' + esc(catLabelOf(it.catId)) + '</span>' : '');
+    ov.innerHTML = '<div class="panel-box">'
+      + '<h2>🖨 מה לייצא?</h2>'
+      + '<p class="panel-hint">' + esc(sourceLabel) + ' — הורידו את הסימון מערכים שאינם נחוצים.</p>'
+      + '<div class="panel-actions" style="margin:0 0 8px">'
+      +   '<button type="button" class="panel-btn secondary" data-pc="all">סמן הכל</button>'
+      +   '<button type="button" class="panel-btn secondary" data-pc="none">נקה הכל</button>'
+      + '</div>'
+      + '<div class="pc-list" style="max-height:50vh;overflow-y:auto;border:1px solid var(--color-outline-faint);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:10px">'
+      +   items.map((it, i) => '<label style="display:flex;gap:8px;align-items:baseline;padding:3px 0;cursor:pointer">'
+          + '<input type="checkbox" data-i="' + i + '" checked> <span>' + label(it) + '</span></label>').join('')
+      + '</div>'
+      + '<div class="panel-actions">'
+      +   '<button type="button" class="panel-btn" data-pc="go"></button>'
+      +   '<button type="button" class="panel-btn secondary" data-pc="cancel">ביטול</button>'
+      + '</div></div>';
+    const boxes = Array.from(ov.querySelectorAll('input[type=checkbox]'));
+    const go = ov.querySelector('[data-pc="go"]');
+    const refresh = () => {
+      const n = boxes.filter(b => b.checked).length;
+      go.textContent = '🖨 ייצוא ' + n + ' מתוך ' + items.length;
+      go.disabled = !n;
+    };
+    const finish = (val) => { ov.classList.remove('open'); ov.innerHTML = ''; resolve(val); };
+    ov.onclick = (e) => {
+      if (e.target === ov) return finish(null);
+      const act = e.target && e.target.getAttribute && e.target.getAttribute('data-pc');
+      if (act === 'all' || act === 'none'){ boxes.forEach(b => { b.checked = act === 'all'; }); refresh(); }
+      else if (act === 'cancel') finish(null);
+      else if (act === 'go') finish(boxes.filter(b => b.checked).map(b => items[Number(b.dataset.i)]));
+    };
+    ov.onchange = refresh;
+    refresh();
+    ov.classList.add('open');
+  });
+}
+
 function printItems(sourceLabel, items, pdfName){
   if (!items.length){ window.alert('אין ערכים לייצוא.'); return; }
+  if (items.length > 1 && items.length <= PRINT_CHOOSER_MAX){
+    chooseItemsToExport(sourceLabel, items).then(chosen => {
+      if (!chosen || !chosen.length) return;
+      const label = chosen.length < items.length ? sourceLabel + ' (' + chosen.length + ' מתוך ' + items.length + ')' : sourceLabel;
+      buildPrintSheet(label, chosen);
+      runPrintSheet(pdfName);
+    });
+    return;
+  }
   if (items.length > PRINT_CONFIRM_OVER &&
       !window.confirm('ייצוא ' + items.length + ' ערכים יפיק דף הדפסה ארוך מאוד (עשרות עמודים) '
         + 'ועלול לקחת זמן. אפשר לצמצם עם הסינון שלמעלה.\n\nלהמשיך בכל זאת?')) return;

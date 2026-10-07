@@ -921,7 +921,7 @@ html, body {
 #entryOverlay.open { display: flex; }
 /* #30 — פאנל ״הודעה למפתח״ נפתח גם מתוך כרטיס (🚩 דיווח על ערך שגוי/כפול),
    ולכן חייב להיות מעל הכרטיס (1200) — ומתחת להודעות הצצה (1300) */
-#reportPanelOverlay { z-index: 1250; }
+#reportPanelOverlay, #printChooserOverlay { z-index: 1250; }
 #entryModal {
   background: var(--color-surface); color: var(--color-on-surface);
   max-width: 760px; width: 100%;
