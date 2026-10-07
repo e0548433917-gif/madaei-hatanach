@@ -34,7 +34,11 @@
     "bookmarks.write",
     "search.dialog",
     "library.books.provide",
-    "library.links.read"
+    "library.links.read",
+    "calendar.read",
+    "events.subscribe:calendar.date_changed",
+    "notifications.system",
+    "notes.write"
   ],
   "network": {
     "enabled": true,

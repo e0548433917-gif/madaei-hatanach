@@ -568,3 +568,15 @@ async function publishUpcomingEventsInner(){
   }
   await saveState(true);
 }
+
+// ---- 4.3.0 — ״ערך היום״ לפי תאריך נתון (התאריך שנבחר ביומן של אוצריא,
+// והתראות המערכת היומיות). todayHebrew/eventsForToday נשארים כמות שהם.
+function hebrewOfDate(d){
+  const raw = gregToHebDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  const isLeap = isHebrewLeapYear(raw.year);
+  return { dayLetters: numToHeb(raw.day), monthName: hebMonthNameOf(raw.month, isLeap), raw: raw };
+}
+function eventsForDate(d){
+  const t = hebrewOfDate(d);
+  return allDateEvents().filter(ev => monthMatchesEventMonth(t.monthName, ev.month) && dayMatchesEventDay(t.raw.day, ev.day));
+}

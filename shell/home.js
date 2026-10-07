@@ -598,10 +598,16 @@ function openDateEventForm(ev){
   });
 }
 
+// 4.3.0 — תאריך שנבחר ביומן של אוצריא (calendar.getSelectedDate / calendar.date_changed).
+// null = היום. נקבע ב-shell/otzaria-extras.js.
+let dailySelectedDate = null;
 function renderDailyEventBody(){
-  const t = todayHebrew();
-  const today = eventsForToday();
-  let html = `<p class="panel-hint">היום ${esc(t.dayLetters)}' ${esc(t.monthName)} ${esc(hebYearStr(t.raw.year))} (${esc(gregDateStr())})</p>`;
+  const sel = (dailySelectedDate && typeof eventsForDate === 'function') ? dailySelectedDate : null;
+  const t = sel ? hebrewOfDate(sel) : todayHebrew();
+  const today = sel ? eventsForDate(sel) : eventsForToday();
+  let html = sel
+    ? `<p class="panel-hint">לפי התאריך שנבחר ביומן של אוצריא: ${esc(t.dayLetters)}' ${esc(t.monthName)} ${esc(hebYearStr(t.raw.year))} (${esc(sel.toLocaleDateString('he-IL'))}) · <a href="#" id="dailyBackToToday">חזרה להיום</a></p>`
+    : `<p class="panel-hint">היום ${esc(t.dayLetters)}' ${esc(t.monthName)} ${esc(hebYearStr(t.raw.year))} (${esc(gregDateStr())})</p>`;
   if (today.length){
     html += '<div class="field-label">מאורעות התנ״ך והתלמוד היום</div>' + today.map(ev => dateEventRow(ev, t.monthName)).join('');
   } else {
@@ -640,6 +646,8 @@ function renderDailyEventBody(){
     + '<a href="#" id="dailyEventReportLink">לשלוח לנו דיווח</a> ונוסיף אותו לכולם.'
     + '</p>';
   dailyEventBody.innerHTML = html;
+  const back = document.getElementById('dailyBackToToday');
+  if (back) back.addEventListener('click', (e) => { e.preventDefault(); dailySelectedDate = null; renderDailyEventBody(); });
   wireDateEventLinks(dailyEventBody);
   const addBtn = dailyEventBody.querySelector('#dateEventAddBtn');
   if (addBtn) addBtn.addEventListener('click', () => openDateEventForm(null));

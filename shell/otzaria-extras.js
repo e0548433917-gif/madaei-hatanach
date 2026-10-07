@@ -174,6 +174,7 @@ function enrichEntryDetail(container, entry){
   }
   wireMentionsSearch(container, entry);
   wireVerseCommentaries(container, entry);
+  wireVerseNotes(container, entry);
   // 4.2.0 — tools.gematria: גימטריה של שם הערך
   if (entry.name && !container.querySelector('.otz-gematria')){
     Otzaria.call('tools.gematria', { text: String(entry.name) }).then(res => {
@@ -239,3 +240,96 @@ function setUnsaved(on, message){
     lib.addEventListener('change', () => writeOptFlag(READ_OPT_IN_LIBRARY, lib.checked));
   }
 })();
+
+// ---- 4.3.0: ״ערך היום״ לפי התאריך שנבחר ביומן של אוצריא ----
+function parseCalDate(v){
+  v = otzData(v);
+  if (v && typeof v === 'object') v = v.date || v.value;
+  const d = v ? new Date(v) : null;
+  return (d && !isNaN(d)) ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : null;
+}
+function applyCalendarDate(d){
+  if (!d || typeof renderDailyEventBody !== 'function') return;
+  const now = new Date();
+  const same = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  dailySelectedDate = same ? null : d;
+  if (typeof dailyEventBody !== 'undefined' && dailyEventBody && dailyEventBody.isConnected && dailyEventBody.offsetParent !== null) renderDailyEventBody();
+}
+(async function wireCalendarDate(){
+  for (let i = 0; i < 50 && !otzOk(); i++) await new Promise(r => setTimeout(r, 200));
+  if (!otzOk()) return;
+  Otzaria.call('calendar.getSelectedDate').then(r => applyCalendarDate(parseCalDate(r))).catch(() => {});
+  Otzaria.on('calendar.date_changed', (p) => applyCalendarDate(parseCalDate(p && (p.date || p.selectedDate || p))));
+})();
+
+// ---- 4.3.0: התראת מערכת יומית על ״ערך היום״ (notifications.scheduleSystem) ----
+// מתזמנים 7 ימים קדימה בכל פתיחה של התוסף; ימים בלי מאורע מדולגים.
+const READ_OPT_DAILY_NOTIFY = 'mh_daily_notify';
+async function scheduleDailyNotifications(){
+  if (!otzOk() || typeof eventsForDate !== 'function') return;
+  await Otzaria.call('notifications.cancelAll').catch(() => {});
+  if (!(await readOptFlag(READ_OPT_DAILY_NOTIFY, false))) return;
+  const now = new Date();
+  for (let i = 0; i < 7; i++){
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i, 8, 0, 0);
+    if (day <= now) continue;
+    const evs = eventsForDate(day);
+    if (!evs.length) continue;
+    const t = hebrewOfDate(day);
+    await Otzaria.call('notifications.scheduleSystem', {
+      title: '👁 ערך היום — ' + t.dayLetters + "' " + t.monthName,
+      body: evs.slice(0, 2).map(e => e.event + (e.source ? ' (' + e.source + ')' : '')).join(' · ').slice(0, 240),
+      scheduledTime: day.toISOString(),
+      id: 7300 + i
+    }).catch(() => {});
+  }
+}
+(async function wireDailyNotify(){
+  const el = document.getElementById('optDailyNotify');
+  for (let i = 0; i < 50 && !otzOk(); i++) await new Promise(r => setTimeout(r, 200));
+  if (!otzOk()) return;
+  if (el){
+    el.checked = await readOptFlag(READ_OPT_DAILY_NOTIFY, false);
+    el.addEventListener('change', async () => {
+      if (el.checked){
+        const p = otzData(await Otzaria.call('notifications.requestPermissions').catch(() => null));
+        if (p && p.granted === false){ el.checked = false; return; }
+      }
+      await writeOptFlag(READ_OPT_DAILY_NOTIFY, el.checked);
+      scheduleDailyNotifications();
+    });
+  }
+  scheduleDailyNotifications();
+})();
+
+// ---- 4.3.0: הערה אישית בספר מתוך כרטיס (notes.add) ----
+function wireVerseNotes(container, entry){
+  const verses = entry.verses || entry.makorot || [];
+  container.querySelectorAll('.verse-card[data-vref]').forEach(card => {
+    if (card.querySelector('.otz-note-btn')) return;
+    const v = verses[parseInt(card.dataset.vref, 10)];
+    if (!v || !v.ref) return;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'tool-btn otz-note-btn'; btn.textContent = '📝 הערה בספר';
+    btn.title = 'הוספת הערה אישית על הפסוק — תופיע בספר עצמו באוצריא';
+    const box = document.createElement('div'); box.hidden = true;
+    box.innerHTML = `<textarea class="f-textarea" rows="2" style="width:100%;margin-top:6px;"></textarea>
+      <button type="button" class="nf-btn" style="margin-top:4px;">שמירה בספר</button> <span class="mini-note"></span>`;
+    const ta = box.querySelector('textarea'), save = box.querySelector('button'), msg = box.querySelector('.mini-note');
+    ta.value = (entry.name ? entry.name + ' — ' : '') + 'עינים למקרא';
+    btn.addEventListener('click', (ev) => { ev.stopPropagation(); box.hidden = !box.hidden; if (!box.hidden) ta.focus(); });
+    box.addEventListener('click', ev => ev.stopPropagation());
+    save.addEventListener('click', async () => {
+      const content = ta.value.trim(); if (!content) return;
+      msg.textContent = 'שומר…';
+      try {
+        const hits = otzData(await Otzaria.call('library.resolveRef', { ref: v.ref, limit: 1 }));
+        const h = Array.isArray(hits) && hits[0];
+        if (!h){ msg.textContent = 'הפסוק לא נמצא בספרייה.'; return; }
+        const ok = otzData(await Otzaria.call('notes.add', { bookId: h.bookId, lineNumber: h.index, content }));
+        msg.textContent = ok === false ? 'השמירה נכשלה.' : '✅ נשמרה בספר';
+      } catch(e){ msg.textContent = 'השמירה נכשלה.'; }
+    });
+    card.appendChild(btn); card.appendChild(box);
+  });
+}
