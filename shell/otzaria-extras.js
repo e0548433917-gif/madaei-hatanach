@@ -145,3 +145,23 @@ function setUnsaved(on, message){
     ? { hasChanges: true, message: message || 'העריכה בכרטיס תאבד' }
     : { hasChanges: false }).catch(() => {});
 }
+
+// ---- 3.9.0: הגדרות קריאה (index.html #setReadingGroup) ----
+(async function wireReadingOptions(){
+  const h = document.getElementById('optHighlight');
+  const a = document.getElementById('optAuto');
+  const b = document.getElementById('optShowBtn');
+  if (!h || !a || !b) return;
+  // Otzaria נטען אסינכרונית — ממתינים לו לפני קריאת הערכים
+  for (let i = 0; i < 50 && !otzOk(); i++) await new Promise(r => setTimeout(r, 200));
+  if (!otzOk()){ const g = document.getElementById('setReadingGroup'); if (g) g.hidden = true; return; }
+  h.checked = await readOptFlag(READ_OPT_HIGHLIGHT, true);
+  a.checked = await readOptFlag(READ_OPT_AUTO, false);
+  b.checked = !(await readOptFlag(READ_OPT_HIDE_BTN, false));
+  h.addEventListener('change', () => {
+    writeOptFlag(READ_OPT_HIGHLIGHT, h.checked);
+    if (!h.checked) Otzaria.call('reader.clearAllHighlights', {}).catch(()=>{});
+  });
+  a.addEventListener('change', () => writeOptFlag(READ_OPT_AUTO, a.checked));
+  b.addEventListener('change', () => writeOptFlag(READ_OPT_HIDE_BTN, !b.checked));
+})();

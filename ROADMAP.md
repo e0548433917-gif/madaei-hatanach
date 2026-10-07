@@ -40,7 +40,7 @@
 * [#48 — 4.11 — contributes.startup.toolbarItems בחבילה הראשית — ✅ בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/48)
 * [#49 — 4.16 — מעבר לחבילה אחת — ✅ בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/49)
 * [#50 — 4.10 — background.entrypoint: כבר הוחזר (v3.5.0); נשאר אימות על מכשיר + pack-bgtest-variant שבור](https://github.com/e0548433917-gif/madaei-hatanach/issues/50)
-* [#51 — 4.17 — הדגשות בטקסט הספר עצמו (reader.setHighlight)](https://github.com/e0548433917-gif/madaei-hatanach/issues/51)
+* [#51 — 4.17 — הדגשות בטקסט הספר עצמו (reader.setHighlight) — ✅ בוצע ב-3.9.0 (הדגשת הקטע שזוהה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/51)
 * [#52 — 4.18 — plugin.openSelf({param}) + plugin.page_opened במקום פולינג — ✅ בוצע ב-3.8.0 (הפולינג נשאר כגיבוי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/52)
 * [#53 — 4.13 — שפת ממשק (i18n) — להערכה מחדש, כנראה לא כדאי](https://github.com/e0548433917-gif/madaei-hatanach/issues/53)
 * [#54 — 2.11 — טעינה עצלה של הדאטה (19MB בפתיחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/54)

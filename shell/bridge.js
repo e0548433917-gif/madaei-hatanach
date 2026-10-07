@@ -174,6 +174,7 @@ async function handleIdentifyClick(payload){
     return;
   }
   const matches = await identifyWithLiveContext(text);
+  if (matches.length) highlightIdentifiedSelection(payload);
 
   if (!(window.Otzaria && Otzaria.call)){
     bringToFront();

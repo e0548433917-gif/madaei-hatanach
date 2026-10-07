@@ -28,7 +28,9 @@
     "network.localhost",
     "tools.read",
     "search.fulltext.read",
-    "app.shortcuts"
+    "app.shortcuts",
+    "reader.highlight",
+    "events.subscribe:reader.selection_changed"
   ],
   "network": {
     "enabled": true,
@@ -82,14 +84,28 @@
           "title": "עינים למקרא",
           "icon": "eye_24_regular",
           "contexts": [
-            "reader-text",
-            "reader-pdf"
+            "reader-text"
           ],
-          "openPlugin": true
+          "openPlugin": true,
+          "when": {
+            "storage": {
+              "key": "mh_hide_toolbar_button",
+              "notEquals": true
+            }
+          }
         }
       ],
       "activationEvents": [
-        "app.startup"
+        "app.startup",
+        {
+          "topic": "reader.selection_changed",
+          "when": {
+            "storage": {
+              "key": "mh_auto_identify",
+              "equals": true
+            }
+          }
+        }
       ],
       "keepAlive": false,
       "shortcuts": [

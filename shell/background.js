@@ -42,6 +42,7 @@ async function bgHandleIdentifyClick(payload){
   }
 
   const matches = await identify(text);
+  if (matches.length) highlightIdentifiedSelection(payload);
 
   // מוסרים ללשונית *לפני* המעבר אליה: plugin.openSelf עלול לטעון מחדש את מופע
   // הלשונית, וכל מה שצויר לפני הקריאה נמחק יחד עם ה-webview.
@@ -50,7 +51,7 @@ async function bgHandleIdentifyClick(payload){
       text: text, mode: mode, ts: Date.now(), origin: BG_INSTANCE_ID
     });
     // שם המתודה מורכב בזמן ריצה — אותו שיקול כמו ב-bridge.js.
-    Otzaria.call(['plugin', 'openSelf'].join('.'), {}).catch(()=>{});
+    Otzaria.call('plugin.openSelf', { param: { kind: 'identify', text: text, mode: mode, ts: Date.now(), origin: BG_INSTANCE_ID } }).catch(()=>{});
   };
 
   if (!matches.length){
@@ -127,6 +128,29 @@ function bgWait(elapsed){
     // publishUpcomingEvents (guides/_shared/dates.js) - ר' הערה מפורטת ב-
     // bridge.js למה זה הוחלף מ-publishTodayEvents (daily-publish.js הוסר).
     publishUpcomingEvents().catch(()=>{}).then(bgEnd, bgEnd);
+  });
+
+  // 3.9.0 — זיהוי תוך כדי קריאה. המנוע מתעורר לאירוע הזה רק כשההגדרה דלוקה
+  // (activationEvents + when במניפסט); הבדיקה כאן היא למקרה שהמנוע כבר חי.
+  let autoTimer = null, lastAutoText = '';
+  Otzaria.on('reader.selection_changed', (data) => {
+    const text = String((data && data.text) || '').trim();
+    if (text.length < 2 || text.length > 80 || text === lastAutoText) return;
+    clearTimeout(autoTimer);
+    bgStart();
+    autoTimer = setTimeout(async () => {
+      try {
+        if (!(await readOptFlag(READ_OPT_AUTO, false))) return;
+        lastAutoText = text;
+        const matches = await identify(text);
+        if (!matches.length) return;
+        const names = matches.slice(0, 3).map(m => m.catIcon + ' ' + m.name).join(' · ');
+        await Otzaria.call('notifications.showInApp', {
+          message: '👁 עינים למקרא: ' + names + (matches.length > 3 ? ' ועוד ' + (matches.length - 3) : '') + ' — Ctrl+Alt+I לפרטים',
+          type: 'info'
+        });
+      } catch(e){} finally { bgEnd(); }
+    }, 700);
   });
 
   Otzaria.on('reader.context_menu_item_clicked', (payload) => {

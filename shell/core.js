@@ -265,3 +265,48 @@ async function callIfSupported(parts, minVersion, payload){
   if (!(await appVersionAtLeast(minVersion))) return null;
   return Otzaria.call(parts.join('.'), payload || {}).catch(() => null);
 }
+
+// ============================================================
+//  3.9.0 — הגדרות קריאה (נשמרות ב-storage של אוצריא כערכים פשוטים, כדי
+//  שתנאי `when` במניפסט יוכלו לקרוא אותן בלי להעיר את המנוע)
+// ============================================================
+const READ_OPT_HIGHLIGHT = 'mh_highlight_identified';   // ברירת מחדל: דלוק
+const READ_OPT_AUTO      = 'mh_auto_identify';          // ברירת מחדל: כבוי
+const READ_OPT_HIDE_BTN  = 'mh_hide_toolbar_button';    // ברירת מחדל: כבוי
+
+async function readOptFlag(key, def){
+  if (!(window.Otzaria && Otzaria.call)) return def;
+  try {
+    const res = await Otzaria.call('storage.get', { key: key });
+    let v = res && (res.data !== undefined ? res.data : res);
+    if (v && typeof v === 'object' && 'value' in v) v = v.value;
+    if (v === 'true') v = true; if (v === 'false') v = false;
+    return (typeof v === 'boolean') ? v : def;
+  } catch(e){ return def; }
+}
+function writeOptFlag(key, val){
+  if (!(window.Otzaria && Otzaria.call)) return Promise.resolve();
+  return Otzaria.call('storage.set', { key: key, value: !!val }).catch(()=>{});
+}
+
+// הדגשת הטקסט שזוהה בספר עצמו (reader.setHighlight). הבחירה מגיעה מ-payload של
+// לחיצת תפריט ההקשר; בבחירה רב-פסקתית יש sections עם עוגן לכל אחת.
+async function highlightIdentifiedSelection(payload){
+  try {
+    if (!(await readOptFlag(READ_OPT_HIGHLIGHT, true))) return;
+    const sel = (payload && payload.selection) || payload || {};
+    const targets = Array.isArray(sel.sections) && sel.sections.length ? sel.sections : [sel];
+    let n = 0;
+    for (const t of targets){
+      if (!t || !t.sourceRange) continue;
+      await Otzaria.call('reader.setHighlight', {
+        highlightId: 'mh-' + Date.now().toString(36) + '-' + (n++),
+        bookId: t.bookId || payload.currentBookId || payload.currentBook,
+        sectionIndex: (t.sectionIndex != null ? t.sectionIndex : payload.currentIndex),
+        range: t.sourceRange,
+        style: { backgroundColor: '#8FC1E3', opacity: 0.45, borderRadius: 3, priority: 5 },
+        metadata: { source: 'madaei-hatanach' }
+      });
+    }
+  } catch(e){ /* הדגשה היא תוספת — כישלון שקט */ }
+}
