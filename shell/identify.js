@@ -171,7 +171,7 @@ function isVerbToken(tok){
 // שרשרת מותרת: [ו]?[הבכלמש]? — ו״ו לבדה, אות שימוש אחת, או ו״ו + אות שימוש.
 // בטקסט מנוקד כל אות-תחילית חייבת לשאת ניקוד שמתאים לה; אחרת זו אינה תחילית
 // (מַחֲנֶה, שְׁמֹנֶה, מִשְׁמָע). בטקסט בלי ניקוד אין איך לבדוק — ההתאמה ״לא מאומתת״.
-const PREFIX_LETTERS = 'הבכלמש';
+const ID_PREFIX_LETTERS = 'הבכלמש';
 function prefixValid(segs, k){
   for (let j = 0; j < k; j++){
     const ch = segs[j] && segs[j][0], m = marksOf(segs[j]), next = marksOf(segs[j + 1]);
@@ -197,8 +197,8 @@ function candidateForms2(firstTok, phrase, vocalized, afterBen){
   const segs = letterSegs(firstTok.r);
   const pres = [''];
   if (!afterBen || w[0] === 'ו'){
-    if (w[0] === 'ו' && w.length > 2){ pres.push('ו'); if (!afterBen && PREFIX_LETTERS.includes(w[1])) pres.push('ו' + w[1]); }
-    else if (!afterBen && PREFIX_LETTERS.includes(w[0])) pres.push(w[0]);
+    if (w[0] === 'ו' && w.length > 2){ pres.push('ו'); if (!afterBen && ID_PREFIX_LETTERS.includes(w[1])) pres.push('ו' + w[1]); }
+    else if (!afterBen && ID_PREFIX_LETTERS.includes(w[0])) pres.push(w[0]);
   }
   const out = [];
   for (const pre of pres){
