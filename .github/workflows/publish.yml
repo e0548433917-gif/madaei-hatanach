@@ -80,8 +80,14 @@ jobs:
 
       # Action רשמי של אוצריא: ולידציה, קיפול ל-.otzplugin (מכבד .otzignore),
       # ופרסום לחנות. אין שלב build — קבצי הנתונים כבר בגיט.
+      # #91: ה-Action מושך בזמן ריצה את ה-API reference משרת otzaria.org, וכשהשרת
+      # לא עונה הוא נתקע עד שכל ה-job נהרג — ואז גם ה-Release בגיטהאב לא נוצר.
+      # מגבילים אותו ל-8 דקות וממשיכים: ה-Release נוצר בכל מקרה (עם חבילה
+      # מקופלת כאן, שלב ״קיפול חלופי״ למטה), והפרסום לחנות ייעשה בהרצה ידנית.
       - name: ולידציה, קיפול ופרסום
         id: otzaria
+        timeout-minutes: 8
+        continue-on-error: true
         uses: Otzaria/otzaria-plugin-validator@v1
         with:
           path: .
@@ -112,6 +118,21 @@ jobs:
           if (( bytes > 41943040 )); then
             echo "::warning::החבילה גדולה מהצפוי ($mb MB, הרף 40MB). בדוק מה תפח בתוך guides/."
           fi
+
+      - name: קיפול חלופי (כשה-Action של אוצריא לא הפיק חבילה)
+        id: fallback
+        env:
+          PLUGIN_FILE: ${{ steps.otzaria.outputs.plugin-file }}
+        run: |
+          if [[ -n "$PLUGIN_FILE" && -f "$PLUGIN_FILE" ]]; then
+            echo "file=$PLUGIN_FILE" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          id="$(node -p "require('./manifest.json').id")"
+          version="$(node -p "require('./manifest.json').version")"
+          out="$id-$version.otzplugin"
+          zip -qr "$out" manifest.json index.html background.html icon shell guides -x 'guides/*/view.html' 'guides/places/css/app.css' 'guides/places/js/app.js' 'guides/places/README.md' 'guides/places/tiles/*'
+          echo "::warning::ה-Action של אוצריא לא הפיק חבילה (#91) — נארזה חבילה חלופית לצירוף ל-Release. הפרסום לחנות לא בוצע."
+          echo "file=$out" >> "$GITHUB_OUTPUT"
 
       - name: קביעת גרסה ותג
         id: meta
@@ -185,5 +206,5 @@ jobs:
           name: עינים למקרא ${{ steps.meta.outputs.version }}
           draft: false
           prerelease: false
-          files: ${{ steps.otzaria.outputs.plugin-file }}
+          files: ${{ steps.fallback.outputs.file }}
           body_path: release-notes.md
