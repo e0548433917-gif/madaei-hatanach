@@ -6,11 +6,9 @@
 // כל מדריך נשאר קובץ עצמאי לגמרי (guides/<cat>/...) — הקובץ הזה רק קורא להם.
 
 const MENU_ITEM_ID = 'madaei-hatanach-identify';
-// TOOLBAR_ITEM_ID (contributes.startup.toolbarItems, ROADMAP 4.11) הוסר ב-2.19.2:
-// reader.addToolbarItem זמין רק מ-0.9.97 (otzaria_plugin.d.ts), וזה כפה
-// minAppVersion 0.9.97 על המניפסט כולו — מה שחסם כל מי שעל 0.9.96 מלהתקין
-// בכלל, כולל את הפריט בלחיצה ימנית שכן עובד שם. חוזר כשנרגיש בנוח להעלות
-// את הרצפה, או כשהתמיכה ב-0.9.96 בפועל תרד מספיק.
+const TOOLBAR_ITEM_ID = 'madaei-hatanach-open';   // manifest: contributes.startup.toolbarItems
+// הוסר ב-2.19.2 כשהרצפה הייתה 0.9.96, וחזר ב-3.7.0 כשהרצפה עלתה ל-0.9.97.
+// מ-3.7.1 bridge.js מאזין ללחיצה עליו ומזהה את מה שפתוח בקורא (#42, #52).
 const DEV_EMAIL = 'E0548433917@outlook.com';
 const HTML_PAGES_INDEX_KEY = 'madaei_hatanach_html_pages_index';
 // מפתח ה"מסירה" (handoff) של זיהוי שממתין להצגה אחרי מעבר ללשונית התוסף. ר' setPendingIdentify.

@@ -363,6 +363,15 @@ function waitForOtzaria(elapsed){
         if (runMode === 'background') callIfSupported(['plugin', 'backgroundDone'], '0.9.97');
       });
     });
+    // כפתור "עינים למקרא" בסרגל הקורא (contributes.startup.toolbarItems,
+    // openPlugin:true). אוצריא פותחת את הלשונית ומוסרת לה את אירוע הלחיצה גם
+    // אם הדף נטען רק עכשיו — API_REFERENCE §reader.addToolbarItem. עד 3.7.0
+    // לא היה כאן מאזין, ולכן הכפתור רק העביר ללשונית (#42, #52).
+    Otzaria.on('reader.toolbar_item_clicked', (payload) => {
+      if (!payload || payload.itemId !== TOOLBAR_ITEM_ID) return;
+      if (runMode === 'background') return;   // openPlugin:true — הלשונית מטפלת
+      handleToolbarOpenClick(payload);
+    });
     // חשוב: לרנדר את כרטיסי דפי ה-HTML השמורים רק אחרי ש-Otzaria אכן זמין -
     // אחרת storage.get נופל מיד ל-null (הבדיקה hasOtzaria() נכשלת) והכרטיסים
     // לא מופיעים בטעינה ראשונה של עמוד השער, גם אם התוכן קיים בזיכרון.

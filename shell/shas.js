@@ -696,41 +696,87 @@ async function refreshOpenPageRow(){
   if (openPageLabel) openPageLabel.textContent = 'זהה את מה שפתוח בקורא — ' + cur.title;
 }
 
+// מזהה את הטקסט שבמיקום נתון בקורא. משותף לשורת "זהה את מה שפתוח" שבבורר
+// הספר, ולכפתור "עינים למקרא" שבסרגל הקורא (3.7.1, #42/#52) — שעד עכשיו רק
+// העביר ללשונית בלי לזהות דבר, כי אף אחד לא האזין ל-reader.toolbar_item_clicked.
+// loc: { bookId, id, type, index, title }
+async function identifyReaderLocation(loc){
+  if (!loc || (!loc.bookId && loc.id == null)) return false;
+  const index = Number(loc.index) || 0;
+  const title = loc.title || loc.bookId || 'הספר הפתוח';
+  if (loc.type && loc.type !== 'text'){
+    // ספר PDF: library.getBookContent מחזיר טקסט רק לספרי טקסט.
+    await Otzaria.call('ui.showError', {
+      message: 'זיהוי הדף הפתוח זמין כרגע רק בספרי טקסט. בספר PDF אפשר לסמן מילה וללחוץ לחיצה ימנית ← ״זיהוי בעינים למקרא״.'
+    }).catch(()=>{});
+    return false;
+  }
+  // רק הפרמטרים המתועדים — type/id אינם בחתימה של getBookContent
+  const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
+    bookId: loc.bookId, offset: index, limit: LIB_CHUNK
+  }));
+  let text = '';
+  if (typeof res === 'string') text = res;
+  else if (Array.isArray(res)) text = res.map(x => (typeof x === 'string' ? x : ((x && (x.text || x.content)) || ''))).join('\n');
+  else if (res) text = res.text || res.content || '';
+  text = String(text || '').replace(/<[^>]*>/g, ' ');
+  if (!text.trim()){
+    await Otzaria.call('ui.showError', { message: 'לא הצלחנו לקרוא את הטקסט שפתוח בקורא.' }).catch(()=>{});
+    return false;
+  }
+  if (!parashaDataReady()) await ensureAllGuidesLoaded();
+  const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
+  closeBookChooser();
+  showResults(matches, title);
+  return true;
+}
+
 async function identifyOpenPage(){
   const bookId = openPageRow && openPageRow.dataset.bookId;
   const numId = openPageRow && openPageRow.dataset.id;
   if (!bookId && !numId) return;
-  const type = openPageRow.dataset.type || 'text';
-  const index = parseInt(openPageRow.dataset.index, 10) || 0;
-  const title = openPageRow.dataset.title || bookId;
   const label = openPageLabel ? openPageLabel.textContent : null;
   if (openPageLabel) openPageLabel.textContent = 'מזהה…';
   try {
-    // ה-id המספרי עדיף על bookId המחרוזתי כשהוא קיים: שני ספרים בספרייה
-    // יכולים לחלוק שם ("עירובין"), וה-id הוא היחיד שחד-משמעי.
-    // רק הפרמטרים המתועדים — type/id אינם בחתימה של getBookContent
-    const res = unwrapOtz(await Otzaria.call('library.getBookContent', {
-      bookId: bookId, offset: index, limit: LIB_CHUNK
-    }));
-    let text = '';
-    if (typeof res === 'string') text = res;
-    else if (Array.isArray(res)) text = res.map(x => (typeof x === 'string' ? x : ((x && (x.text || x.content)) || ''))).join('\n');
-    else if (res) text = res.text || res.content || '';
-    text = String(text || '').replace(/<[^>]*>/g, ' ');
-    if (!text.trim()){
-      await Otzaria.call('ui.showError', { message: 'לא הצלחנו לקרוא את הטקסט שפתוח בקורא.' }).catch(()=>{});
-      return;
-    }
-    if (!parashaDataReady()) await ensureAllGuidesLoaded();
-    const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
-    closeBookChooser();
-    showResults(matches, title);
+    await identifyReaderLocation({
+      bookId: bookId,
+      id: numId ? Number(numId) : null,
+      type: openPageRow.dataset.type || 'text',
+      index: parseInt(openPageRow.dataset.index, 10) || 0,
+      title: openPageRow.dataset.title || bookId
+    });
   } catch(e){
     await Otzaria.call('ui.showError', {
       message: 'הזיהוי נכשל. ' + ((e && e.message) || '')
     }).catch(() => window.alert('הזיהוי נכשל.'));
   } finally {
     if (openPageLabel && label) openPageLabel.textContent = label;
+  }
+}
+
+// לחיצה על כפתור הסרגל: ה-payload כבר נושא את הספר והמיקום (API_REFERENCE
+// §reader.toolbar_item_clicked), כך שלא צריך קריאה נוספת. אם השדות חסרים —
+// נופלים ל-reader.getCurrentState.
+async function handleToolbarOpenClick(payload){
+  try {
+    let loc = null;
+    if (payload && (payload.currentBookId || payload.currentBook)){
+      loc = {
+        bookId: String(payload.currentBookId || payload.currentBook),
+        id: Number.isInteger(payload.currentId) ? payload.currentId : null,
+        type: payload.currentType || (payload.context === 'reader-pdf' ? 'pdf' : 'text'),
+        index: Number(payload.currentIndex) || 0,
+        title: String(payload.currentRef || payload.currentBook || payload.currentBookId)
+      };
+    } else {
+      loc = await currentReaderBook();
+    }
+    if (!loc) return;
+    await identifyReaderLocation(loc);
+  } catch(e){
+    await Otzaria.call('ui.showError', {
+      message: 'הזיהוי נכשל. ' + ((e && e.message) || '')
+    }).catch(()=>{});
   }
 }
 
