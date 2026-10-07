@@ -30,7 +30,9 @@
     "search.fulltext.read",
     "app.shortcuts",
     "reader.highlight",
-    "events.subscribe:reader.selection_changed"
+    "events.subscribe:reader.selection_changed",
+    "bookmarks.write",
+    "search.dialog"
   ],
   "network": {
     "enabled": true,
@@ -114,6 +116,19 @@
           "label": "זיהוי בעינים למקרא",
           "key": "ctrl+alt+i",
           "contextMenuItemId": "madaei-hatanach-identify"
+        }
+      ],
+      "searchDialogItems": [
+        {
+          "id": "madaei-hatanach-search",
+          "type": "checkbox",
+          "title": "חפש גם בעינים למקרא (אישים, מקומות, צומח, בע״ח ועוד)",
+          "defaultValue": false,
+          "openPluginOnSubmit": true,
+          "visibleInModes": [
+            "exact",
+            "advanced"
+          ]
         }
       ]
     }

@@ -85,6 +85,13 @@ function runPrintSheet(){
   printResetTimer = setTimeout(done, 120000);
   // דחייה קצרה כדי שהדפדפן יספיק לפרוס את מה שהרגע נבנה לפני צילום העמוד
   setTimeout(() => {
+    // 4.0.0 — ui.print של אוצריא: A4 מפורש (ברירת המחדל של המנוע היא US Letter)
+    // ודיאלוג המערכת המלא. נפילה ל-window.print מחוץ לאוצריא.
+    if (window.Otzaria && Otzaria.call){
+      Otzaria.call('ui.print', { jobName: 'עינים למקרא', pageSize: 'a4', orientation: 'portrait', marginMm: 12, printBackgrounds: true })
+        .then(done, () => { try { window.print(); } catch(e){ done(); } });
+      return;
+    }
     try { window.print(); }
     catch(e){ console.warn('madaei-hatanach: print failed', e); done(); }
   }, 60);

@@ -72,7 +72,18 @@ function wireMentionsSearch(container, entry){
       const { total, results } = await searchMentions(name, 30);
       if (!results.length){ list.innerHTML = '<p class="mini-note">לא נמצאו מופעים.</p>'; return; }
       list.innerHTML = `<p class="mini-note">${total} מופעים${total > results.length ? ' — מוצגים ' + results.length + ' הראשונים' : ''}</p>` +
-        results.map((r, i) => `<div class="src-item clickable" data-hit="${i}"><b>${esc(r.reference || r.book || '')}</b> — ${esc(String(r.text || '').replace(/<[^>]*>/g, '').slice(0, 140))}</div>`).join('');
+        results.map((r, i) => `<div class="src-item clickable" data-hit="${i}"><button type="button" class="tool-btn" data-bm="${i}" title="הוספה לסימניות של אוצריא" style="float:inline-end;">🔖</button><b>${esc(r.reference || r.book || '')}</b> — ${esc(String(r.text || '').replace(/<[^>]*>/g, '').slice(0, 140))}</div>`).join('');
+      // 4.0.0 — bookmarks.add: שמירת מופע כסימנייה ברשימת הסימניות של אוצריא
+      list.querySelectorAll('[data-bm]').forEach(b => b.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const r = results[+b.dataset.bm];
+        try {
+          const res = await Otzaria.call('bookmarks.add', { bookId: r.bookId, index: r.index, label: (entry.name || '') + ' — ' + (r.reference || '') });
+          const ok = otzData(res);
+          b.textContent = ok === false ? '✓' : '✅';
+          b.title = ok === false ? 'כבר קיימת סימנייה כזו' : 'נוסף לסימניות של אוצריא';
+        } catch(e){ b.textContent = '⚠️'; }
+      }));
       list.querySelectorAll('[data-hit]').forEach(el => el.addEventListener('click', () => {
         const r = results[+el.dataset.hit];
         Otzaria.call('reader.openBook', { bookId: r.bookId, type: r.type, index: r.index }).catch(() => {});

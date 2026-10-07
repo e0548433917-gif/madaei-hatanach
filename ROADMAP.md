@@ -31,7 +31,7 @@
 * [#42 — אימות על מכשיר אמיתי: לחיצה ימנית, כפתור הסרגל, ו-reader.getCurrentState](https://github.com/e0548433917-gif/madaei-hatanach/issues/42)
 * [#43 — 4.5 — דף HTML מוסף לא נשאר נגיש מעמוד הבית אחרי סגירת אוצריא](https://github.com/e0548433917-gif/madaei-hatanach/issues/43)
 * [#44 — באג: לשונית "ניווט" ישנה שעדיין מופיעה בממשק](https://github.com/e0548433917-gif/madaei-hatanach/issues/44)
-* [#45 — באג: מספר גרסה ישן מוצג בלשונית "מה חדש"](https://github.com/e0548433917-gif/madaei-hatanach/issues/45)
+* [#45 — באג: מספר גרסה ישן מוצג בלשונית "מה חדש" — ✅ 4.0.0: בדיקת הגרסה דרך network.fetchStream; לאמת על מכשיר](https://github.com/e0548433917-gif/madaei-hatanach/issues/45)
 * [#46 — הדגשה ויזואלית של הטקסט ששונה ב-diff של כרטיס נערך](https://github.com/e0548433917-gif/madaei-hatanach/issues/46)
 * [#98 — לוח שנה: וריאנט ״עינים למקרא+״ מזדהה כ״עינים למקרא״ בכל מקום](https://github.com/e0548433917-gif/madaei-hatanach/issues/98)
 

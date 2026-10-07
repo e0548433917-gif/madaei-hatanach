@@ -516,7 +516,9 @@ async function publishUpcomingEventsInner(){
     events.forEach((ev, i) => items.push({
       key: 'madaei:dailyEvent:' + iso + ':' + i,
       payload: { title: ev.event, startsAt, source: 'עינים למקרא', importance: 'low',
-        description: dayLabel + (ev.source ? ' · ' + ev.source : '') }
+        // #99 (4.0.0): התיאור נושא את המאורע עצמו ואת המקור, לא רק את התאריך
+        description: ev.event + (ev.source ? '\nמקור: ' + ev.source : '') + '\n' + dayLabel
+          + '\nמתוך ״ערך היום״ בתוסף עינים למקרא' }
     }));
     if (wantChurban) items.push({
       key: 'madaei:zChurban:' + iso,

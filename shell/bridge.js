@@ -194,10 +194,11 @@ async function handleIdentifyClick(payload){
 
   // אין התאמה: מציעים לפתוח טופס הצעת ערך חדש (עם בחירת קטגוריה) - לשליחה או לשמירה מקומית.
   if (!matches.length){
+    const dict = await dictionaryLine(text);
     try {
       const res = await Otzaria.call('ui.showConfirm', {
         title: 'לא נמצאה התאמה ל"' + snippet(text, 40) + '"',
-        content: 'לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת קטגוריה, שליחה למפתח או שמירה במחשב.'
+        content: (dict ? dict + '\n\n' : '') + 'לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת קטגוריה, שליחה למפתח או שמירה במחשב.'
           + (canOpenSelf ? '' : '\n\n(אין מעבר אוטומטי ללשונית בגרסת אוצריא זו — יש לפתוח את עינים למקרא ידנית, הטופס ימתין פתוח.)')
           + '\n\nהקטע שנבחר: "' + snippet(text, 120) + '"'
       });
@@ -356,6 +357,13 @@ function waitForOtzaria(elapsed){
       if (p.mode === 'propose'){ openGenericProposeForm(p.text); return; }
       identifyWithLiveContext(p.text).then(m => showResults(m, p.text));
     });
+    // 4.0.0 — שורת ״חפש גם בעינים למקרא״ בדיאלוג החיפוש של אוצריא
+    // (contributes.startup.searchDialogItems, openPluginOnSubmit)
+    Otzaria.on('search.requested', (data) => {
+      const q = String((data && data.request && data.request.query) || (data && data.query) || '').trim();
+      if (!q) return;
+      identifyWithLiveContext(q).then(m => showResults(m, q));
+    });
     Otzaria.on('plugin.suspended', suspendBackgroundWork);
     Otzaria.on('plugin.resumed', resumeBackgroundWork);
     // גם משיכה יזומה — plugin.boot כבר עשוי היה לרוץ לפני שנרשמנו
@@ -457,7 +465,27 @@ function fetchUpdateManifest(url){
   );
 }
 
+async function fetchRemoteVersionViaOtzaria(url){
+  let chunks = Otzaria.call('network.fetchStream', { url, headers: { 'Accept': 'application/vnd.github.raw' }, timeoutMs: UPDATE_FETCH_TIMEOUT_MS });
+  if (chunks && typeof chunks.then === 'function' && !chunks[Symbol.asyncIterator]) chunks = await chunks;
+  let ok = false, body = '';
+  for await (const c of chunks){
+    if (c.type === 'response'){ ok = !!c.ok; if (!ok) break; continue; }
+    if (typeof c.body === 'string') body += c.body;
+  }
+  if (!ok) return null;
+  const data = JSON.parse(body);
+  return isPlainVersion(data && data.version) ? data.version : null;
+}
+
 async function fetchRemoteVersion(){
+  // 4.0.0 (#45): fetch() ישיר מה-WebView נחסם ב-CORS (Origin: null), ולכן בדיקת
+  // העדכון ו״הגרסה האחרונה״ בלשונית מה חדש לא עבדו מתוך אוצריא. קודם דרך אוצריא.
+  if (window.Otzaria && Otzaria.call){
+    for (const url of UPDATE_MANIFEST_URLS){
+      try { const v = await fetchRemoteVersionViaOtzaria(url); if (v) return v; } catch(e){}
+    }
+  }
   for (const url of UPDATE_MANIFEST_URLS){
     try {
       const res = await fetchUpdateManifest(url);

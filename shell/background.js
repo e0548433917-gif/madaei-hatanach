@@ -55,9 +55,10 @@ async function bgHandleIdentifyClick(payload){
   };
 
   if (!matches.length){
+    const dict = await dictionaryLine(text);
     const res = await Otzaria.call('ui.showConfirm', {
       title: 'לא נמצאה התאמה ל"' + bgSnippet(text, 40) + '"',
-      content: 'לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת קטגוריה, שליחה למפתח או שמירה במחשב.'
+      content: (dict ? dict + '\n\n' : '') + 'לחיצה על אישור תפתח טופס הצעת ערך חדש — עם בחירת קטגוריה, שליחה למפתח או שמירה במחשב.'
         + '\n\nהקטע שנבחר: "' + bgSnippet(text, 120) + '"'
     }).catch(() => null);
     if (res && res.success && res.data && res.data.confirmed === true) await handoff('propose');

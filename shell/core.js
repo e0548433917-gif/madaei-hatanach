@@ -310,3 +310,23 @@ async function highlightIdentifiedSelection(payload){
     }
   } catch(e){ /* הדגשה היא תוספת — כישלון שקט */ }
 }
+
+// 4.0.0 — tools.dictionary: כשאין ערך במדריכים, פירוש ראשי תיבות / ארמית מהמילון
+// המובנה של אוצריא. מחזיר שורה מוכנה להצגה, או '' כשאין.
+async function dictionaryLine(text){
+  try {
+    const t = String(text || '').trim();
+    if (!t || t.length > 40 || !(window.Otzaria && Otzaria.call)) return '';
+    const res = await Otzaria.call('tools.dictionary', { term: t });
+    const d = res && (res.data !== undefined ? res.data : res);
+    if (!d) return '';
+    const parts = [];
+    (d.acronyms || []).slice(0, 2).forEach(a => parts.push('ר״ת ' + a.acronym + ': ' + (a.meanings || []).slice(0, 3).join(' / ')));
+    (d.aramaic || []).slice(0, 2).forEach(a => {
+      const w = a.word || a.term || a.aramaic || '';
+      const h = String(a.hebrew || a.meaning || '').replace(/<[^>]*>/g, '');
+      if (h) parts.push('ארמית' + (w ? ' ' + w : '') + ': ' + h.slice(0, 120));
+    });
+    return parts.length ? '📖 מהמילון של אוצריא — ' + parts.join(' · ') : '';
+  } catch(e){ return ''; }
+}
