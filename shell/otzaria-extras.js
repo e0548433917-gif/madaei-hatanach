@@ -198,6 +198,7 @@ function enrichEntryDetail(container, entry){
   }
   wireMentionsSearch(container, entry);
   wireVerseCommentaries(container, entry);
+  if (typeof wireVersePrintRange === 'function') wireVersePrintRange(container, entry);   // 4.7.0, אוצריא 0.9.99
   wireVerseNotes(container, entry);
   if (typeof wireEntryOtzariaActions === 'function') wireEntryOtzariaActions(container, entry, catId);   // 4.4.0
   // 4.2.0 — tools.gematria: גימטריה של שם הערך
