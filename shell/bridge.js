@@ -347,8 +347,14 @@ function waitForOtzaria(elapsed){
     Otzaria.on('theme.changed', onOtzariaTheme);
     // עצירה/חידוש של עבודה מתמשכת ביציאה מהלשונית ובחזרה אליה. שני האירועים
     // אינם דורשים הרשאת events.subscribe (README §אירועי מחזור חיים).
+    Otzaria.on('plugin.boot', publishGuidesToLibrary);
+    Otzaria.on('library.providerBook.openRequested', (d) => {
+      const g = guideIdFromProviderBook(d);
+      if (g){ bringToFront(); openGuide(g, null); }
+    });
     Otzaria.on('plugin.page_opened', (data) => {
       const p = data && data.param;
+      if (p && p.kind === 'guide' && p.catId){ openGuide(p.catId, null); return; }
       if (!p || p.kind !== 'identify' || !p.text) return;
       if (p.origin === INSTANCE_ID) return;              // המופע ששלח כבר הציג
       if (p.ts && p.ts <= lastConsumedTs) return;

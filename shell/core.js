@@ -330,3 +330,26 @@ async function dictionaryLine(text){
     return parts.length ? '📖 מהמילון של אוצריא — ' + parts.join(' · ') : '';
   } catch(e){ return ''; }
 }
+
+// 4.1.0 — המדריכים כ"ספרים" באיתור הספרים של מסך הספרייה באוצריא
+// (contributes.startup.libraryBooks + library.setProviderBooks). הרשימה נשמרת
+// אצל אוצריא, ולכן מספיק לשלוח אותה פעם בעלייה. id = מיקום ב-CATEGORIES + 1.
+const LIBRARY_PROVIDER = 'einayim-lamikra';
+const READ_OPT_IN_LIBRARY = 'mh_show_in_library';
+function publishGuidesToLibrary(){
+  if (!(window.Otzaria && Otzaria.call) || typeof CATEGORIES === 'undefined') return;
+  Otzaria.call('library.setProviderBooks', {
+    provider: LIBRARY_PROVIDER,
+    books: CATEGORIES.map((c, i) => ({
+      id: i + 1,
+      title: 'עינים למקרא — ' + c.label,
+      author: 'מדריך עינים למקרא',
+      categoryPath: '/עינים למקרא'
+    }))
+  }).catch(() => {});
+}
+function guideIdFromProviderBook(d){
+  if (!d || d.provider !== LIBRARY_PROVIDER) return null;
+  const c = CATEGORIES[(Number(d.id) || 0) - 1];
+  return c ? c.id : null;
+}

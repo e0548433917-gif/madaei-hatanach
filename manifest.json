@@ -32,7 +32,9 @@
     "reader.highlight",
     "events.subscribe:reader.selection_changed",
     "bookmarks.write",
-    "search.dialog"
+    "search.dialog",
+    "library.books.provide",
+    "library.links.read"
   ],
   "network": {
     "enabled": true,
@@ -129,6 +131,20 @@
             "exact",
             "advanced"
           ]
+        }
+      ],
+      "libraryBooks": [
+        {
+          "id": "guides",
+          "provider": "einayim-lamikra",
+          "title": "עינים למקרא",
+          "icon": "eye_24_regular",
+          "when": {
+            "storage": {
+              "key": "mh_show_in_library",
+              "notEquals": false
+            }
+          }
         }
       ]
     }

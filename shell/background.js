@@ -124,7 +124,16 @@ function bgWait(elapsed){
     return;
   }
 
+  // 4.1.0 — מדריך שנבחר במסך הספרייה של אוצריא → פתיחת הלשונית על המדריך
+  Otzaria.on('library.providerBook.openRequested', (d) => {
+    const g = guideIdFromProviderBook(d);
+    if (!g) return;
+    bgStart();
+    Otzaria.call('plugin.openSelf', { param: { kind: 'guide', catId: g } }).catch(()=>{}).then(bgEnd, bgEnd);
+  });
+
   Otzaria.on('plugin.boot', () => {
+    publishGuidesToLibrary();
     bgStart();
     // publishUpcomingEvents (guides/_shared/dates.js) - ר' הערה מפורטת ב-
     // bridge.js למה זה הוחלף מ-publishTodayEvents (daily-publish.js הוסר).

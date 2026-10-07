@@ -112,6 +112,51 @@ async function markUnresolvedSources(container, entry){
   }
 }
 
+// ---- 4.1.0: מפרשים על הפסוק מתוך הספרייה (library.getLinks + getLinkContent) ----
+async function loadCommentary(ref, box){
+  box.innerHTML = '<p class="mini-note">טוען מפרשים…</p>';
+  try {
+    const hits = otzData(await Otzaria.call('library.resolveRef', { ref, limit: 1 }));
+    const h = Array.isArray(hits) && hits[0];
+    if (!h || h.isPdf){ box.innerHTML = '<p class="mini-note">הפסוק לא נמצא בספרייה.</p>'; return; }
+    const res = otzData(await Otzaria.call('library.getLinks', {
+      bookId: h.bookId, startLine: h.index, endLine: h.index, connectionTypes: ['COMMENTARY']
+    }));
+    const links = ((res && res.links) || []).slice(0, 6);
+    if (!links.length){ box.innerHTML = '<p class="mini-note">לא נמצאו מפרשים לפסוק זה בספרייה.</p>'; return; }
+    const content = otzData(await Otzaria.call('library.getLinkContent', {
+      links: links.map(l => ({ targetTitle: l.targetTitle, targetLine: l.targetLine, targetLineEnd: l.targetLineEnd,
+        targetIsUserBook: l.targetIsUserBook, targetCategoryId: l.targetCategoryId }))
+    }));
+    const items = (content && content.items) || [];
+    box.innerHTML = links.map((l, i) => {
+      const t = items[i] && items[i].content ? String(items[i].content).replace(/<[^>]*>/g, '') : '';
+      return t ? `<div class="src-item"><b>${esc(String(l.targetTitle || '').replace(/ על .*$/, ''))}:</b> ${guardHolyNamesSafe(t.slice(0, 600))}</div>` : '';
+    }).join('') || '<p class="mini-note">לא נמצא תוכן מפרשים.</p>';
+  } catch(e){ box.innerHTML = '<p class="mini-note">המפרשים אינם זמינים כרגע.</p>'; }
+}
+function guardHolyNamesSafe(t){ return (typeof guardHolyNames === 'function') ? guardHolyNames(esc(t)) : esc(t); }
+
+function wireVerseCommentaries(container, entry){
+  const verses = entry.verses || entry.makorot || [];
+  container.querySelectorAll('.verse-card[data-vref]').forEach(card => {
+    if (card.querySelector('.otz-comm-btn')) return;
+    const v = verses[parseInt(card.dataset.vref, 10)];
+    if (!v || !v.ref) return;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'tool-btn otz-comm-btn'; btn.textContent = '📚 מפרשים';
+    btn.title = 'מפרשים על הפסוק מתוך הספרייה של אוצריא';
+    const box = document.createElement('div'); box.className = 'otz-comm';
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (box.dataset.loaded){ box.hidden = !box.hidden; return; }
+      box.dataset.loaded = '1'; loadCommentary(v.ref, box);
+    });
+    box.addEventListener('click', ev => ev.stopPropagation());
+    card.appendChild(btn); card.appendChild(box);
+  });
+}
+
 // נקרא מסוף wireEntryDetail (entry-detail.js)
 function enrichEntryDetail(container, entry){
   if (!otzOk() || !container || !entry) return;
@@ -124,6 +169,7 @@ function enrichEntryDetail(container, entry){
     });
   }
   wireMentionsSearch(container, entry);
+  wireVerseCommentaries(container, entry);
   markUnresolvedSources(container, entry);
 }
 
@@ -175,4 +221,9 @@ function setUnsaved(on, message){
   });
   a.addEventListener('change', () => writeOptFlag(READ_OPT_AUTO, a.checked));
   b.addEventListener('change', () => writeOptFlag(READ_OPT_HIDE_BTN, !b.checked));
+  const lib = document.getElementById('optInLibrary');
+  if (lib){
+    lib.checked = await readOptFlag(READ_OPT_IN_LIBRARY, true);
+    lib.addEventListener('change', () => writeOptFlag(READ_OPT_IN_LIBRARY, lib.checked));
+  }
 })();
