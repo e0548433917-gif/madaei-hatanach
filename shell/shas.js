@@ -705,6 +705,7 @@ async function identifyReaderLocation(loc){
   const index = Number(loc.index) || 0;
   const title = loc.title || loc.bookId || 'הספר הפתוח';
   if (loc.type && loc.type !== 'text'){
+    if (loc.quiet) return false;
     // ספר PDF: library.getBookContent מחזיר טקסט רק לספרי טקסט.
     await Otzaria.call('ui.showError', {
       message: 'זיהוי הדף הפתוח זמין כרגע רק בספרי טקסט. בספר PDF אפשר לסמן מילה וללחוץ לחיצה ימנית ← ״זיהוי בעינים למקרא״.'
@@ -721,14 +722,16 @@ async function identifyReaderLocation(loc){
   else if (res) text = res.text || res.content || '';
   text = String(text || '').replace(/<[^>]*>/g, ' ');
   if (!text.trim()){
+    if (loc.quiet) return false;
     await Otzaria.call('ui.showError', { message: 'לא הצלחנו לקרוא את הטקסט שפתוח בקורא.' }).catch(()=>{});
     return false;
   }
   if (!parashaDataReady()) await ensureAllGuidesLoaded();
   const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
   closeBookChooser();
-  showResults(matches, title);
+  if (!loc.quiet || matches.length) showResults(matches, title);
   if (matches.length) highlightMatchesInSection(loc.bookId, index, matches);   // 4.2.0
+  if (typeof updateToolbarCount === 'function') updateToolbarCount(matches.length);   // 4.4.0
   return true;
 }
 

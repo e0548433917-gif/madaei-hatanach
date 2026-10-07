@@ -78,14 +78,25 @@ function wireMentionsSearch(container, entry){
       list.innerHTML = `<p class="mini-note">${total} מופעים${total > results.length ? ' — מוצגים ' + results.length + ' הראשונים' : ''}</p>` +
         results.map((r, i) => `<div class="src-item clickable" data-hit="${i}"><button type="button" class="tool-btn" data-bm="${i}" title="הוספה לסימניות של אוצריא" style="float:inline-end;">🔖</button><b>${esc(r.reference || r.book || '')}</b> — ${esc(String(r.text || '').replace(/<[^>]*>/g, '').slice(0, 140))}</div>`).join('');
       // 4.0.0 — bookmarks.add: שמירת מופע כסימנייה ברשימת הסימניות של אוצריא
+      // 4.4.0 — bookmarks.list/remove: מופע שכבר שמור מסומן ✅, ולחיצה עליו מסירה אותו
+      const setBm = (b, on) => {
+        b.dataset.on = on ? '1' : '';
+        b.textContent = on ? '✅' : '🔖';
+        b.title = on ? 'שמור בסימניות של אוצריא — לחיצה להסרה' : 'הוספה לסימניות של אוצריא';
+      };
+      markSavedBookmarks(list, results, setBm);
       list.querySelectorAll('[data-bm]').forEach(b => b.addEventListener('click', async (ev) => {
         ev.stopPropagation();
         const r = results[+b.dataset.bm];
         try {
-          const res = await Otzaria.call('bookmarks.add', { bookId: r.bookId, index: r.index, label: (entry.name || '') + ' — ' + (r.reference || '') });
-          const ok = otzData(res);
-          b.textContent = ok === false ? '✓' : '✅';
-          b.title = ok === false ? 'כבר קיימת סימנייה כזו' : 'נוסף לסימניות של אוצריא';
+          if (b.dataset.on){
+            const ok = otzData(await Otzaria.call('bookmarks.remove', { bookId: r.bookId, index: r.index }));
+            if (ok !== false) setBm(b, false);
+            return;
+          }
+          const ok = otzData(await Otzaria.call('bookmarks.add', { bookId: r.bookId, index: r.index, label: (entry.name || '') + ' — ' + (r.reference || '') }));
+          setBm(b, true);
+          if (ok === false) b.title = 'כבר קיימת סימנייה כזו — לחיצה להסרה';
         } catch(e){ b.textContent = '⚠️'; }
       }));
       list.querySelectorAll('[data-hit]').forEach(el => el.addEventListener('click', () => {
@@ -96,6 +107,19 @@ function wireMentionsSearch(container, entry){
       list.innerHTML = '<p class="mini-note">החיפוש אינו זמין כרגע.</p>';
     } finally { btn.disabled = false; }
   });
+}
+
+// 4.4.0 — bookmarks.list: אילו מהמופעים כבר שמורים בסימניות של אוצריא
+async function markSavedBookmarks(list, results, setBm){
+  try {
+    const saved = otzData(await Otzaria.call('bookmarks.list', { limit: 500 }));
+    if (!Array.isArray(saved) || !saved.length) return;
+    const keys = new Set(saved.map(b => String(b.title || b.bookId || '') + '|' + Number(b.index)));
+    list.querySelectorAll('[data-bm]').forEach(b => {
+      const r = results[+b.dataset.bm];
+      if (r && (keys.has(String(r.bookId) + '|' + Number(r.index)) || keys.has(String(r.book || '') + '|' + Number(r.index)))) setBm(b, true);
+    });
+  } catch(e){ /* אין הרשאה או גרסה ישנה — הכפתורים נשארים להוספה בלבד */ }
 }
 
 // ---- סימון מקורות שאינם נפתרים בספרייה המותקנת ----
@@ -175,6 +199,7 @@ function enrichEntryDetail(container, entry){
   wireMentionsSearch(container, entry);
   wireVerseCommentaries(container, entry);
   wireVerseNotes(container, entry);
+  if (typeof wireEntryOtzariaActions === 'function') wireEntryOtzariaActions(container, entry, catId);   // 4.4.0
   // 4.2.0 — tools.gematria: גימטריה של שם הערך
   if (entry.name && !container.querySelector('.otz-gematria')){
     Otzaria.call('tools.gematria', { text: String(entry.name) }).then(res => {
@@ -316,7 +341,7 @@ function wireVerseNotes(container, entry){
     box.innerHTML = `<textarea class="f-textarea" rows="2" style="width:100%;margin-top:6px;"></textarea>
       <button type="button" class="nf-btn" style="margin-top:4px;">שמירה בספר</button> <span class="mini-note"></span>`;
     const ta = box.querySelector('textarea'), save = box.querySelector('button'), msg = box.querySelector('.mini-note');
-    ta.value = (entry.name ? entry.name + ' — ' : '') + 'עינים למקרא';
+    ta.value = (entry.name ? entry.name + ' — ' : '') + PLUGIN_DISPLAY_NAME;
     btn.addEventListener('click', (ev) => { ev.stopPropagation(); box.hidden = !box.hidden; if (!box.hidden) ta.focus(); });
     box.addEventListener('click', ev => ev.stopPropagation());
     save.addEventListener('click', async () => {

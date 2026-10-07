@@ -96,7 +96,16 @@ async function saveReplyEmail(v){
 async function ensureReplyEmail(){
   const saved = await readReplyEmail();
   if (isValidReplyEmail(saved)) return saved;
-  const typed = window.prompt('כתובת אימייל לתשובה (חובה — כדי שנוכל לחזור אליכם על ההצעה):', saved || '');
+  // 4.4.0 — feedback.hasReporterEmail: אם באוצריא שמורה כתובת לדיווחים, אומרים
+  // זאת — העותק שנשלח למערכת המשוב יישא אותה. הכתובת עצמה אינה נחשפת לתוסף.
+  let hint = '';
+  if (hasOtzaria()){
+    try {
+      const r = await withTimeout(Otzaria.call('feedback.hasReporterEmail'), REPORT_STEP_TIMEOUT_MS, 'hasReporterEmail');
+      if ((r && r.data !== undefined ? r.data : r) === true) hint = '\n(בהגדרות הדיווח של אוצריא כבר שמורה כתובת — היא תצורף לעותק שנשלח לאוצריא. כאן היא נדרשת עבור תשובה מהמפתח.)';
+    } catch(e){}
+  }
+  const typed = window.prompt('כתובת אימייל לתשובה (חובה — כדי שנוכל לחזור אליכם על ההצעה):' + hint, saved || '');
   if (typed === null) return '';
   const clean = typed.trim();
   if (!isValidReplyEmail(clean)){
@@ -623,6 +632,18 @@ function copyReportText(text){
 function saveReportsToFile(items, baseName){
   const text = (items || []).map(reportItemToText).join('\n\n==============================\n\n');
   const name = (baseName || 'דיווח-עינים-למקרא') + '-' + new Date().toISOString().slice(0, 10) + '.txt';
+  // 4.4.0 — דיאלוג ״שמור בשם״ של אוצריא; ההורדה הישנה נשארת רק כשהוא אינו זמין
+  if (typeof saveTextViaDialog === 'function'){
+    return saveTextViaDialog(text, name.replace(/\.txt$/, ''), 'txt', true).then(res => {
+      if (res === null) return downloadReportFile(text, name);
+      if (res) reportNotify('הקובץ נשמר: ' + res + '. אפשר לשלוח אותו מתי שנוח.', 'success');
+      return !!res;
+    });
+  }
+  return downloadReportFile(text, name);
+}
+
+function downloadReportFile(text, name){
   try {
     const blob = new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);

@@ -326,6 +326,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
     + ` title="${bmOn ? 'הסרה מהסימניות' : 'הוספה לסימניות (האזור האישי)'}"`
     + ` data-bm-cat="${esc(catId || '')}" data-bm-key="${esc(bmKey)}" data-bm-label="${esc(entry.name)}">${bmOn ? '★' : '☆'}</button>`
     + ` <button id="entryPrintBtn" title="הדפסה" class="entry-tool-btn">🖨️</button>`
+    + ((window.Otzaria && Otzaria.call) ? ` <button id="entryPdfBtn" title="שמירה כקובץ PDF" class="entry-tool-btn">📄</button>` : '')
     + ` <button id="entryEditBtn" title="עריכת הכרטיס / הוספת מידע" class="entry-tool-btn">✏️</button>`
     + ` <button id="entryReportBtn" title="דיווח על ערך שגוי או כפול (בלי לערוך)" class="entry-tool-btn">🚩</button></h2>`;
   html += `<div class="entry-sub">כינויים: ${entry.aliases && entry.aliases.length ? esc(entry.aliases.join(', ')) : '<span class="missing-val">— חסר</span>'}</div>`;
@@ -556,6 +557,8 @@ function wireEntryDetail(container, entry, onEdit){
   // חשופה ל-window.print(), שהדפיסה את כל ממשק התוסף — סרגלים, כפתורים והשער.
   const pb = container.querySelector('#entryPrintBtn');
   if (pb) pb.addEventListener('click', (e) => { e.stopPropagation(); printSingleEntry(entry); });
+  const pdfb = container.querySelector('#entryPdfBtn');
+  if (pdfb) pdfb.addEventListener('click', (e) => { e.stopPropagation(); exportSingleEntryPdf(entry); });
   const eb = container.querySelector('#entryEditBtn');
   if (eb) eb.addEventListener('click', (e) => { e.stopPropagation(); onEdit ? onEdit() : openGenericEditForm(entry); });
   // Issue #25: דיווח ממוקד על נתון שגוי/כפול — בלי לפתוח עריכה. עובר דרך פאנל

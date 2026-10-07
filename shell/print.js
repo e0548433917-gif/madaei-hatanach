@@ -74,7 +74,7 @@ function buildPrintSheet(sourceLabel, items){
 // לא כל מנוע יורה את האירוע הזה, ודף הדפסה שנשאר תקוע בזיכרון הוא בזבוז בלבד
 // (הוא ממילא display:none במסך).
 let printResetTimer = null;
-function runPrintSheet(){
+function runPrintSheet(pdfName){
   const done = () => {
     window.removeEventListener('afterprint', done);
     clearTimeout(printResetTimer);
@@ -87,8 +87,18 @@ function runPrintSheet(){
   setTimeout(() => {
     // 4.0.0 — ui.print של אוצריא: A4 מפורש (ברירת המחדל של המנוע היא US Letter)
     // ודיאלוג המערכת המלא. נפילה ל-window.print מחוץ לאוצריא.
+    // 4.4.0 — ui.exportPdf: אותו דף, נשמר כקובץ PDF בדיאלוג ״שמור בשם״ של המערכת
+    if (pdfName && window.Otzaria && Otzaria.call){
+      Otzaria.call('ui.exportPdf', { fileName: pdfName, title: 'שמירה כ-PDF', pageSize: 'a4', orientation: 'portrait', marginMm: 12, printBackgrounds: true })
+        .then(res => {
+          const d = res && (res.data !== undefined ? res.data : res);
+          if (d && d.saved) Otzaria.call('notifications.showInApp', { message: 'נשמר: ' + (d.name || pdfName), type: 'success' }).catch(() => {});
+          done();
+        }, () => { done(); Otzaria.call('ui.showError', { message: 'השמירה כ-PDF אינה זמינה בגרסת אוצריא זו. אפשר להדפיס ולבחור ״שמירה כ-PDF״ במדפסת.' }).catch(() => {}); });
+      return;
+    }
     if (window.Otzaria && Otzaria.call){
-      Otzaria.call('ui.print', { jobName: 'עינים למקרא', pageSize: 'a4', orientation: 'portrait', marginMm: 12, printBackgrounds: true })
+      Otzaria.call('ui.print', { jobName: PLUGIN_DISPLAY_NAME, pageSize: 'a4', orientation: 'portrait', marginMm: 12, printBackgrounds: true })
         .then(done, () => { try { window.print(); } catch(e){ done(); } });
       return;
     }
@@ -97,13 +107,13 @@ function runPrintSheet(){
   }, 60);
 }
 
-function printItems(sourceLabel, items){
+function printItems(sourceLabel, items, pdfName){
   if (!items.length){ window.alert('אין ערכים לייצוא.'); return; }
   if (items.length > PRINT_CONFIRM_OVER &&
       !window.confirm('ייצוא ' + items.length + ' ערכים יפיק דף הדפסה ארוך מאוד (עשרות עמודים) '
         + 'ועלול לקחת זמן. אפשר לצמצם עם הסינון שלמעלה.\n\nלהמשיך בכל זאת?')) return;
   buildPrintSheet(sourceLabel, items);
-  runPrintSheet();
+  runPrintSheet(pdfName);
 }
 
 // ---- ההקשרים ----
@@ -111,6 +121,11 @@ function printItems(sourceLabel, items){
 // כרטיס בודד — הכפתור 🖨️ שבכותרת הכרטיס
 function printSingleEntry(entry, catId){
   printItems('כרטיס ערך', [{ entry: entry, catId: catId || catIdOfEntry(entry) }]);
+}
+// 4.4.0 — הכפתור 📄 שבכותרת הכרטיס
+function exportSingleEntryPdf(entry, catId){
+  const name = String(entry.name || 'כרטיס').replace(/[\\/:*?"<>|]/g, '').slice(0, 80) + ' — ' + PLUGIN_DISPLAY_NAME;
+  printItems('כרטיס ערך', [{ entry: entry, catId: catId || catIdOfEntry(entry) }], name);
 }
 
 // תוצאות חלון הזיהוי (בלי דפי HTML אישיים — אין להם כרטיס להדפיס)

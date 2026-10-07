@@ -506,9 +506,20 @@
     <div class="set-title">בזמן קריאה בספר</div>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optHighlight"> הדגשת המילים שזוהו בטקסט הספר</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optAuto"> זיהוי אוטומטי בכל סימון טקסט (הודעה קטנה, בלי לפתוח חלון)</label>
+    <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optFollow"> מעקב אחרי מקום הקריאה — כשהתוסף פתוח, הזיהוי מתעדכן לבד בכל מעבר לפרק או דף</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optDailyNotify"> התראה יומית ב-8:00 על ״ערך היום״ (בימים שיש בהם מאורע)</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optInLibrary"> הצגת המדריכים בחיפוש הספרים של מסך הספרייה</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optShowBtn"> כפתור ״עינים למקרא״ בסרגל הקורא</label>
+  </div>
+
+  <!-- 4.4.0 — גיבוי ושחזור של האזור האישי לקובץ; מחווט ב-shell/otzaria-sdk-998.js -->
+  <div class="set-group" id="setBackupGroup" hidden>
+    <div class="set-title">גיבוי ושחזור</div>
+    <div class="settings-row">
+      <div class="settings-row-subtitle" style="margin:0 0 9px;">שמירת כל האזור האישי (סימניות, עריכות, פריטים שמורים, דפים אישיים והגדרות) לקובץ — ושחזור ממנו, גם במחשב אחר.</div>
+      <button class="set-action" id="setBackupExport" type="button">💾 שמירת גיבוי לקובץ</button>
+      <button class="set-action" id="setBackupImport" type="button">📂 שחזור מקובץ גיבוי</button>
+    </div>
   </div>
 
   <button id="settingsReset" type="button">איפוס להגדרות ברירת המחדל</button>
@@ -564,6 +575,7 @@
 <script src="shell/personal.js"></script>
 <script src="shell/settings.js"></script>
 <script src="shell/otzaria-extras.js"></script>
+<script src="shell/otzaria-sdk-998.js"></script>
 <script src="shell/bridge.js"></script>
 </body>
 </html>
