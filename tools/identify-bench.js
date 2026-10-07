@@ -6,6 +6,7 @@
  *   node tools/identify-bench.js --verbose       — גם שורה לכל מקרה: מה חסר (FN) ומה מיותר (FP)
  *   node tools/identify-bench.js --tag תלמוד     — רק מקרים עם התגית הזו
  *   node tools/identify-bench.js --engine path   — קובץ identify.js חלופי (להשוואת גרסאות ב-3.2)
+ *   node tools/identify-bench.js --all           — גם זיהויים בדרגת ״אפשרי״ (מוסתרים בתצוגה)
  *   node tools/identify-bench.js --json out.json — שמירת התוצאות המלאות (להשוואת לפני/אחרי)
  *
  * הסט: tools/identify-testset.json. לכל מקרה:
@@ -32,6 +33,8 @@ const VERBOSE = args.includes('--verbose');
 const TAG = opt('--tag');
 const ENGINE = opt('--engine') || 'shell/identify.js';
 const JSON_OUT = opt('--json');
+// ברירת מחדל: רק מה שמוצג למשתמש (ודאי + סביר). --all: גם דרגת ״אפשרי״ המקופלת.
+const ALL = args.includes('--all');
 
 const DATASETS = {};
 for (const g of GUIDES) DATASETS[g.id] = loadDataFile(g.file).DATA || [];
@@ -46,6 +49,9 @@ const ctx = {
 vm.createContext(ctx);
 const coreSrc = fs.readFileSync(path.join(ROOT, 'shell/core.js'), 'utf8');
 vm.runInContext(coreSrc.match(/const HEB_POINT_SRC[\s\S]*?const PREFIXES = \[.*?\];/)[0], ctx);
+// הלקסיקון של v2 (#39) — נטען לפני המנוע, כמו ב-index.html. מנוע ישן מתעלם ממנו.
+const LEXICON = path.join(ROOT, 'guides/_shared/identify-lexicon.js');
+if (fs.existsSync(LEXICON)) vm.runInContext(fs.readFileSync(LEXICON, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(path.resolve(ROOT, ENGINE), 'utf8'), ctx);
 
 const testset = JSON.parse(fs.readFileSync(path.join(__dirname, 'identify-testset.json'), 'utf8'));
@@ -56,7 +62,7 @@ const cases = testset.cases.filter((c) => !TAG || c.tag === TAG);
   const rows = [];
   let TP = 0, FP = 0, FN = 0, perfect = 0;
   for (const c of cases) {
-    const res = await ctx.identify(c.text);
+    const res = await ctx.identify(c.text, ALL ? { includePossible: true } : undefined);
     const hits = new Set(res.map((r) => r.catId + '|' + r.name));
     const expect = new Set(c.expect), allow = new Set(c.allow);
     const tp = [...hits].filter((h) => expect.has(h));
