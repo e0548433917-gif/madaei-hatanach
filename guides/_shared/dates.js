@@ -334,18 +334,18 @@ function allDateEvents(){
     const key = dateEventKey(ev);
     const edit = edits[key];
     return edit
-      ? { day: edit.day, month: edit.month, event: edit.event, source: edit.source || '', __origKey: key, __edited: true }
-      : { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', __origKey: key };
+      ? { day: edit.day, month: edit.month, event: edit.event, source: edit.source || '', desc: edit.desc != null ? edit.desc : (ev.desc || ''), __origKey: key, __edited: true }
+      : { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', desc: ev.desc || '', __origKey: key };
   });
   const added = readDateEventsAdded().map((ev, i) =>
-    ({ day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', __addedIdx: i, __custom: true }));
+    ({ day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', desc: ev.desc || '', __addedIdx: i, __custom: true }));
   return base.concat(added);
 }
 
 function saveDateEventEdit(origKey, ev){
   try {
     const edits = readDateEventsEdits();
-    edits[origKey] = { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '' };
+    edits[origKey] = { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', desc: ev.desc || '' };
     localStorage.setItem(DATE_EVENTS_EDITS_KEY, JSON.stringify(edits));
     return true;
   } catch(e){ return false; }
@@ -361,7 +361,7 @@ function restoreBuiltinDateEvent(origKey){
 function addCustomDateEvent(ev){
   try {
     const added = readDateEventsAdded();
-    added.push({ day: ev.day, month: ev.month, event: ev.event, source: ev.source || '' });
+    added.push({ day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', desc: ev.desc || '' });
     localStorage.setItem(DATE_EVENTS_ADDED_KEY, JSON.stringify(added));
     return true;
   } catch(e){ return false; }
@@ -370,7 +370,7 @@ function saveCustomDateEvent(idx, ev){
   try {
     const added = readDateEventsAdded();
     if (!added[idx]) return false;
-    added[idx] = { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '' };
+    added[idx] = { day: ev.day, month: ev.month, event: ev.event, source: ev.source || '', desc: ev.desc || '' };
     localStorage.setItem(DATE_EVENTS_ADDED_KEY, JSON.stringify(added));
     return true;
   } catch(e){ return false; }
@@ -517,7 +517,7 @@ async function publishUpcomingEventsInner(){
       key: 'madaei:dailyEvent:' + iso + ':' + i,
       payload: { title: ev.event, startsAt, source: (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא'), importance: 'low',
         // #99 (4.0.0): התיאור נושא את המאורע עצמו ואת המקור, לא רק את התאריך
-        description: ev.event + (ev.source ? '\nמקור: ' + ev.source : '') + '\n' + dayLabel
+        description: ev.event + (ev.desc ? '\n\n' + ev.desc + '\n' : '') + (ev.source ? '\nמקור: ' + ev.source : '') + '\n' + dayLabel
           + '\nמתוך ״ערך היום״ בתוסף ' + (typeof PLUGIN_DISPLAY_NAME !== 'undefined' ? PLUGIN_DISPLAY_NAME : 'עינים למקרא') }
     }));
     if (wantChurban) items.push({

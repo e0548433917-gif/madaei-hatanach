@@ -1614,3 +1614,94 @@ html, body {
 .possible-matches { margin-block-start: var(--space-md); text-align: center; }
 .possible-matches .possible-note { margin-block-start: var(--space-xs); color: var(--color-on-surface-faint); font-size: 0.85em; }
 .possible-matches .possible-list { margin-block-start: var(--space-sm); text-align: start; opacity: 0.85; }
+
+/* 4.6.0 — ״ערך היום״: הסבר למאורע (שדה desc), כמו ההסבר בכרטיסי דומם */
+.date-ev-desc { margin-block-start: var(--space-xs); padding: var(--space-sm); background: var(--color-surface-3); border-radius: var(--radius-sm); color: var(--color-on-surface); line-height: 1.6; }
+.date-ev-desc-label { font-weight: 600; color: var(--color-primary); font-size: 0.85em; margin-block-end: var(--space-xs); }
+
+/* ==================== 4.6.0 (#37) — פאנל ההגדרות בסגנון אוצריא / ״שני טורים״ ====================
+   מגירה מעוגלת על רקע מוגבה; כל מקטע = כותרת ב-primary מחוץ לכרטיס + כרטיס לבן
+   אחד שבתוכו השורות (index.html: .set-group > .set-title + .set-card). תווית מעל
+   השדה, דרופדאון עם מסגרת, כפתור פעולה מלא ב-primary, ומתג במקום תיבת סימון.
+   רק טוקנים מ-:root — בלי hex, ובלי px ב-font-size/border-radius (אילוץ החנות). */
+#settingsPanel {
+  background: var(--color-surface-container-high);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-md) var(--space-lg);
+}
+#settingsPanel h2 {
+  font-size: 1.35em; font-weight: 700; margin: 0 0 var(--space-xs);
+  color: var(--color-on-surface);
+}
+#settingsPanel .set-note { margin: 0 0 var(--space-md); }
+#settingsPanel .set-group {
+  overflow: visible; gap: 0; margin-bottom: var(--space-md);
+}
+#settingsPanel .set-group > .set-title {
+  margin: 0 var(--space-xs) var(--space-sm);
+  font-size: 1.02rem; font-weight: 700; color: var(--color-primary);
+}
+.set-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  display: flex; flex-direction: column; gap: var(--space-md);
+  box-shadow: 0 1px 2px var(--color-shadow);
+}
+.set-card > .settings-row { background: transparent; padding: 0; border-radius: 0; }
+.set-card .field-label {
+  display: block; margin: 0 0 var(--space-sm);
+  font-size: .95rem; font-weight: 500; color: var(--color-on-surface);
+}
+.set-card .settings-row-title { font-size: .98rem; }
+/* דרופדאון עם מסגרת (OutlinedTextField) — כמו ״גופן הספר״ בתוסף ״שני טורים״ */
+#settingsPanel .dropdown-field select {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline);
+}
+#settingsPanel .dropdown-field select:hover { border-color: var(--color-on-surface-dim); background: var(--color-surface); }
+#settingsPanel .dropdown-field select:focus { border-color: var(--color-primary); background: var(--color-surface); }
+/* כפתור פעולה — מלא ב-primary, ברוחב מלא */
+#settingsPanel .set-action {
+  align-self: stretch; width: 100%;
+  background: var(--color-primary); color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+#settingsPanel .set-action:hover { background: color-mix(in srgb, var(--color-on-primary) 12%, var(--color-primary)); }
+#settingsPanel .set-action + .set-action { margin-block-start: var(--space-sm); }
+/* מחוון: הערך משמאל בלי מסגרת, כמו ב״שני טורים״ */
+#settingsPanel .set-val { border: none; min-width: 42px; color: var(--color-on-surface-dim); }
+/* תיבות הסימון של ״בזמן קריאה בספר״ — מוצגות כמתג גלולה, הטקסט מימין והמתג
+   משמאל. ה-JS (otzaria-extras.js) ממשיך לקרוא .checked כרגיל. */
+#settingsPanel label.settings-row {
+  flex-direction: row-reverse; justify-content: space-between; align-items: center;
+  gap: var(--space-md) !important; font-size: .98rem; line-height: 1.45;
+}
+#settingsPanel label.settings-row input[type=checkbox] {
+  appearance: none; -webkit-appearance: none; margin: 0;
+  flex: 0 0 auto; inline-size: 46px; block-size: 26px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-outline);
+  background: var(--color-surface-container-highest);
+  position: relative; cursor: pointer;
+  transition: background var(--anim-fast), border-color var(--anim-fast);
+}
+#settingsPanel label.settings-row input[type=checkbox]::after {
+  content: ""; position: absolute; inset-block-start: 50%; inset-inline-start: 3px;
+  inline-size: 16px; block-size: 16px; border-radius: 50%;
+  background: var(--color-outline); transform: translateY(-50%);
+  transition: inset-inline-start var(--anim-fast), inline-size var(--anim-fast), background var(--anim-fast);
+}
+#settingsPanel label.settings-row input[type=checkbox]:checked { background: var(--color-primary); border-color: var(--color-primary); }
+#settingsPanel label.settings-row input[type=checkbox]:checked::after {
+  inline-size: 20px; block-size: 20px; inset-inline-start: 19px; background: var(--color-on-primary);
+}
+#settingsPanel label.settings-row input[type=checkbox]:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+#settingsReset { display: block; margin: var(--space-sm) auto 0; }
+
+/* ---- 4.6.0 (#37) — שאר התוסף: אותה שפה בפאנלים ובכרטיסים ---- */
+.panel-box { border-radius: var(--radius-lg); }
+.panel-box h2 { font-weight: 700; }
+.result-row { border-radius: var(--radius-md); }

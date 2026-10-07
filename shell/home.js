@@ -407,6 +407,7 @@ function dateEventRow(ev, monthLabel){
       <button type="button" class="date-ev-report-btn"${editAttr} title="דיווח על מאורע שגוי (בלי לערוך)">🚩</button>
     </div>
     ${ev.source ? `<div class="src-note">${esc(ev.source)}${parsed ? ' <span class="open-hint">↗ פתח בספרייה</span>' : ''}</div>` : ''}
+    ${ev.desc ? `<div class="date-ev-desc"><div class="date-ev-desc-label">הסבר</div>${esc(ev.desc).replace(/\n/g, '<br>')}</div>` : ''}
   </div>`;
 }
 function wireDateEventLinks(container){
@@ -480,8 +481,11 @@ function openDateEventForm(ev){
     <div class="field-label">חודש</div>
     <select id="dateEvMonth" class="f-input">${monthOptions}</select>
 
-    <div class="field-label">תיאור המאורע</div>
+    <div class="field-label">המאורע <span class="mini-hint">(שורה אחת — הכותרת ביומן)</span></div>
     <textarea id="dateEvText" class="f-textarea">${esc(ev ? ev.event : '')}</textarea>
+
+    <div class="field-label">הסבר <span class="mini-hint">(רשות — רקע, מה קרה ולמה זה חשוב; מוצג מתחת למאורע ונשלח גם ליומן)</span></div>
+    <textarea id="dateEvDesc" class="f-textarea" rows="4">${esc(ev ? (ev.desc || '') : '')}</textarea>
 
     <div class="field-label">מקור <span class="mini-hint">(פסוק בנקודתיים - "עזרא ז:ט"; או מקור חז״ל בפורמט הרגיל - "משנה, בכורות ט, ה" / "בבלי, שבת פו ע\"ב")</span></div>
     <input type="text" id="dateEvSource" value="${esc(ev ? ev.source : '')}" class="f-input">
@@ -515,8 +519,9 @@ function openDateEventForm(ev){
     const month = document.getElementById('dateEvMonth').value;
     const event = document.getElementById('dateEvText').value.trim();
     const source = document.getElementById('dateEvSource').value.trim();
+    const desc = document.getElementById('dateEvDesc').value.trim();
     if (!day || !event){ window.alert('יש למלא יום ותיאור מאורע.'); return null; }
-    return { day, month, event, source };
+    return { day, month, event, source, desc };
   }
   // שמירה במכשיר - אותה פעולה לשני הכפתורים, כדי שמה שנשלח לא ייעלם מהמסך
   function persistDateEv(newEv){
@@ -549,10 +554,12 @@ function openDateEventForm(ev){
       if (ev.day !== newEv.day || ev.month !== newEv.month) lines.push('תאריך: ' + ev.day + "' " + ev.month + ' ← ' + when);
       if (ev.event !== newEv.event) lines.push('המאורע: ' + ev.event + ' ← ' + newEv.event);
       if ((ev.source || '') !== newEv.source) lines.push('מקור: ' + (ev.source || '—') + ' ← ' + (newEv.source || '—'));
+      if ((ev.desc || '') !== newEv.desc) lines.push('הסבר: ' + (ev.desc || '—') + ' ← ' + (newEv.desc || '—'));
     } else {
       lines.push('תאריך: ' + when);
       lines.push('המאורע: ' + newEv.event);
       lines.push('מקור: ' + (newEv.source || '—'));
+      if (newEv.desc) lines.push('הסבר: ' + newEv.desc);
     }
     const diff = lines.join('\n') || '(לא זוהה שינוי)';
     // מזהה הרשומה לצורך "כבר נשלח": המפתח המובנה, אינדקס התוספת, או תוכן המאורע החדש

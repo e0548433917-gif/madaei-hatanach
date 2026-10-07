@@ -349,14 +349,18 @@
 <button id="settingsBtn" type="button" title="הגדרות תצוגה" aria-label="הגדרות תצוגה">⚙️</button>
 <div id="settingsScrim"></div>
 <div id="settingsPanel" role="dialog" aria-label="הגדרות תצוגה">
-  <h2>⚙️ הגדרות תצוגה
+  <h2>הגדרות
     <button id="settingsCloseBtn" class="tool-btn" type="button" title="סגירה">✕</button>
   </h2>
   <p class="set-note">ההגדרות נשמרות במכשיר ונשארות גם אחרי סגירת אוצריא.</p>
 
+  <!-- 4.6.0 (#37) — מבנה בהשראת ״שני טורים״ ושל אוצריא עצמה: כותרת מקטע ב-primary
+       מחוץ לכרטיס, כרטיס לבן אחד לכל מקטע, ותווית מעל כל שדה. -->
   <div class="set-group">
-    <div class="set-title">ערכת צבעים</div>
+    <div class="set-title">הגדרות תצוגה</div>
+    <div class="set-card">
     <div class="settings-row">
+      <div class="field-label">ערכת צבעים</div>
       <div class="dropdown-field" id="setTheme">
         <select id="setThemeSelect" aria-label="בחירת ערכת צבעים">
           <option value="otzaria">תואם לאוצריא (ברירת מחדל)</option>
@@ -366,11 +370,8 @@
         </select>
       </div>
     </div>
-  </div>
-
-  <div class="set-group">
-    <div class="set-title">גופן</div>
     <div class="settings-row">
+      <div class="field-label">גופן</div>
       <div class="dropdown-field" id="setFont">
         <select id="setFontSelect" aria-label="בחירת גופן">
           <option value="otzaria">כמו באוצריא (ברירת מחדל)</option>
@@ -383,40 +384,42 @@
       </div>
       <div class="settings-row-subtitle" style="margin-top:7px;">״כמו באוצריא״ לוקח רק את שם הגופן — גודל הטקסט נשאר בשליטתך למטה.</div>
     </div>
-  </div>
-
-  <div class="set-group">
-    <div class="set-title">גודל טקסט</div>
     <div class="settings-row">
+      <div class="field-label">גודל טקסט</div>
       <div class="set-row">
         <input type="range" id="setScale" min="85" max="125" step="5" value="100">
         <span class="set-val" id="setScaleVal">100%</span>
       </div>
     </div>
-  </div>
-
-  <div class="set-group">
-    <div class="set-title">צפיפות הכרטיסים</div>
     <div class="settings-row">
+      <div class="field-label">צפיפות הכרטיסים</div>
       <div class="set-opts" id="setDensity">
         <button class="set-opt" type="button" data-val="compact">צפוף</button>
         <button class="set-opt" type="button" data-val="normal">רגיל</button>
         <button class="set-opt" type="button" data-val="roomy">מרווח</button>
       </div>
     </div>
-  </div>
-
-  <div class="set-group">
     <div class="settings-row toggle-row">
       <div class="settings-row-title">הצגת תמונות בכרטיסי הרשימה</div>
       <button type="button" role="switch" aria-checked="true" id="setCardImg" class="switch"></button>
+    </div>
+    <div class="settings-row">
+      <div class="field-label">תצוגה מקדימה</div>
+      <div class="set-preview">
+        <div class="pv-title">אַבְרָהָם אָבִינוּ</div>
+        <div class="pv-sub">אישים בתנ״ך · דור עשרים</div>
+        <div class="pv-ref">בראשית י״ב, א׳</div>
+        <p class="pv-text">וַיֹּאמֶר ה׳ אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.</p>
+      </div>
+    </div>
     </div>
   </div>
 
   <!-- הנקדן המקומי (2.17.2): מנוע ניקוד אופציונלי שרץ על המחשב, אותו פרוטוקול
        כמו ב"שומר השם". כשהוא פועל, הזיהוי מבחין בין מילים דו-משמעיות לפי ניקוד. -->
   <div class="set-group">
-    <div class="set-title">🔤 הנקדן המקומי (אופציונלי)</div>
+    <div class="set-title">הנקדן המקומי (אופציונלי)</div>
+    <div class="set-card">
     <div class="settings-row">
       <div id="setNikudStatus" class="nikud-status"></div>
       <div class="settings-row-subtitle" style="margin-top:7px;">
@@ -435,17 +438,6 @@
       </div>
       <div id="setNikudUrl" class="nikud-url" style="display:none;"></div>
     </div>
-  </div>
-
-  <div class="set-group">
-    <div class="set-title">תצוגה מקדימה</div>
-    <div class="settings-row">
-      <div class="set-preview">
-        <div class="pv-title">אַבְרָהָם אָבִינוּ</div>
-        <div class="pv-sub">אישים בתנ״ך · דור עשרים</div>
-        <div class="pv-ref">בראשית י״ב, א׳</div>
-        <p class="pv-text">וַיֹּאמֶר ה׳ אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.</p>
-      </div>
     </div>
   </div>
 
@@ -454,6 +446,7 @@
        שני המתגים עצמאיים, וכיבוי מריץ מחדש כדי למחוק מהיומן את מה שכבר פורסם. -->
   <div class="set-group">
     <div class="set-title">פרסום ליומן של אוצריא</div>
+    <div class="set-card">
     <div class="settings-row toggle-row">
       <div class="settings-row-title">מאורעות התנ״ך והתלמוד</div>
       <button type="button" role="switch" aria-checked="true" id="setPubEvents" class="switch"></button>
@@ -489,36 +482,43 @@
         <span class="set-note" id="setPubStatus" style="margin:0;"></span>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- קיצור דרך לשולחן העבודה (3.2.3, בהשראת "סידורון"). דסקטופ בלבד —
        הקבוצה מוסתרת לגמרי כשה-API לא זמין, ר' wireShortcutBtn ב-settings.js -->
   <div class="set-group" id="setShortcutGroup" hidden>
     <div class="set-title">קיצור דרך</div>
+    <div class="set-card">
     <div class="settings-row">
       <div class="settings-row-subtitle" style="margin:0 0 9px;">יצירת קיצור לתוסף על שולחן העבודה, לפתיחה ישירה בלי לעבור דרך אוצריא.</div>
       <button class="set-action" id="setShortcutBtn" type="button">＋ צור קיצור דרך</button>
+    </div>
     </div>
   </div>
 
   <!-- 3.9.0 — הגדרות קריאה; נשמרות באחסון אוצריא ומחווטות ב-shell/otzaria-extras.js -->
   <div class="set-group" id="setReadingGroup">
     <div class="set-title">בזמן קריאה בספר</div>
+    <div class="set-card">
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optHighlight"> הדגשת המילים שזוהו בטקסט הספר</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optAuto"> זיהוי אוטומטי בכל סימון טקסט (הודעה קטנה, בלי לפתוח חלון)</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optFollow"> מעקב אחרי מקום הקריאה — כשהתוסף פתוח, הזיהוי מתעדכן לבד בכל מעבר לפרק או דף</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optDailyNotify"> התראה יומית ב-8:00 על ״ערך היום״ (בימים שיש בהם מאורע)</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optInLibrary"> הצגת המדריכים בחיפוש הספרים של מסך הספרייה</label>
     <label class="settings-row" style="display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" id="optShowBtn"> כפתור ״עינים למקרא״ בסרגל הקורא</label>
+    </div>
   </div>
 
   <!-- 4.4.0 — גיבוי ושחזור של האזור האישי לקובץ; מחווט ב-shell/otzaria-sdk-998.js -->
   <div class="set-group" id="setBackupGroup" hidden>
     <div class="set-title">גיבוי ושחזור</div>
+    <div class="set-card">
     <div class="settings-row">
       <div class="settings-row-subtitle" style="margin:0 0 9px;">שמירת כל האזור האישי (סימניות, עריכות, פריטים שמורים, דפים אישיים והגדרות) לקובץ — ושחזור ממנו, גם במחשב אחר.</div>
       <button class="set-action" id="setBackupExport" type="button">💾 שמירת גיבוי לקובץ</button>
       <button class="set-action" id="setBackupImport" type="button">📂 שחזור מקובץ גיבוי</button>
+    </div>
     </div>
   </div>
 
