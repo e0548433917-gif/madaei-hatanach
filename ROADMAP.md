@@ -33,7 +33,7 @@
 * [#44 — באג: לשונית "ניווט" ישנה שעדיין מופיעה בממשק](https://github.com/e0548433917-gif/madaei-hatanach/issues/44)
 * [#45 — באג: מספר גרסה ישן מוצג בלשונית "מה חדש" — ✅ 4.0.0: בדיקת הגרסה דרך network.fetchStream; לאמת על מכשיר](https://github.com/e0548433917-gif/madaei-hatanach/issues/45)
 * [#46 — הדגשה ויזואלית של הטקסט ששונה ב-diff של כרטיס נערך](https://github.com/e0548433917-gif/madaei-hatanach/issues/46)
-* [#98 — לוח שנה: וריאנט ״עינים למקרא+״ מזדהה כ״עינים למקרא״ בכל מקום](https://github.com/e0548433917-gif/madaei-hatanach/issues/98)
+* ✅ שוחרר ב-4.4.0: [#98 — לוח שנה: וריאנט ״עינים למקרא+״ מזדהה כ״עינים למקרא״ בכל מקום](https://github.com/e0548433917-gif/madaei-hatanach/issues/98)
 
 ### 🔌 SDK ותשתית
 * [#47 — 4.15 — network.fetchStream לקריאות הנקדן — ✅ בוצע ב-3.7.1, נשאר אימות מול נקדן חי](https://github.com/e0548433917-gif/madaei-hatanach/issues/47)
@@ -99,7 +99,7 @@
 ### ⚙️ CI ושחרור
 * [#92 — CI: להוסיף timeout-minutes ל-publish.yml — ריצות תקועות רצות 6 שעות](https://github.com/e0548433917-gif/madaei-hatanach/issues/92)
 * [#91 — פרסום לחנות תקוע (שרת otzaria.org לא יציב) + וריאנט + לא עודכן](https://github.com/e0548433917-gif/madaei-hatanach/issues/91)
-* [#100 — 0.9.9.7 יצאה: מעבר לחבילה אחת + אימוץ ה-API החדש — ✅ החלק הראשון בוצע ב-3.7.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/100)
+* [#100 — 0.9.9.7 יצאה: מעבר לחבילה אחת + אימוץ ה-API החדש — ✅ החלק הראשון בוצע ב-3.7.0; ה-API החדש של 0.9.97–0.9.98 אומץ ב-4.4.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/100)
 
 ### נוספות
 * [#94 — i18n: שכבת שפת ממשק אנגלית (ROADMAP 4.13)](https://github.com/e0548433917-gif/madaei-hatanach/issues/94)
