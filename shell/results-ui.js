@@ -43,19 +43,83 @@ function renderNikudStatus(){
   el.classList.toggle('on', connected);
 }
 
-function showResults(matches, selectedText){
+function showResults(allMatches, selectedText){
   let activeResultsCat = 'all';
-  printCtxResults = { matches: matches, selectedText: selectedText };   // ל״ייצוא כרטסת״ (print.js)
+  // 4.5.0 (מנוע הזיהוי v2) — זיהויים בדרגת ״אפשרי״ מקופלים תחת כפתור, כדי שהרשימה
+  // תראה רק את מה שהמנוע בטוח בו, בלי למחוק את הספק. תוצאות בלי confidence
+  // (פרשה, דף מותאם, מסלולים ישנים) נחשבות גלויות.
+  const matches = (allMatches || []).filter(m => m.confidence !== 'אפשרי');
+  const possible = (allMatches || []).filter(m => m.confidence === 'אפשרי');
+  let showPossible = false;
+  printCtxResults = { matches: matches, selectedText: selectedText };   // ל״ייצוא כרטסת״ (print.js) — הגלויים בלבד
 
   function render(){
     renderResultsChips(matches, activeResultsCat, (catId) => { activeResultsCat = catId; render(); });
     const filtered = activeResultsCat === 'all' ? matches : matches.filter(m => m.catId === activeResultsCat);
     renderResultsListRows(filtered, selectedText);
+    if (possible.length && activeResultsCat === 'all'){
+      const box = document.createElement('div');
+      box.className = 'possible-matches';
+      box.innerHTML = '<button type="button" class="panel-btn secondary" id="togglePossible">' +
+        (showPossible ? 'הסתרת הזיהויים הנוספים ⌃' : 'הצג זיהויים נוספים (' + possible.length + ') ⌄') + '</button>' +
+        '<div class="possible-note">זיהויים שהמנוע פחות בטוח בהם — מילה נפוצה, שם משותף לכמה אנשים, או עם ולא אדם.</div>';
+      box.querySelector('#togglePossible').addEventListener('click', () => { showPossible = !showPossible; render(); });
+      if (showPossible){
+        const list = document.createElement('div');
+        list.className = 'possible-list';
+        possible.forEach(m => list.appendChild(buildResultRow(m)));
+        box.appendChild(list);
+      }
+      // לפני כפתור הדיווח, כדי שהדיווח יישאר אחרון
+      const report = resultsList.querySelector('#identifyErrorBtn');
+      if (report) resultsList.insertBefore(box, report.parentNode); else resultsList.appendChild(box);
+    }
   }
   render();
   renderNikudStatus();
 
   resultsOverlay.classList.add('open');
+}
+
+// שורת תוצאה אחת (שם, מדריך, הרחבה לכרטיס). משותפת לרשימה הגלויה ולמקופלת.
+function buildResultRow(m){
+  const row = document.createElement('div');
+  row.className = 'result-row';
+  const viaPrefix = (m.matchedVia && m.matchedVia !== m.name) ? (esc(m.matchedVia) + ': ') : '';
+  const modern = shortModernId(m.entry);
+  const isCustom = m.catId === 'custom';
+  row.innerHTML = `
+    <div class="result-row-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div class="info">
+        <div class="name">${viaPrefix}${catIconHtml(m.catId, 20)} ${esc(m.name)}</div>
+        <div class="cat">${m.catLabel}${modern ? ' · ' + esc(modern) : ''}</div>
+      </div>
+      <button type="button" class="expand-btn">${isCustom ? 'פתיחה' : 'הרחבה ⌄'}</button>
+    </div>
+    <div class="result-row-detail" style="display:none;margin-top:10px;"></div>
+  `;
+  const btn = row.querySelector('.expand-btn');
+  const detailBox = row.querySelector('.result-row-detail');
+  if (isCustom){
+    btn.addEventListener('click', () => openCustomHtmlPage(m.term));
+  } else {
+    btn.addEventListener('click', async () => {
+      const open = detailBox.style.display !== 'none';
+      if (open){
+        detailBox.style.display = 'none';
+        btn.textContent = 'הרחבה ⌄';
+        return;
+      }
+      if (!detailBox.dataset.built){
+        detailBox.innerHTML = renderEntryDetailHTML(m.entry, m.catId);
+        wireEntryDetail(detailBox, m.entry, () => openGenericEditForm(m.entry, m.catId));
+        detailBox.dataset.built = '1';
+      }
+      detailBox.style.display = 'block';
+      btn.textContent = 'סגירה ⌃';
+    });
+  }
+  return row;
 }
 
 function renderResultsListRows(matches, selectedText){
@@ -68,45 +132,7 @@ function renderResultsListRows(matches, selectedText){
   } else {
     noResults.style.display = 'none';
     resultsQuote.textContent = 'נבחר: "' + selectedText + '"';
-    matches.forEach(m => {
-      const row = document.createElement('div');
-      row.className = 'result-row';
-      const viaPrefix = (m.matchedVia && m.matchedVia !== m.name) ? (esc(m.matchedVia) + ': ') : '';
-      const modern = shortModernId(m.entry);
-      const isCustom = m.catId === 'custom';
-      row.innerHTML = `
-        <div class="result-row-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <div class="info">
-            <div class="name">${viaPrefix}${catIconHtml(m.catId, 20)} ${esc(m.name)}</div>
-            <div class="cat">${m.catLabel}${modern ? ' · ' + esc(modern) : ''}</div>
-          </div>
-          <button type="button" class="expand-btn">${isCustom ? 'פתיחה' : 'הרחבה ⌄'}</button>
-        </div>
-        <div class="result-row-detail" style="display:none;margin-top:10px;"></div>
-      `;
-      const btn = row.querySelector('.expand-btn');
-      const detailBox = row.querySelector('.result-row-detail');
-      if (isCustom){
-        btn.addEventListener('click', () => openCustomHtmlPage(m.term));
-      } else {
-        btn.addEventListener('click', async () => {
-          const open = detailBox.style.display !== 'none';
-          if (open){
-            detailBox.style.display = 'none';
-            btn.textContent = 'הרחבה ⌄';
-            return;
-          }
-          if (!detailBox.dataset.built){
-            detailBox.innerHTML = renderEntryDetailHTML(m.entry, m.catId);
-            wireEntryDetail(detailBox, m.entry, () => openGenericEditForm(m.entry, m.catId));
-            detailBox.dataset.built = '1';
-          }
-          detailBox.style.display = 'block';
-          btn.textContent = 'סגירה ⌃';
-        });
-      }
-      resultsList.appendChild(row);
-    });
+    matches.forEach(m => resultsList.appendChild(buildResultRow(m)));
 
     // דיווח על טעות בזיהוי - שליחה למפתח או תיקון מקומי (✏️ בכל תוצאה מורחבת).
     const reportRow = document.createElement('div');

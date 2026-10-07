@@ -12,12 +12,14 @@
 // allowStopwords (מילים דו-משמעיות כמו "אשר" שמותר להן לעקוף את STOPWORDS) ו-
 // vocalizedText (הטקסט הנבחר מנוקד, לפסילת התאמות-חיתוך-תחילית שגויות כמו
 // "משה"→"שה" - עוזר גם כשהטקסט המקורי לא היה מנוקד, לא רק על טקסט מנוקד).
-async function identifyWithLiveContext(text){
+// extra (4.5.0, מנוע v2): opts נוספים ל-identify — includePossible (חלון התוצאות מקפל
+// את דרגת ״אפשרי״), source: {kind, book} (הספר הפתוח בקורא — עדות ״אותו ספר״).
+async function identifyWithLiveContext(text, extra){
   let ctx = null;
   if (window.NikudEngine && NikudEngine.isConnected()){
     try { ctx = await NikudEngine.getLiveContext(text); } catch(e){}
   }
-  return identify(text, { allowStopwords: ctx && ctx.allowStopwords, vocalizedText: ctx && ctx.vocalizedText });
+  return identify(text, Object.assign({ allowStopwords: ctx && ctx.allowStopwords, vocalizedText: ctx && ctx.vocalizedText }, extra || {}));
 }
 
 // 0.9.96 הוא הסף לשתי יכולות שונות שבמקרה נכנסו יחד: plugin.openSelf (מעבר ללשונית)
@@ -101,7 +103,7 @@ async function consumePendingIdentify(){
     // בקשה ישנה (למשל התוסף נפתח ידנית שבוע אחר כך) לא מוצגת
     if (rec.ts && (Date.now() - rec.ts) > 120000) return;
     if (rec.mode === 'propose'){ openGenericProposeForm(rec.text); return; }
-    const matches = await identifyWithLiveContext(rec.text);
+    const matches = await identifyWithLiveContext(rec.text, { includePossible: true });
     showResults(matches, rec.text);
   } finally {
     consumingPending = false;
@@ -173,8 +175,8 @@ async function handleIdentifyClick(payload){
     }
     return;
   }
-  const matches = await identifyWithLiveContext(text);
-  if (matches.length) highlightIdentifiedSelection(payload);
+  const matches = await identifyWithLiveContext(text, { includePossible: true });
+  if (matches.some(m => m.confidence !== 'אפשרי')) highlightIdentifiedSelection(payload);
 
   if (!(window.Otzaria && Otzaria.call)){
     bringToFront();
@@ -361,14 +363,14 @@ function waitForOtzaria(elapsed){
       lastConsumedTs = p.ts || Date.now();
       clearPendingIdentify();
       if (p.mode === 'propose'){ openGenericProposeForm(p.text); return; }
-      identifyWithLiveContext(p.text).then(m => showResults(m, p.text));
+      identifyWithLiveContext(p.text, { includePossible: true }).then(m => showResults(m, p.text));
     });
     // 4.0.0 — שורת ״חפש גם בעינים למקרא״ בדיאלוג החיפוש של אוצריא
     // (contributes.startup.searchDialogItems, openPluginOnSubmit)
     Otzaria.on('search.requested', (data) => {
       const q = String((data && data.request && data.request.query) || (data && data.query) || '').trim();
       if (!q) return;
-      identifyWithLiveContext(q).then(m => showResults(m, q));
+      identifyWithLiveContext(q, { includePossible: true }).then(m => showResults(m, q));
     });
     Otzaria.on('plugin.suspended', suspendBackgroundWork);
     Otzaria.on('plugin.resumed', resumeBackgroundWork);

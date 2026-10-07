@@ -1609,3 +1609,8 @@ html, body {
 /* הקישור בפוטר לשליחת תיקון (3.2.7) */
 #aiDisclaimer a { color: var(--color-link); text-decoration: underline; cursor: pointer; }
 #aiDisclaimer a:hover { color: var(--color-primary); }
+
+/* 4.5.0 — מנוע הזיהוי v2: זיהויים בדרגת ״אפשרי״ מקופלים בחלון התוצאות (results-ui.js) */
+.possible-matches { margin-block-start: var(--space-md); text-align: center; }
+.possible-matches .possible-note { margin-block-start: var(--space-xs); color: var(--color-on-surface-faint); font-size: 0.85em; }
+.possible-matches .possible-list { margin-block-start: var(--space-sm); text-align: start; opacity: 0.85; }

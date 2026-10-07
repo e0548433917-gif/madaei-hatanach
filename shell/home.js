@@ -322,7 +322,7 @@ function attachLiveSearch(opts){
     let label = null;
     if (btn){ btn.disabled = true; label = btn.textContent; btn.textContent = '…'; }
     try {
-      const matches = await identifyWithLiveContext(text);
+      const matches = await identifyWithLiveContext(text, { includePossible: true });
       showResults(matches, text);
     } finally {
       if (btn){ btn.disabled = false; btn.textContent = label; }

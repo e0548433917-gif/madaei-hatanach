@@ -603,7 +603,7 @@ async function runLibraryIdentify(){
       return;
     }
     if (!parashaDataReady()) await ensureAllGuidesLoaded();
-    const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
+    const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK), { includePossible: true, source: { book: libPickedBook && libPickedBook.title } });
     libraryBookOverlay.classList.remove('open');
     const secLabel = libSectionSelect.selectedOptions[0] ? libSectionSelect.selectedOptions[0].textContent.trim() : '';
     showResults(matches, libPickedBook.title + (secLabel && secLabel !== 'תחילת הספר' ? ' — ' + secLabel : '') + (libPickedBook.path ? '  (' + libPickedBook.path + ')' : ''));
@@ -727,11 +727,13 @@ async function identifyReaderLocation(loc){
     return false;
   }
   if (!parashaDataReady()) await ensureAllGuidesLoaded();
-  const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK));
+  const matches = await identifyWithLiveContext(text.slice(0, LIB_CHUNK), { includePossible: true, source: { book: loc.title || '' } });
+  // 4.5.0 — הדגשות ומונה הסרגל רק לזיהויים הגלויים (ודאי/סביר), לא ל״אפשרי״ המקופל
+  const shown = matches.filter(m => m.confidence !== 'אפשרי');
   closeBookChooser();
-  if (!loc.quiet || matches.length) showResults(matches, title);
-  if (matches.length) highlightMatchesInSection(loc.bookId, index, matches);   // 4.2.0
-  if (typeof updateToolbarCount === 'function') updateToolbarCount(matches.length);   // 4.4.0
+  if (!loc.quiet || shown.length) showResults(matches, title);
+  if (shown.length) highlightMatchesInSection(loc.bookId, index, shown);   // 4.2.0
+  if (typeof updateToolbarCount === 'function') updateToolbarCount(shown.length);   // 4.4.0
   return true;
 }
 
@@ -769,8 +771,8 @@ async function handleToolbarOpenClick(payload){
       const sel = unwrapOtz(await Otzaria.call('reader.getSelection'));
       const st = sel && String(sel.text || sel.renderedSelectedText || '').trim();
       if (st){
-        const m = await identifyWithLiveContext(st);
-        if (m.length) highlightIdentifiedSelection({ selection: sel, currentBookId: sel.bookId, currentIndex: sel.sectionIndex });
+        const m = await identifyWithLiveContext(st, { includePossible: true });
+        if (m.some(x => x.confidence !== 'אפשרי')) highlightIdentifiedSelection({ selection: sel, currentBookId: sel.bookId, currentIndex: sel.sectionIndex });
         showResults(m, st);
         return;
       }
