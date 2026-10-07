@@ -59,7 +59,7 @@
 * [#66 — שאיבת הגדרות המרת שמות הקדושה מהתוסף "שומר השם"](https://github.com/e0548433917-gif/madaei-hatanach/issues/66)
 * [#90 — מדריכים/קטגוריות בהגדרת משתמש (הרחבה של Issue #24)](https://github.com/e0548433917-gif/madaei-hatanach/issues/90)
 * [#24 — אפשרות להוסיף קטגוריות](https://github.com/e0548433917-gif/madaei-hatanach/issues/24)
-* [#99 — לוח שנה: ״ערך היום״ נשלח בלי הסבר ובלי מקורות](https://github.com/e0548433917-gif/madaei-hatanach/issues/99)
+* [#99 — לוח שנה: ״ערך היום״ נשלח בלי הסבר ובלי מקורות — ✅ העיקר בוצע ב-4.0.0; נשאר: הסתרת שם ה׳ בטקסט שנשלח ליומן](https://github.com/e0548433917-gif/madaei-hatanach/issues/99)
 
 ### 🎨 עיצוב — נספח ב׳
 * [#58 — עיצוב נספח ב׳ — בורר גופנים מסונן + בורר תצוגת שם ה׳ (לא בוצע)](https://github.com/e0548433917-gif/madaei-hatanach/issues/58)
