@@ -35,14 +35,75 @@ window.NikudEngine = window.NikudEngine || {};
   let activePort = null;
   let watching = false;
 
+  // ---- בקשה לנקדן המקומי (3.7.1, #47 / ROADMAP 4.15) ----
+  // עד 3.7.0 הקריאות לנקדן היו fetch() ישיר מה-WebView. הדף נטען מ-file://,
+  // ה-Origin הוא null, והנקדן (שרת loopback) אינו מחזיר Access-Control-Allow-Origin
+  // — כך שבתוך אוצריא הבקשות נחסמו ב-CORS והנקדן נראה "לא מחובר" גם כשרץ.
+  // API_REFERENCE §network.fetchStream: הבקשה רצה בצד אוצריא ואינה כפופה ל-CORS,
+  // ויעד 127.0.0.1 מכוסה בהרשאה network.localhost שכבר מוצהרת במניפסט, עם
+  // הפורטים 5000–5010 ב-network.allowlist. הרצפה היא 0.9.97 — אפשר לקרוא ישירות.
+  // fetch() נשאר כנפילה רק מחוץ לאוצריא (דפדפן בפיתוח) או אם ה-API נכשל באופן
+  // שאינו תשובת שרת (למשל error.unknown_method בבנייה חריגה).
+  function hasStreamApi() {
+    return !!(window.Otzaria && typeof Otzaria.call === 'function');
+  }
+
+  async function streamRequest(url, opts) {
+    let chunks = Otzaria.call('network.fetchStream', {
+      url,
+      method: opts.method || 'GET',
+      headers: opts.headers || undefined,
+      body: opts.body || undefined,
+      timeoutMs: opts.timeoutMs || 30000
+    });
+    // לפי התיעוד הקריאה מחזירה AsyncIterable מיד; אם הגשר מחזיר Promise שלו — מחכים לו.
+    if (chunks && typeof chunks.then === 'function' && !chunks[Symbol.asyncIterator]) {
+      chunks = await chunks;
+    }
+    if (chunks && chunks.data && chunks.data[Symbol.asyncIterator]) chunks = chunks.data;
+    if (!chunks || !chunks[Symbol.asyncIterator]) throw new Error('fetchStream: no stream');
+    let status = 0, ok = false, body = '';
+    for await (const chunk of chunks) {
+      if (!chunk) continue;
+      if (chunk.type === 'response') { status = chunk.status; ok = !!chunk.ok; continue; }
+      if (chunk.type === 'data' && typeof chunk.body === 'string') body += chunk.body;
+    }
+    return { status, ok, body, via: 'stream' };
+  }
+
+  async function plainFetch(url, opts) {
+    const controller = (typeof AbortController === 'function') ? new AbortController() : null;
+    const tid = setTimeout(() => { try { controller && controller.abort(); } catch (e) {} }, opts.timeoutMs || 30000);
+    try {
+      const res = await fetch(url, {
+        method: opts.method || 'GET',
+        headers: opts.headers,
+        body: opts.body,
+        signal: controller ? controller.signal : undefined
+      });
+      return { status: res.status, ok: res.ok, body: await res.text(), via: 'fetch' };
+    } finally { clearTimeout(tid); }
+  }
+
+  // מחזיר { status, ok, body } או זורק כשאין תשובה בכלל (פורט סגור, timeout).
+  async function localRequest(url, opts) {
+    opts = opts || {};
+    if (hasStreamApi()) {
+      try { return await streamRequest(url, opts); }
+      catch (e) {
+        const code = e && (e.code || (e.error && e.error.code) || e.message);
+        // פורט סגור / timeout / חסימה — זו התשובה האמיתית; fetch ישיר לא יצליח יותר.
+        if (!/unknown_method|unsupported|no stream/.test(String(code || ''))) throw e;
+      }
+    }
+    return plainFetch(url, opts);
+  }
+
   async function findActivePort() {
     for (const port of PORTS) {
       try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 400);
-        const res = await fetch(`http://127.0.0.1:${port}/api/status`, { signal: controller.signal });
-        clearTimeout(tid);
-        if (res.ok) { activePort = port; return port; }
+        const res = await localRequest(`http://127.0.0.1:${port}/api/status`, { timeoutMs: 400 });
+        if (res && res.ok) { activePort = port; return port; }
       } catch (e) { /* פורט לא זמין, ממשיכים */ }
     }
     activePort = null;
@@ -76,13 +137,14 @@ window.NikudEngine = window.NikudEngine || {};
     if (!text || !text.trim()) return null;
     if (!activePort && !(await findActivePort())) return null;
     try {
-      const res = await fetch(`http://127.0.0.1:${activePort}/api/nikud`, {
+      const res = await localRequest(`http://127.0.0.1:${activePort}/api/nikud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text }),
+        timeoutMs: 15000
       });
-      if (!res.ok) return null;
-      const data = await res.json();
+      if (!res || !res.ok) return null;
+      const data = JSON.parse(res.body);
       return (typeof data.vocalized === 'string') ? data.vocalized : null;
     } catch (e) { activePort = null; return null; }
   }
