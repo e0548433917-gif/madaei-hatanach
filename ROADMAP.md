@@ -101,7 +101,6 @@
 
 ### נוספות
 * [#94 — i18n: שכבת שפת ממשק אנגלית (ROADMAP 4.13)](https://github.com/e0548433917-gif/madaei-hatanach/issues/94)
-* [#37 — משימה פתוחה למצטרפים: עיצוב תואם אוצריא — שלבים 5–9](https://github.com/e0548433917-gif/madaei-hatanach/issues/37)
 * [#96 — שאלה ל-@Y-PLONI ו-@palmoni5: האם תרצו לקבל את ניהול הפרויקט?](https://github.com/e0548433917-gif/madaei-hatanach/issues/96)
 
 ---
