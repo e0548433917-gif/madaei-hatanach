@@ -208,3 +208,45 @@ jobs:
           prerelease: false
           files: ${{ steps.fallback.outputs.file }}
           body_path: release-notes.md
+
+      # ״עינים למקרא+״ — אותה חבילה עם אריחי מפה אופליין (guides/places/tiles,
+      # ~55MB). האריחים אינם בגיט, ולכן נמשכים מחבילת ה-offlinemaps האחרונה
+      # שצורפה ל-Release קודם, ומוזרקים לחבילה של הגרסה הנוכחית. אותם שינויי
+      # מניפסט כמו build/pack-offline-maps-variant.ps1, ובנוסף שם ספק נפרד לספרייה
+      # כדי ששתי החבילות יוכלו להיות מותקנות יחד.
+      - name: עינים למקרא+ (מפות אופליין) — צירוף ל-Release
+        if: steps.meta.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          BASE_FILE: ${{ steps.fallback.outputs.file }}
+        run: |
+          set -e
+          src_tag="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=50" --jq '[.[] | select(any(.assets[]; .name | endswith("-offlinemaps.otzplugin")))][0].tag_name')"
+          if [[ -z "$src_tag" || "$src_tag" == "null" ]]; then echo "::warning::אין Release קודם עם אריחים — מדלג."; exit 0; fi
+          aid="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$src_tag" --jq '.assets[] | select(.name | endswith("-offlinemaps.otzplugin")) | .id' | head -1)"
+          gh api -H "Accept: application/octet-stream" "repos/$GITHUB_REPOSITORY/releases/assets/$aid" > /tmp/prev-plus.zip
+          rm -rf /tmp/plus && mkdir -p /tmp/plus/tilesrc
+          unzip -q "$BASE_FILE" -d /tmp/plus/pkg
+          unzip -q /tmp/prev-plus.zip 'guides/places/tiles/*' -d /tmp/plus/tilesrc
+          cp -r /tmp/plus/tilesrc/guides/places/tiles /tmp/plus/pkg/guides/places/
+          node -e '
+            const fs = require("fs"), p = "/tmp/plus/pkg/manifest.json";
+            const m = JSON.parse(fs.readFileSync(p, "utf8"));
+            m.id = "com.chadbedera.madaeihatanachplus";
+            m.name = m.name + "+";
+            m.description = "מדריך מאוחד לתנ״ך ומשנה/תלמוד עם מפת OpenStreetMap מפורטת מוטמעת (בלי אינטרנט) - אישים, מקומות, בע״ח, צומח, דומם, בית המקדש, מסכתות.";
+            const c = m.contributes || {};
+            if (c.toolTab){ c.toolTab.title = m.name; c.toolTab.iconName = "eye_24_filled"; }
+            const st = c.startup || {};
+            (st.toolbarItems || []).forEach(t => { t.icon = "eye_24_filled"; t.title = m.name; });
+            (st.libraryBooks || []).forEach(b => { b.provider = "einayim-lamikra-plus"; b.title = m.name; });
+            fs.writeFileSync(p, JSON.stringify(m, null, 2) + "\n");
+          '
+          sed -i "s/const LIBRARY_PROVIDER = 'einayim-lamikra';/const LIBRARY_PROVIDER = 'einayim-lamikra-plus';/" /tmp/plus/pkg/shell/core.js
+          out="com.chadbedera.madaeihatanach-$VERSION-offlinemaps.otzplugin"
+          (cd /tmp/plus/pkg && zip -qr "$GITHUB_WORKSPACE/$out" .)
+          ls -la "$out"
+          gh release upload "$TAG" "$out" --clobber --repo "$GITHUB_REPOSITORY"
