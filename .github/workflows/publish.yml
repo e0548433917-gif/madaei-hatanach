@@ -277,6 +277,7 @@ jobs:
       # מניפסט כמו build/pack-offline-maps-variant.ps1, ובנוסף שם ספק נפרד לספרייה
       # כדי ששתי החבילות יוכלו להיות מותקנות יחד.
       - name: עינים למקרא+ (מפות אופליין) — צירוף ל-Release
+        id: plus
         if: steps.meta.outcome == 'success'
         continue-on-error: true
         env:
@@ -328,3 +329,27 @@ jobs:
           node tools/pack-otzplugin.js /tmp/plus/pkg "$GITHUB_WORKSPACE/$out"
           ls -la "$out"
           gh release upload "$TAG" "$out" --clobber --repo "$GITHUB_REPOSITORY"
+          # צילומי מסך לפרסום הראשון של הפלוס בחנות (השלב הבא). שמות ASCII, מחוץ לחבילה.
+          mkdir -p /tmp/plus-shots
+          cp "docs/screenshots/ביוגרפיות תקופות.png" /tmp/plus-shots/01.png
+          cp "docs/screenshots/בעלי חיים2.png" /tmp/plus-shots/02.png
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      # 08/10/2026 (באישור בעלת הפרויקט): עינים למקרא+ לא עלה לחנות דרך דף ״תוסף חדש״
+      # באתר (״לא ניתן לקרוא את manifest.json מקובץ התוסף״ — 4,677 קבצים, #91). כאן
+      # הוא נשלח דרך ה-API של החנות, כמו החבילה הרגילה: בפעם הראשונה כתוסף חדש
+      # (צילומי מסך + אישור קבלת דיווחים במייל, כפי שנדרש באתר), ואחר כך כעדכון גרסה.
+      # תגובת השרת נכתבת ללוג — אם הוא דוחה, שם רואים את השגיאה המדויקת.
+      - name: עינים למקרא+ — פרסום לחנות
+        if: steps.plus.outputs.ready == 'true'
+        timeout-minutes: 6
+        continue-on-error: true
+        uses: Otzaria/otzaria-plugin-validator@v1
+        with:
+          path: /tmp/plus/pkg
+          otzaria-user: ${{ secrets.OTZARIA_USER }}
+          otzaria-password: ${{ secrets.OTZARIA_PASSWORD }}
+          publish: ${{ github.event.inputs.publish || 'auto' }}
+          force: ${{ github.event.inputs.force || false }}
+          screenshots: '/tmp/plus-shots/01.png,/tmp/plus-shots/02.png'
+          reports-consent: 'true'
