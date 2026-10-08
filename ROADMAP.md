@@ -42,7 +42,6 @@
 ### 🎨 עיצוב — נספח ב׳
 
 ### 📖 תוכן ודאטה — סבב ת׳
-* [#67 — ת.1ב — מזהה id ייחודי לכל רשומה (חוסם את עץ המשפחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/67)
 * [#68 — ת.1א (שארית) — 45 מראי מקום "דורש עין אנושית"](https://github.com/e0548433917-gif/madaei-hatanach/issues/68)
 * [#69 — ת.2 — מחקר מאורעות התנ״ך לפי תאריך](https://github.com/e0548433917-gif/madaei-hatanach/issues/69)
 * [#70 — ת.3 — העשרה מספרי פליקס (זכויות יוצרים)](https://github.com/e0548433917-gif/madaei-hatanach/issues/70)

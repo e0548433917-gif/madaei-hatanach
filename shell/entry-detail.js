@@ -28,9 +28,23 @@ function findPersonEntry(raw){
   return data.find(e => core(e.name) === norm ||
     (e.aliases || []).some(a => core(a) === norm)) || null;
 }
-function personLinkedValue(value, selfEntry){
+// ת.1ב (#67): כשלרשומה יש relIds — הקישור לפי id (האדם הנכון, גם כשיש כמה בשם הזה),
+// ו-null = לא מקשרים בכלל (סתירה/דו-משמעות): עדיף בלי קישור מקישור לאדם הלא נכון.
+// בלי relIds (רשומה ישנה/אישית) — כמו קודם, לפי שם.
+function findPersonById(pid){
+  if (!pid) return null;
+  return (dataCache['people'] || []).find(e => e.id === pid) || null;
+}
+function personLinkedValue(value, selfEntry, field){
   const list = Array.isArray(value) ? value : [value];
-  return list.filter(v => v != null && v !== '').map(name => {
+  const rel = selfEntry && selfEntry.relIds && field ? selfEntry.relIds[field] : undefined;
+  const relList = rel === undefined ? null : (Array.isArray(rel) ? rel : [rel]);
+  return list.map((name, i) => [name, i]).filter(([v]) => v != null && v !== '').map(([name, i]) => {
+    if (relList){
+      const target = findPersonById(relList[i]);
+      if (target && target !== selfEntry) return `<span class="person-link" data-person="${esc(name)}" data-person-id="${esc(target.id)}">${esc(name)}</span>`;
+      return esc(name);
+    }
     const target = findPersonEntry(name);
     if (target && target !== selfEntry) return `<span class="person-link" data-person="${esc(name)}">${esc(name)}</span>`;
     return esc(name);
@@ -370,7 +384,9 @@ function renderEntryDetailHTML(entry, catIdOverride){
     // שדה ריק לגמרי עדיין צריך להיספר ב-missing כרגיל.)
     if (renderedInMethodsBlock(k)) return;
     if (personEntry && PERSON_LINK_FIELDS.has(k)){
-      const linked = personLinkedValue(v, entry);
+      // relIds מקביל לשדה המקורי — אם המשתמש ערך את השדה, חוזרים לקישור לפי שם
+      const sameAsData = JSON.stringify(v) === JSON.stringify(entry[k]);
+      const linked = personLinkedValue(v, entry, sameAsData ? k : null);
       if (linked){ html += `<div class="field-label">${esc(label)}</div><p>${linked}</p>`; return; }
     }
     if (personEntry && PLACE_LINK_FIELDS.has(k)){
@@ -598,7 +614,7 @@ function wireEntryDetail(container, entry, onEdit){
   container.querySelectorAll('.person-link').forEach(el => {
     el.addEventListener('click', (ev) => {
       ev.stopPropagation();
-      const target = findPersonEntry(el.dataset.person);
+      const target = findPersonById(el.dataset.personId) || findPersonEntry(el.dataset.person);
       if (target) openEntryDetail(target);
     });
   });
