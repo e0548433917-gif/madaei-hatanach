@@ -163,19 +163,27 @@ jobs:
             echo "::warning::החבילה גדולה מהצפוי ($mb MB, הרף 40MB). בדוק מה תפח בתוך guides/."
           fi
 
-      - name: קיפול חלופי (כשה-Action של אוצריא לא הפיק חבילה)
+      # 4.17.0: החבילה ל-Release נארזת תמיד ע״י tools/pack-otzplugin.js — פורמט זהה
+      # לאורז הרשמי של אוצריא. עד 4.16.1, כשה-Action נתקע, נארזה כאן חבילה ב-`zip -qr`
+      # ודף ההעלאה ב-otzaria.org דחה אותה (״לא ניתן לקרוא את manifest.json מקובץ התוסף״).
+      # הסינון זהה ל-.otzignore (רשימה לבנה + החרגות בתוך guides/).
+      - name: אריזה ל-Release (פורמט האורז הרשמי)
         id: fallback
         env:
           PLUGIN_FILE: ${{ steps.otzaria.outputs.plugin-file }}
         run: |
-          if [[ -n "$PLUGIN_FILE" && -f "$PLUGIN_FILE" ]]; then
-            echo "file=$PLUGIN_FILE" >> "$GITHUB_OUTPUT"; exit 0
-          fi
           id="$(node -p "require('./manifest.json').id")"
           version="$(node -p "require('./manifest.json').version")"
           out="$id-$version.otzplugin"
-          zip -qr "$out" manifest.json index.html background.html icon shell guides -x 'guides/*/view.html' 'guides/places/css/app.css' 'guides/places/js/app.js' 'guides/places/README.md' 'guides/places/tiles/*'
-          echo "::warning::ה-Action של אוצריא לא הפיק חבילה (#91) — נארזה חבילה חלופית לצירוף ל-Release. הפרסום לחנות לא בוצע."
+          rm -rf /tmp/stage && mkdir -p /tmp/stage
+          cp -r manifest.json index.html background.html icon shell guides /tmp/stage/
+          rm -f /tmp/stage/guides/*/view.html /tmp/stage/guides/places/css/app.css /tmp/stage/guides/places/js/app.js /tmp/stage/guides/places/README.md
+          rm -rf /tmp/stage/guides/places/tiles
+          rm -f "$out"
+          node tools/pack-otzplugin.js /tmp/stage "$out"
+          if [[ -z "$PLUGIN_FILE" ]]; then
+            echo "::warning::ה-Action של אוצריא לא הפיק חבילה (#91) — הפרסום לחנות לא בוצע. את החבילה מה-Release אפשר להעלות ידנית ל-otzaria.org."
+          fi
           echo "file=$out" >> "$GITHUB_OUTPUT"
 
       - name: קביעת גרסה ותג
@@ -307,6 +315,6 @@ jobs:
           sed -i "s/^const PLUGIN_DISPLAY_NAME = 'עינים למקרא';/const PLUGIN_DISPLAY_NAME = 'עינים למקרא+';/" /tmp/plus/pkg/shell/core.js
           grep -q "^const PLUGIN_DISPLAY_NAME = 'עינים למקרא+';" /tmp/plus/pkg/shell/core.js || { echo "::error::החלפת PLUGIN_DISPLAY_NAME בווריאנט נכשלה"; exit 1; }
           out="com.chadbedera.madaeihatanach-$VERSION-offlinemaps.otzplugin"
-          (cd /tmp/plus/pkg && zip -qr "$GITHUB_WORKSPACE/$out" .)
+          node tools/pack-otzplugin.js /tmp/plus/pkg "$GITHUB_WORKSPACE/$out"
           ls -la "$out"
           gh release upload "$TAG" "$out" --clobber --repo "$GITHUB_REPOSITORY"
