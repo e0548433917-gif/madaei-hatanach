@@ -16,6 +16,6 @@ jobs:
       - run: |
           git config user.name Claude
           git config user.email noreply@anthropic.com
-          git add kivun/streets-data.js
+          git add kivun/streets-data.js kivun/build-log.txt
           git commit -m "kivun: streets-data.js (OSM)"
           git push
