@@ -1,15 +1,15 @@
 # זמני: בניית רחובות מובנים לתוסף כיוון תפילה. רץ רק בענף kivun-streets-build, שיימחק אחרי השימוש.
-name: kivun-streets
+name: kivun-abroad-wide
 on:
   push:
-    branches: [kivun-streets-build]
+    branches: [kivun-abroad-wide]
     paths: [kivun/build_streets.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
 permissions:
   contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - run: python3 kivun/build_streets.py

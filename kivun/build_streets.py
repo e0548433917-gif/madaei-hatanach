@@ -11,7 +11,7 @@ C = json.load(open("kivun/centers.json", encoding="utf-8"))
 
 
 def radius(name):
-    return 1500 if name.startswith("ירושלים") else 2000
+    return 3500  # חו"ל: רדיוס מורחב, כדי שיכסה את אזור המיקודים סביב הקהילה
 
 
 def fetch(q):
