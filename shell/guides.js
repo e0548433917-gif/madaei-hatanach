@@ -262,6 +262,14 @@ function guideErasInOrder(){
 }
 // מכבד את אותו סינון (activeGuideChips/matchesGuideFilters/חיפוש) שכבר חושב ב-renderGuideGrid -
 // ציר שלא מכבד את הצ'יפים היה סותר את מה שכתוב בהם.
+// #61: ציר הזמן כעץ — גזע של תקופות, ענף לכל תת-קבוצה (ספר/קטגוריה באישים, דור
+// באנשי התלמוד), ועלים = שמות קצרים שלחיצה עליהם פותחת את הכרטיס. ענפים מתקפלים.
+const TIMELINE_GUIDES = ['people', 'amoraim'];
+function timelineBranchOf(entry){
+  if (currentGuideCat && currentGuideCat.id === 'amoraim' && entry.dor) return entry.dor;
+  const c = guideCatOf(entry.cat);
+  return (c && c.label) || '';
+}
 function renderGuideTimeline(list){
   const eras = guideErasInOrder();
   if (!eras.length){
@@ -269,23 +277,28 @@ function renderGuideTimeline(list){
     return;
   }
   const flatIdx = [];
-  let html = '<div class="timeline">';
+  let html = '<div class="timeline timeline-tree">';
   eras.forEach(era => {
     const items = list.filter(e => guideEraOf(e) === era);
     if (!items.length) return;
     html += `<div class="timeline-era">
       <div class="timeline-era-head"><span class="timeline-dot"></span><h3>${esc(era)}</h3><span class="timeline-count">${items.length}</span></div>
-      <div class="timeline-items">`;
-    items.forEach(entry => { html += entryCardHTML(entry, flatIdx.length); flatIdx.push(entry); });
+      <div class="tl-branches">`;
+    const branches = [];
+    items.forEach(e => { const b = timelineBranchOf(e); let br = branches.find(x => x.name === b); if (!br){ br = { name: b, items: [] }; branches.push(br); } br.items.push(e); });
+    branches.forEach(br => {
+      html += `<details class="tl-branch" open><summary><span class="tl-branch-name">${esc(br.name || '—')}</span><span class="timeline-count">${br.items.length}</span></summary><div class="tl-leaves">`;
+      br.items.forEach(entry => { html += `<button type="button" class="tl-leaf" data-idx="${flatIdx.length}">${esc(entry.name)}</button>`; flatIdx.push(entry); });
+      html += '</div></details>';
+    });
     html += `</div></div>`;
   });
   html += '</div>';
   guideGrid.innerHTML = html;
-  guideGrid.querySelectorAll('.entry-card').forEach(card => {
-    const entry = flatIdx[parseInt(card.dataset.idx, 10)];
-    card.addEventListener('click', () => openEntryDetail(entry));
+  guideGrid.querySelectorAll('.tl-leaf').forEach(btn => {
+    const entry = flatIdx[parseInt(btn.dataset.idx, 10)];
+    btn.addEventListener('click', () => openEntryDetail(entry));
   });
-  lazyLoadWikiThumbnails(guideGrid);
 }
 if (guideTimelineToggle) guideTimelineToggle.addEventListener('click', () => {
   guideViewMode = guideViewMode === 'timeline' ? 'grid' : 'timeline';
@@ -309,7 +322,7 @@ function renderGuideGrid(filterText){
     return;
   }
 
-  if (guideViewMode === 'timeline' && currentGuideCat && currentGuideCat.id === 'people'){
+  if (guideViewMode === 'timeline' && currentGuideCat && TIMELINE_GUIDES.includes(currentGuideCat.id)){
     renderGuideTimeline(list);
     return;
   }
@@ -388,7 +401,7 @@ async function openGuide(catId, term){
   activeGuideLetter = 'all';
   guideViewMode = 'grid';
   if (guideTimelineToggle){
-    guideTimelineToggle.style.display = cat.id === 'people' ? '' : 'none';
+    guideTimelineToggle.style.display = TIMELINE_GUIDES.includes(cat.id) ? '' : 'none';
     guideTimelineToggle.classList.remove('on');
     guideTimelineToggle.textContent = '🕰️ ציר זמן';
   }

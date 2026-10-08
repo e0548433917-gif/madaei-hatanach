@@ -736,6 +736,26 @@ html, body {
 }
 .timeline-era-head h3 { font-size: 1.05em; margin: 0; color: var(--color-primary); }
 .timeline-count { font-size: .8em; color: var(--color-on-surface-faint); }
+/* #61 — ציר זמן כעץ: ענפים מתקפלים ועלים קצרים */
+.tl-branches { display: flex; flex-direction: column; gap: 6px; }
+.tl-branch { position: relative; padding-inline-start: 16px; }
+.tl-branch::before {
+  content: ""; position: absolute; inset-inline-start: 0; top: 12px;
+  width: 10px; height: 2px; background: var(--color-outline-faint);
+}
+.tl-branch > summary {
+  display: flex; align-items: baseline; gap: 8px; cursor: pointer;
+  font-weight: 600; color: var(--color-on-surface); padding: 2px 0;
+}
+.tl-branch-name { font-size: .95em; }
+.tl-leaves { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 4px; }
+.tl-leaf {
+  font-family: var(--font-main); font-size: .86em;
+  padding: 3px 10px; border-radius: var(--radius-pill);
+  border: 1px solid var(--color-outline); background: var(--color-surface);
+  color: var(--color-on-surface); cursor: pointer;
+}
+.tl-leaf:hover, .tl-leaf:focus-visible { border-color: var(--color-primary); color: var(--color-primary); }
 .timeline-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));

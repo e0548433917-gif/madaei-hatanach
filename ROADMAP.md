@@ -36,7 +36,6 @@
 ### ✨ פיצ׳רים
 * [#57 — העלאת "עינים למקרא+" (מפות אופליין) לחנות כתוסף נפרד](https://github.com/e0548433917-gif/madaei-hatanach/issues/57)
 * [#59 — 2.6 — עץ משפחה אינטראקטיבי (חסום)](https://github.com/e0548433917-gif/madaei-hatanach/issues/59)
-* [#61 — ציר זמן כעץ (במקום רשימה) במדריך אישים ואנשי התלמוד](https://github.com/e0548433917-gif/madaei-hatanach/issues/61)
 * [#64 — כפתור ℹ️ במפה — לפתוח את מיקום התיקייה לאריחים, לא רק להסביר](https://github.com/e0548433917-gif/madaei-hatanach/issues/64)
 * [#66 — שאיבת הגדרות המרת שמות הקדושה מהתוסף "שומר השם"](https://github.com/e0548433917-gif/madaei-hatanach/issues/66)
 
