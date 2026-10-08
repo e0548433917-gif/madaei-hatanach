@@ -29,6 +29,7 @@
     "tools.read",
     "search.fulltext.read",
     "app.shortcuts",
+    "ui.create_shortcut",
     "reader.highlight",
     "events.subscribe:reader.selection_changed",
     "bookmarks.write",

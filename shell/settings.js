@@ -410,13 +410,10 @@ wireSettings();
 
 // ============================================================
 //  קיצור דרך לשולחן העבודה (3.2.3)
-//  ⚠️ ההרשאה `ui.create_shortcut` **אינה מוצהרת בחבילת הבסיס** בכוונה: היא
-//  מסומנת SENSITIVE ברשימת ההרשאות של אוצריא, ולא אומתה על 0.9.96. לכן שם
+//  ✅ 4.10.1: ההרשאה `ui.create_shortcut` מוצהרת במניפסט (באישור בעל הפרויקט). שם
 //  המתודה מורכב ממערך דרך callIfSupported (shell/core.js) — אותו דפוס בדיוק
 //  כמו feedback.report — כך שהמחרוזת אינה ליטרל בקוד, האריזה אינה נחסמת,
 //  ובגרסה/הרשאה שאינה תומכת הקריאה פשוט לא נשלחת והקבוצה נשארת מוסתרת.
-//  📌 להפעלה בפועל צריך להוסיף "ui.create_shortcut" לרשימת ההרשאות בווריאנט
-//     997 (build/pack-997-variant.ps1), אחרי אימות על מכשיר.
 // ============================================================
 let shortcutWired = false;
 function refreshShortcutGroup(){
@@ -453,10 +450,13 @@ function wireShortcutBtn(group, btn){
     const orig = btn.textContent;
     btn.textContent = 'יוצר…';
     try {
-      const res = await callIfSupported(['shortcut', 'create'], '0.9.89', {
-        name: PLUGIN_DISPLAY_NAME,
-        description: 'מדריך מאוחד לתנ״ך ומשנה/תלמוד'
+      // אוצריא מצפה ל-label (לא name) ול-location; מינימום 0.9.94
+      const res = await callIfSupported(['shortcut', 'create'], '0.9.94', {
+        label: PLUGIN_DISPLAY_NAME,
+        location: 'desktop'
       });
+      const data = res && (res.data !== undefined ? res.data : res);
+      if (data && data.created === false) return;   // המשתמש ביטל בדיאלוג האישור
       if (res == null || (res && res.success === false)){
         // ההרשאה בוטלה בינתיים / הקריאה נדחתה — מודיעים, ולא נעלמים בשקט
         group.hidden = true;
