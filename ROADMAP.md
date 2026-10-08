@@ -33,7 +33,7 @@
 * [#123 — feedback.submitBookCorrection (0.9.99) — להערכה, עדיפות נמוכה](https://github.com/e0548433917-gif/madaei-hatanach/issues/123)
 
 ### ✨ פיצ׳רים
-* [#57 — העלאת "עינים למקרא+" (מפות אופליין) לחנות כתוסף נפרד](https://github.com/e0548433917-gif/madaei-hatanach/issues/57)
+* [#57 — העלאת "עינים למקרא+" (מפות אופליין) לחנות כתוסף נפרד](https://github.com/e0548433917-gif/madaei-hatanach/issues/57) — ה-CI שולח אותו דרך ה-API בכל גרסה; החנות דוחה בצד השרת ([#127](https://github.com/e0548433917-gif/madaei-hatanach/issues/127)), ממתין לתשובת מנהלי החנות
 * [#64 — כפתור ℹ️ במפה — לפתוח את מיקום התיקייה לאריחים, לא רק להסביר](https://github.com/e0548433917-gif/madaei-hatanach/issues/64)
 
 ### 🎨 עיצוב — נספח ב׳
