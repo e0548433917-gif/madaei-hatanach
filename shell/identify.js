@@ -536,7 +536,12 @@ function scoreGroups(ctx, groups){
         const nation = COLL_NAMES.has(c.key) || COLL_NAMES.has(normalizeHeb(c.entry.name || ''));
         const genealogy = cx.naming || cx.genAfter || (cx.genBefore && !(nation && cx.benneyBefore));
         if (genealogy){ c.score += (c.ambig === 'context' || c.ambig === 'vocal') ? 0.4 : 0.3; c.ev.push('רמז גנאלוגי'); }
-        if (nation && !genealogy && !c.owner){ c.cap = 0.45; c.ev.push('עם/ארץ'); }
+        if (nation && !genealogy && !c.owner){
+          // כינוי-אדם שהוא גם שם עם (ישראל→יעקב) — מוצג כ״סביר״ ולא מוסתר: המשתמש
+          // מצפה לראות את יעקב כשכתוב ״ישראל״, גם אם לרוב הכוונה לעם.
+          const aliasOfPerson = c.key !== normalizeHeb((c.entry.name || '').replace(/\s*\([^)]*\)\s*$/, ''));
+          c.cap = aliasOfPerson ? SCORE.LIKELY : 0.45; c.ev.push('עם/ארץ');
+        }
         else if (cx.collBefore && !genealogy){ c.score -= 0.3; c.ev.push('רמז קיבוצי'); }
       }
       if (k === 'L' && (cx.collBefore || cx.benneyBefore)){ c.score += 0.2; c.ev.push('רמז קיבוצי'); }
