@@ -125,6 +125,7 @@ const GEN_AFTER      = lexSet('GENEALOGY_AFTER');
 const NAMING_CUES    = lexSet('NAMING_CUES');
 const COLL_BEFORE    = lexSet('COLLECTIVE_BEFORE');
 const COLL_NAMES     = lexSet('COLLECTIVE_NAMES');
+const HOLY_KEYS      = lexSet('HOLY_KEYS');
 const SAGE_CUES      = lexSet('SAGE_CUES');
 const SUBJECT_VERBS  = new Set(['ויאמר','ותאמר','ויען','ותען','וידבר','ויקח','ותקח','וילך','ותלך','וישלח','ויצו','ויבא','ותבא','ויקם','ותקם','וישב','ויעל','וירד','ויצא','ותצא','ויחי','וימת','ותמת','וימלך']);
 const DISAMBIG_SKIP  = new Set(['מלך','בן','בת','אבי','אשת','אחי','של','איש','אשה','חז״ל','חזל']);
@@ -532,6 +533,13 @@ function scoreGroups(ctx, groups){
       c.owner = ownsContext(ctx, g, c.entry);
       if (c.owner){ c.score += 0.3; c.ev.push('פסוק רשום'); }
       if (ctx.book && (c.entry.verses || []).some(v => String(v.ref || '').indexOf(ctx.book) === 0)){ c.score += 0.15; c.ev.push('אותו ספר'); }
+      if (k === 'P' && (HOLY_KEYS.has(c.key) || HOLY_KEYS.has(normalizeHeb(c.form && c.form.pre ? c.form.pre + c.key : c.key)))){
+        const tokV = (toks[g.i] && toks[g.i].v) || '';
+        // אֶל / אַל — מילת יחס/שלילה, לעולם לא השם (ולא ערך אדם על שמו)
+        const notTsere = HAS_VOWEL_RE.test(tokV) && /^[^א]*א[\u0591-\u05AF]*[ֶַ]/.test(tokV) && c.key.slice(-2) === 'אל';
+        const genealogyH = cx.naming || cx.genAfter || cx.genBefore;
+        if (notTsere || (!genealogyH && !c.owner)){ c.score = 0; c.cap = 0; c.ev.push('שם קדוש'); continue; }
+      }
       if (k === 'P'){
         const nation = COLL_NAMES.has(c.key) || COLL_NAMES.has(normalizeHeb(c.entry.name || ''));
         const genealogy = cx.naming || cx.genAfter || (cx.genBefore && !(nation && cx.benneyBefore));
