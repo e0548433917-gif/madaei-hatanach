@@ -10,9 +10,9 @@
 // ============================================================
 const PREFS_KEY = 'madaei_hatanach_ui_prefs_v1';
 // pubEvents/pubChurban/pubAhead/pubBack — פרסום ליומן של אוצריא. ברירות המחדל
-// משמרות בדיוק את ההתנהגות שהייתה לפני 3.2.7, כדי לא לשנות בשקט למי שלא נגע.
+// 4.16.1: כבויות כברירת מחדל (בקשת בעלת הפרויקט — יש למי שזה מפריע); מפעילים בהגדרות.
 const DEFAULT_PREFS = { theme: 'otzaria', font: 'otzaria', scale: 100, density: 'normal', cardImg: true, divineName: 'he',
-  pubEvents: true, pubChurban: true, pubAhead: 365, pubBack: 7, shemMode: 'hyphen', shemScope: 'all', shemAggr: true };
+  pubEvents: false, pubChurban: false, pubAhead: 365, pubBack: 7, shemMode: 'hyphen', shemScope: 'all', shemAggr: true };
 let uiPrefs = Object.assign({}, DEFAULT_PREFS);
 let otzariaTheme = null; // ה-theme האחרון שהתקבל מאוצריא (boot / theme.changed)
 
@@ -214,9 +214,9 @@ function syncSettingsUI(){
   if (sa) setOn(sa, uiPrefs.shemAggr !== false);
   updateDivinePreview();
   const pe = document.getElementById('setPubEvents');
-  if (pe) setOn(pe, uiPrefs.pubEvents !== false);
+  if (pe) setOn(pe, uiPrefs.pubEvents === true);
   const pc = document.getElementById('setPubChurban');
-  if (pc) setOn(pc, uiPrefs.pubChurban !== false);
+  if (pc) setOn(pc, uiPrefs.pubChurban === true);
   const pa = document.querySelector('#setPubAhead select');
   if (pa) pa.value = String(uiPrefs.pubAhead != null ? uiPrefs.pubAhead : 365);
   const pb = document.querySelector('#setPubBack select');

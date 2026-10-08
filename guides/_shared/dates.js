@@ -521,8 +521,8 @@ async function publishUpcomingEventsInner(){
   let pubPrefs = (typeof uiPrefs === 'object' && uiPrefs) ? uiPrefs : null;
   if (!pubPrefs) pubPrefs = await storageGetJson(PUBLISH_PREFS_KEY);
   if (!pubPrefs || typeof pubPrefs !== 'object') pubPrefs = {};
-  const wantEvents  = pubPrefs.pubEvents  !== false;
-  const wantChurban = pubPrefs.pubChurban !== false;
+  const wantEvents  = pubPrefs.pubEvents  === true;
+  const wantChurban = pubPrefs.pubChurban === true;
   // 3.3.2 — pubAhead/pubBack סוף־סוף בשימוש: עד כה ההגדרות "כמה זמן קדימה/אחורה"
   // נשמרו (shell/settings.js) אבל אף אחד לא קרא אותן, והקבועים 365/7 נשארו קשיחים.
   const lookAhead = (typeof pubPrefs.pubAhead === 'number' && isFinite(pubPrefs.pubAhead) && pubPrefs.pubAhead >= 1)
