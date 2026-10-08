@@ -17,11 +17,25 @@ name: ולידציה ופרסום לחנות אוצריא
 
 on:
   push:
-    branches: [main]
+    # #55: כל ענף — אבל רק main מפרסם. בשאר הענפים ובכל PR רץ ה-job ״validate״
+    # (ולידציה בלי פרסום), כדי שבעיה תתגלה לפני המיזוג ולא אחריו.
+    branches: ['**']
     paths:
       # רק מה שנכנס בפועל לחבילה — 6 פריטי המוצר, זהים ל-!/-entries ב-.otzignore
       # ול-$includeItems ב-build/pack.ps1. שינוי ב-_עבודה/ (assets, docs וכו') אינו
       # שינוי מוצר ואינו אמור להפעיל פרסום.
+      - 'manifest.json'
+      - 'index.html'
+      - 'background.html'
+      - 'guides/**'
+      - 'shell/**'
+      - 'icon/**'
+      - 'CHANGELOG.md'
+      - 'ROADMAP.md'
+      - '.otzignore'
+      - '.github/workflows/publish.yml'
+  pull_request:
+    paths:
       - 'manifest.json'
       - 'index.html'
       - 'background.html'
@@ -52,7 +66,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # #55: ולידציה בלי פרסום — ענפים שאינם main ו-PR-ים. אותן בדיקות כמו בפרסום,
+  # ובלי פרטי החנות (publish: 'false'), כך שאין שום דרך שענף יגיע לחנות.
+  validate:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: בדיקת סנכרון המוטבעים
+        run: node tools/verify-embedded.js
+      - name: ולידציית דאטה (מדווחת בלבד)
+        continue-on-error: true
+        run: node tools/validate.js --strict
+      - name: סט הזהב של מנוע הזיהוי (מדווח בלבד)
+        continue-on-error: true
+        run: node tools/identify-bench.js
+      - name: ולידציה וקיפול של אוצריא (בלי פרסום)
+        timeout-minutes: 8
+        continue-on-error: true
+        uses: Otzaria/otzaria-plugin-validator@v1
+        with:
+          path: .
+          publish: 'false'
+
   publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     # #92: בלי זה ריצה שנתקעת מול שרת החנות רצה 6 שעות (ברירת המחדל של GitHub)
     # וחוסמת את תור הפרסום שאחריה. 20 דקות מספיקות לולידציה + קיפול + פרסום.
