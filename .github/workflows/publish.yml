@@ -287,25 +287,43 @@ jobs:
           BASE_FILE: ${{ steps.fallback.outputs.file }}
         run: |
           set -e
-          src_tag="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=50" --jq '[.[] | select(any(.assets[]; .name | endswith("-offlinemaps.otzplugin")))][0].tag_name')"
-          if [[ -z "$src_tag" || "$src_tag" == "null" ]]; then echo "::warning::אין Release קודם עם אריחים — מדלג."; exit 0; fi
-          aid="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$src_tag" --jq '.assets[] | select(.name | endswith("-offlinemaps.otzplugin")) | .id' | head -1)"
-          gh api -H "Accept: application/octet-stream" "repos/$GITHUB_REPOSITORY/releases/assets/$aid" > /tmp/prev-plus.zip
           rm -rf /tmp/plus && mkdir -p /tmp/plus/tilesrc
           unzip -q "$BASE_FILE" -d /tmp/plus/pkg
-          unzip -q /tmp/prev-plus.zip 'guides/places/tiles/*' -d /tmp/plus/tilesrc
-          cp -r /tmp/plus/tilesrc/guides/places/tiles /tmp/plus/pkg/guides/places/
-          # 08/10/2026 (באישור בעלת הפרויקט): האריחים מומרים מ-PNG ל-WebP (q75) — ~44MB → ~16MB,
-          # כדי שהחבילה תרד מתחת למגבלת 50MB של החנות. אריחים שכבר הומרו — אין מה להמיר.
+          # #126: מקור האריחים הוא נכס קבוע — places-tiles-png.zip ב-Release ״tiles-source״
+          # (PNG מקורי, בלי איבוד). עד 4.17.0 הם נמשכו מחבילת הפלוס הקודמת, שכבר כווצה ל-WebP
+          # q75, וכל אריזה כיווצה שוב את המכווץ — מכאן הטשטוש. אם הנכס חסר (ריצה ראשונה), הוא
+          # נבנה כאן פעם אחת מה-Release האחרון שהאריחים בו עדיין PNG (4.15.0), ונשמר.
+          if gh release view tiles-source --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release download tiles-source --repo "$GITHUB_REPOSITORY" -p places-tiles-png.zip -D /tmp/plus --clobber
+          else
+            src_tag="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '[.[] | select(.tag_name | test("^v")) | select(any(.assets[]; .name | endswith("-offlinemaps.otzplugin")))] | map(.tag_name)[]' | while read -r tg; do
+              aid="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tg" --jq '.assets[] | select(.name | endswith("-offlinemaps.otzplugin")) | .id' | head -1)"
+              gh api -H "Accept: application/octet-stream" "repos/$GITHUB_REPOSITORY/releases/assets/$aid" > /tmp/plus/cand.zip
+              if unzip -l /tmp/plus/cand.zip 'guides/places/tiles/*.png' 2>/dev/null | grep -q '\.png'; then echo "$tg"; break; fi
+            done)"
+            if [[ -z "$src_tag" ]]; then echo "::warning::לא נמצא Release עם אריחי PNG — מדלג על הפלוס."; exit 0; fi
+            echo "בונה את נכס האריחים מ-$src_tag"
+            unzip -q /tmp/plus/cand.zip 'guides/places/tiles/*' -d /tmp/plus/boot
+            (cd /tmp/plus/boot/guides/places && zip -q -0 -r /tmp/plus/places-tiles-png.zip tiles)
+            gh release create tiles-source /tmp/plus/places-tiles-png.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+              --title "מקור אריחי המפה (PNG) — לא להתקנה" \
+              --notes "נכס קבוע ל-CI (#126): אריחי OpenStreetMap המקוריים של עינים למקרא+ (PNG, בלי איבוד), מתוך $src_tag. ה-workflow ממיר מהם בכל אריזה. זו לא גרסה להתקנה."
+          fi
+          unzip -q /tmp/plus/places-tiles-png.zip -d /tmp/plus/tilesrc
+          cp -r /tmp/plus/tilesrc/tiles /tmp/plus/pkg/guides/places/
+          # WebP q90 מה-PNG המקורי: הרחובות והשמות חדים (q75 טשטש אותם), והחבילה ~44MB —
+          # מתחת למגבלת 50MB של החנות. lossless יוצא ~50MB, ולכן לא נבחר.
           python3 -m pip install -q pillow
-          python3 -c "
+          python3 - <<'PY'
           import pathlib
+          from multiprocessing import Pool
           from PIL import Image
-          n = 0
-          for p in pathlib.Path('/tmp/plus/pkg/guides/places/tiles').rglob('*.png'):
-              Image.open(p).convert('RGB').save(p.with_suffix('.webp'), 'WEBP', quality=75, method=6); p.unlink(); n += 1
-          print('converted to webp:', n)
-          "
+          def conv(p):
+              Image.open(p).convert('RGB').save(p.with_suffix('.webp'), 'WEBP', quality=90, method=4); p.unlink()
+          ps = list(pathlib.Path('/tmp/plus/pkg/guides/places/tiles').rglob('*.png'))
+          with Pool() as pool: pool.map(conv, ps, chunksize=64)
+          print('converted to webp q90:', len(ps))
+          PY
           sed -i "s#tiles/{z}/{x}/{y}.png#tiles/{z}/{x}/{y}.webp#" /tmp/plus/pkg/guides/places/js/map.js
           grep -q "tiles/{z}/{x}/{y}.webp" /tmp/plus/pkg/guides/places/js/map.js || { echo "::error::עדכון סיומת האריחים ב-map.js נכשל"; exit 1; }
           node -e '
@@ -328,12 +346,14 @@ jobs:
           out="com.chadbedera.madaeihatanach-$VERSION-offlinemaps.otzplugin"
           node tools/pack-otzplugin.js /tmp/plus/pkg "$GITHUB_WORKSPACE/$out"
           ls -la "$out"
+          # #127: החנות מוגבלת ל-50MB. מעל זה — לא מעלים לחנות (ה-Release עדיין מקבל את הקובץ).
+          if (( $(stat -c%s "$out") > 50000000 )); then echo "::warning::חבילת הפלוס מעל 50MB — לא תישלח לחנות"; too_big=1; fi
           gh release upload "$TAG" "$out" --clobber --repo "$GITHUB_REPOSITORY"
           # צילומי מסך לפרסום הראשון של הפלוס בחנות (השלב הבא). שמות ASCII, מחוץ לחבילה.
           mkdir -p /tmp/plus-shots
           cp "docs/screenshots/ביוגרפיות תקופות.png" /tmp/plus-shots/01.png
           cp "docs/screenshots/בעלי חיים2.png" /tmp/plus-shots/02.png
-          echo "ready=true" >> "$GITHUB_OUTPUT"
+          [[ -z "$too_big" ]] && echo "ready=true" >> "$GITHUB_OUTPUT" || true
 
       # 08/10/2026 (באישור בעלת הפרויקט): עינים למקרא+ לא עלה לחנות דרך דף ״תוסף חדש״
       # באתר (״לא ניתן לקרוא את manifest.json מקובץ התוסף״ — 4,677 קבצים, #91). כאן
