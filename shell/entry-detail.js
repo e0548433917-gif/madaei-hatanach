@@ -237,6 +237,9 @@ const FIELD_LABELS = {
   // ארכיאולוגיה יהודית (3.3.4)
   site:'מקום הגילוי', found:'שנת הגילוי', museum:'היכן מוצג היום', credit:'קרדיט לתמונה'
 };
+// #89: תווית שונה לאותו שדה לפי מדריך
+const GUIDE_FIELD_LABELS = { mumim: { region: 'סוג הפסול' } };
+function fieldLabel(catId, k){ return ((GUIDE_FIELD_LABELS[catId] || {})[k]) || FIELD_LABELS[k] || k; }
 const ARRAY_FIELDS = new Set(['aliases','spouses','children','siblings','roles']);
 const LONG_FIELDS = new Set(['explanation','identification','note','modern']);
 
@@ -248,7 +251,10 @@ const GUIDE_FIELDS = {
   domem:  ['tribe','explanation','identification','note'],
   beithamikdash: ['explanation','identification','note'],
   archaeology: ['site','era','found','museum','note','credit'],
-  mumim:  ['explanation','modern','note'],
+  // #89: שלושת המדריכים המומרים — אותו סדר שדות. ב-mumim השדה region הוא סוג הפסול
+  // (״פוסל כהן / בהמה״), ולא הוצג כלל עד כה.
+  mumim:  ['region','explanation','modern','note'],
+  chullin: ['explanation','note'],
   sukkah: ['explanation','note'],
   // אנשים מהתלמוד: אין שדות זיהוי/משפחה — רק תקופה, דור ומקום פעילות.
   // התיאור הביוגרפי יושב ב-methods[0].explanation כמו בשאר המדריכים.
@@ -377,7 +383,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
   base.forEach(k => {
     // אצל ערך הבחנה השניים האלה מוצגים למעלה בצורה טובה יותר
     if (disambig && (k === 'note' || k === 'roles')) return;
-    const label = FIELD_LABELS[k] || k;
+    const label = fieldLabel(catId, k);
     const v = readField(entry, k);
     if (isEmptyVal(v)){ if (!disambig) missing.push(label); return; }
     // הערך קיים ויוצג בבלוק השיטות — לא כאן. (הבדיקה אחרי isEmptyVal בכוונה:

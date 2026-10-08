@@ -68,7 +68,7 @@ function openGenericEditForm(entry, catIdOverride){
   const editExists = hasStoredEdit(catId, origName);
 
   function inputFor(k){
-    const label = FIELD_LABELS[k] || k;
+    const label = (typeof fieldLabel === 'function') ? fieldLabel(catId, k) : (FIELD_LABELS[k] || k);
     const v = readField(entry, k);
     const txt = Array.isArray(v) ? v.join(', ') : (v == null ? '' : String(v));
     const hint = ARRAY_FIELDS.has(k) ? ' <span class="mini-hint">(מופרד בפסיקים)</span>' : '';

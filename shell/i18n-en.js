@@ -407,4 +407,8 @@ window.TRANSLATIONS.en = {
   'כל השמות': 'All names',
   'שם הוי״ה בלבד': 'The Tetragrammaton only',
   'זיהוי מחמיר גם בלי ניקוד (א-ל, י-ה)': 'Strict detection even without vowels (א-ל, י-ה)',
+  'סוג הפסול': 'Disqualification type',
+  'פוסל כהן': 'Disqualifies a kohen',
+  'פוסל בהמה': 'Disqualifies an animal',
+  'פוסל כהן ובהמה': 'Disqualifies a kohen and an animal',
 };
