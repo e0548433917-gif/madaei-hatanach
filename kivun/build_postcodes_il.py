@@ -1,6 +1,6 @@
 """מיקודי ישראל באריחים קטנים (0.15°): כל אריח שאילתה קצרה, והקובץ נשמר אחרי כל אריח,
 כך שגם עצירה באמצע משאירה את מה שירד. נתונים: © OpenStreetMap contributors, ODbL."""
-import json, time, urllib.parse, urllib.request, datetime, collections, os
+import json, time, urllib.parse, urllib.request, datetime, collections, os, subprocess
 
 SERVERS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.kumi.systems/api/interpreter",
@@ -33,6 +33,19 @@ def fetch(q):
 
 def mean(v):
     return [round(sum(x[0] for x in v) / len(v), 4), round(sum(x[1] for x in v) / len(v), 4)]
+
+
+LAST_PUSH = [time.time()]
+
+
+def push(force=False):
+    """דוחף את מה שירד עד עכשיו, כל 3 דקות, כדי שאפשר יהיה להשתמש בו גם לפני סוף הריצה."""
+    if not force and time.time() - LAST_PUSH[0] < 180:
+        return
+    LAST_PUSH[0] = time.time()
+    subprocess.run("git config user.name Claude && git config user.email noreply@anthropic.com && "
+                   "git add kivun/postcodes-il.js kivun/postcodes-il-state.json && "
+                   "git commit -qm 'kivun: postcodes-il.js (חלקי)' && git push -q", shell=True)
 
 
 def save():
@@ -75,6 +88,8 @@ for i, (la, lo) in enumerate(tiles):
     done.add((la, lo))
     print(f"[{i + 1}/{len(tiles)}] {la},{lo}: {len(els)} → total {len(full)} codes", flush=True)
     save()
+    push()
     time.sleep(2)
 save()
+push(True)
 open("kivun/build-log.txt", "a", encoding="utf-8").write(f"postcodes-il: tiles {len(done)}/{len(tiles)}, failed {fails}, codes {len(full)}\n")
