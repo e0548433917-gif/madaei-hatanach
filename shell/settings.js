@@ -203,6 +203,7 @@ function syncSettingsUI(){
     if (sel){ sel.value = val; return; }
     g.querySelectorAll('.set-opt').forEach(b => b.classList.toggle('active', b.dataset.val === val));
   };
+  mark('setUiLang', uiPrefs.uiLang || 'auto');
   mark('setTheme', uiPrefs.theme);
   mark('setFont', uiPrefs.font);
   mark('setDensity', uiPrefs.density);
@@ -233,6 +234,12 @@ function setPref(key, val){
   savePrefs();
   applyPrefs();
   if (key === 'divineName' || key === 'shemMode' || key === 'shemScope'){ syncSettingsUI(); }
+  // #94 — בחירת שפה ידנית: אוצריא עדיין מחזירה he-IL קבוע (Otzaria#758 טרם שוחרר).
+  // מעבר לאנגלית חל מיד; חזרה לעברית/אוטומטי דורשת טעינה מחדש (התרגום מחליף טקסט במקום).
+  if (key === 'uiLang'){
+    if (val === 'en' && typeof setLanguage === 'function') setLanguage('en');
+    else if (typeof I18N !== 'undefined' && I18N.dict) location.reload();
+  }
 }
 
 // #58 — תצוגה מקדימה של שם ה׳ לפי הבחירה (אותה maskDivineName של הכרטיסים)
@@ -322,7 +329,7 @@ function wireSettings(){
   const scrim = document.getElementById('settingsScrim');
   if (scrim) scrim.addEventListener('click', closeSettings);
 
-  [['setTheme','theme'], ['setFont','font'], ['setDensity','density'], ['setDivine','divineName'], ['setShemMode','shemMode'], ['setShemScope','shemScope']].forEach(([id, key]) => {
+  [['setUiLang','uiLang'], ['setTheme','theme'], ['setFont','font'], ['setDensity','density'], ['setDivine','divineName'], ['setShemMode','shemMode'], ['setShemScope','shemScope']].forEach(([id, key]) => {
     const g = document.getElementById(id);
     if (!g) return;
     const sel = g.querySelector('select');

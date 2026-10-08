@@ -411,4 +411,8 @@ window.TRANSLATIONS.en = {
   'פוסל כהן': 'Disqualifies a kohen',
   'פוסל בהמה': 'Disqualifies an animal',
   'פוסל כהן ובהמה': 'Disqualifies a kohen and an animal',
+  'שפת ממשק': 'Interface language',
+  'לפי אוצריא (ברירת מחדל)': 'Follow Otzaria (default)',
+  'עברית': 'עברית',
+  'בחירת שפת ממשק': 'Choose interface language',
 };

@@ -78,7 +78,15 @@ function setLanguage(lang){
   return true;
 }
 
+function uiLangOverride(){
+  try { return (JSON.parse(localStorage.getItem('madaei_hatanach_ui_prefs_v1') || '{}').uiLang) || 'auto'; }
+  catch(e){ return 'auto'; }
+}
+
 async function detectLanguage(bootPayload){
+  const ov = uiLangOverride();                // #94: בחירה ידנית בהגדרות
+  if (ov === 'he') return;
+  if (ov !== 'auto'){ setLanguage(ov); return; }
   const bp = bootPayload || {};
   let lang = (bp.app && (bp.app.language || bp.app.locale)) || bp.locale || bp.language || null;
   if (!lang && window.Otzaria && typeof Otzaria.call === 'function'){
@@ -93,4 +101,9 @@ async function detectLanguage(bootPayload){
 
 if (typeof window !== 'undefined' && window.Otzaria && typeof Otzaria.on === 'function'){
   Otzaria.on('plugin.boot', (p) => { detectLanguage(p).catch(() => {}); });
+}
+// #94: בחירה ידנית חלה גם בלי plugin.boot (למשל בתצוגה מקדימה בדפדפן)
+if (typeof document !== 'undefined' && uiLangOverride() !== 'auto' && uiLangOverride() !== 'he'){
+  const go = () => setLanguage(uiLangOverride());
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 }
