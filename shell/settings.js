@@ -12,7 +12,7 @@ const PREFS_KEY = 'madaei_hatanach_ui_prefs_v1';
 // pubEvents/pubChurban/pubAhead/pubBack — פרסום ליומן של אוצריא. ברירות המחדל
 // משמרות בדיוק את ההתנהגות שהייתה לפני 3.2.7, כדי לא לשנות בשקט למי שלא נגע.
 const DEFAULT_PREFS = { theme: 'otzaria', font: 'otzaria', scale: 100, density: 'normal', cardImg: true, divineName: 'he',
-  pubEvents: true, pubChurban: true, pubAhead: 365, pubBack: 7 };
+  pubEvents: true, pubChurban: true, pubAhead: 365, pubBack: 7, shemMode: 'hyphen', shemScope: 'all', shemAggr: true };
 let uiPrefs = Object.assign({}, DEFAULT_PREFS);
 let otzariaTheme = null; // ה-theme האחרון שהתקבל מאוצריא (boot / theme.changed)
 
@@ -207,6 +207,10 @@ function syncSettingsUI(){
   mark('setFont', uiPrefs.font);
   mark('setDensity', uiPrefs.density);
   mark('setDivine', uiPrefs.divineName || 'he');
+  mark('setShemMode', uiPrefs.shemMode || 'hyphen');
+  mark('setShemScope', uiPrefs.shemScope || 'all');
+  const sa = document.getElementById('setShemAggr');
+  if (sa) setOn(sa, uiPrefs.shemAggr !== false);
   updateDivinePreview();
   const pe = document.getElementById('setPubEvents');
   if (pe) setOn(pe, uiPrefs.pubEvents !== false);
@@ -228,7 +232,7 @@ function setPref(key, val){
   uiPrefs[key] = val;
   savePrefs();
   applyPrefs();
-  if (key === 'divineName'){ syncSettingsUI(); }
+  if (key === 'divineName' || key === 'shemMode' || key === 'shemScope'){ syncSettingsUI(); }
 }
 
 // #58 — תצוגה מקדימה של שם ה׳ לפי הבחירה (אותה maskDivineName של הכרטיסים)
@@ -318,7 +322,7 @@ function wireSettings(){
   const scrim = document.getElementById('settingsScrim');
   if (scrim) scrim.addEventListener('click', closeSettings);
 
-  [['setTheme','theme'], ['setFont','font'], ['setDensity','density'], ['setDivine','divineName']].forEach(([id, key]) => {
+  [['setTheme','theme'], ['setFont','font'], ['setDensity','density'], ['setDivine','divineName'], ['setShemMode','shemMode'], ['setShemScope','shemScope']].forEach(([id, key]) => {
     const g = document.getElementById(id);
     if (!g) return;
     const sel = g.querySelector('select');
@@ -331,6 +335,9 @@ function wireSettings(){
 
   const sc = document.getElementById('setScale');
   if (sc) sc.addEventListener('input', () => setPref('scale', parseInt(sc.value, 10) || 100));
+
+  const sa = document.getElementById('setShemAggr');
+  if (sa) sa.addEventListener('click', () => { const next = !isOn(sa); setOn(sa, next); setPref('shemAggr', next); });
 
   const ci = document.getElementById('setCardImg');
   if (ci) ci.addEventListener('click', () => {

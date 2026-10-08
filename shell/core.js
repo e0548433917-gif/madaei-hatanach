@@ -123,7 +123,10 @@ function gregDateStr(d){
 function guardHolyNames(text){
   if (text && divineNameMode() === 'source') return text;   // #58 — ״ככתוב״
   if (!text || !(window.ShemShomrer && typeof ShemShomrer.replaceHolyNames === 'function')) return text;
-  try { return ShemShomrer.replaceHolyNames(text, {}).result; }
+  // #66 — הגדרות ״שומר השם״ מתוך ההגדרות של התוסף (ברירות המחדל = של שומר השם)
+  const p = (typeof uiPrefs !== 'undefined' && uiPrefs) || {};
+  const opts = { mode: p.shemMode || 'hyphen', scope: p.shemScope || 'all', aggressiveNoNikud: p.shemAggr !== false };
+  try { return ShemShomrer.replaceHolyNames(text, opts).result; }
   catch(e){ return text; }
 }
 

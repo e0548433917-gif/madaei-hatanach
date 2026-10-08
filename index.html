@@ -410,6 +410,25 @@
         <button class="set-opt" type="button" data-val="source">ככתוב</button>
       </div>
     </div>
+    <!-- #66: הגדרות ״שומר השם״ להמרת שמות קדושים בציטוטים (shell/holy-names-lib.js) -->
+    <div class="settings-row">
+      <div class="field-label">שמות קדושים בציטוטים (כמו ב״שומר השם״)</div>
+      <div class="set-opts" id="setShemMode">
+        <button class="set-opt" type="button" data-val="hyphen">במקף (אל-הים)</button>
+        <button class="set-opt" type="button" data-val="kinuy">בכינוי (אלקים)</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="field-label">אילו שמות להמיר</div>
+      <div class="set-opts" id="setShemScope">
+        <button class="set-opt" type="button" data-val="all">כל השמות</button>
+        <button class="set-opt" type="button" data-val="havaya">שם הוי״ה בלבד</button>
+      </div>
+    </div>
+    <div class="settings-row toggle-row">
+      <div class="settings-row-title">זיהוי מחמיר גם בלי ניקוד (א-ל, י-ה)</div>
+      <button type="button" role="switch" aria-checked="true" id="setShemAggr" class="switch"></button>
+    </div>
     <div class="settings-row toggle-row">
       <div class="settings-row-title">הצגת תמונות בכרטיסי הרשימה</div>
       <button type="button" role="switch" aria-checked="true" id="setCardImg" class="switch"></button>
