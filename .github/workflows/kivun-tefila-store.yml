@@ -1,0 +1,58 @@
+name: כיוון תפילה — פרסום לחנות אוצריא
+
+# מפרסם את התוסף ״כיוון תפילה״ (com.shiachrina.kivuntefila) לחנות אוצריא, מתוך
+# ענף ההפצה כיוון-תפילה ב-e0548433917-gif/otzaria (התיקייה kivun-tefila/).
+# נמצא כאן כי פרטי החנות (OTZARIA_USER / OTZARIA_PASSWORD) שמורים בריפו הזה.
+# רץ אוטומטית כל 3 שעות. גרסה שכבר קיימת בחנות לא מתפרסמת שוב (publish: auto),
+# כך שהעלאת מספר הגרסה ב-manifest.json בענף ההפצה מספיקה לעדכון החנות.
+# אפשר גם להריץ ידנית מלשונית Actions.
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'לפרסם גם אם הגרסה כבר קיימת'
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ['.github/workflows/kivun-tefila-store.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kivun-tefila-store
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: e0548433917-gif/otzaria
+          ref: כיוון-תפילה
+          sparse-checkout: |
+            kivun-tefila
+            kivun-tefila-screenshots
+          sparse-checkout-cone-mode: true
+          path: kt
+
+      - name: גרסה
+        run: node -p "'כיוון תפילה ' + require('./kt/kivun-tefila/manifest.json').version"
+
+      - name: ולידציה, קיפול ופרסום
+        timeout-minutes: 6
+        uses: Otzaria/otzaria-plugin-validator@v1
+        with:
+          path: kt/kivun-tefila
+          otzaria-user: ${{ secrets.OTZARIA_USER }}
+          otzaria-password: ${{ secrets.OTZARIA_PASSWORD }}
+          publish: 'auto'
+          force: ${{ github.event.inputs.force || false }}
+          screenshots: 'kt/kivun-tefila-screenshots/01.png,kt/kivun-tefila-screenshots/02.png'
+          reports-consent: 'true'
