@@ -3,7 +3,7 @@ name: kivun-streets
 on:
   push:
     branches: [kivun-streets-build]
-    paths: [kivun/build_streets.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
+    paths: [kivun/build_streets.py, kivun/build_postcodes.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
 permissions:
   contents: write
 jobs:
@@ -13,9 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 kivun/build_streets.py
+      - run: python3 kivun/build_postcodes.py
+        continue-on-error: true
       - run: |
           git config user.name Claude
           git config user.email noreply@anthropic.com
           git add kivun/streets-data.js kivun/build-log.txt
-          git commit -m "kivun: streets-data.js (OSM, השלמה)"
+          if [ -f kivun/postcodes.js ]; then git add kivun/postcodes.js; fi
+          git commit -m "kivun: streets-data.js + postcodes (OSM)"
           git push
