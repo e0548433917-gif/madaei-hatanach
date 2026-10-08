@@ -427,7 +427,24 @@ function refreshShortcutGroup(){
   // הקבוצה מוצגת רק כשיש אוצריא. אין דרך לדעת מראש אם ההרשאה ניתנה — ננסה
   // בלחיצה, ואם נדחה נסתיר את הקבוצה כדי לא להשאיר כפתור מת.
   if (!hasOtzaria()) { group.hidden = true; return; }
-  group.hidden = false;
+  // #41 (4.9.0) — הכפתור הוצג תמיד, ובלחיצה הקריאה נדחתה (ההרשאה אינה מוצהרת בבסיס)
+  // והקבוצה פשוט נעלמה — ״כפתור שלא עושה כלום״. עכשיו מציגים אותו רק כשאוצריא
+  // מאשרת שההרשאה אכן ניתנה (app.getGrantedPermissions, 0.9.89, בלי הרשאה נוספת).
+  shortcutPermissionGranted().then(granted => {
+    group.hidden = !granted;
+    if (granted) wireShortcutBtn(group, btn);
+  });
+}
+
+async function shortcutPermissionGranted(){
+  const res = await callIfSupported(['app', 'getGrantedPermissions'], '0.9.89', {});
+  if (res == null) return false;
+  let list = res && (res.data !== undefined ? res.data : res);
+  if (list && !Array.isArray(list)) list = list.permissions || list.granted || [];
+  return Array.isArray(list) && list.indexOf('ui.create_shortcut') !== -1;
+}
+
+function wireShortcutBtn(group, btn){
   if (shortcutWired) return;
   shortcutWired = true;
 
@@ -440,9 +457,12 @@ function refreshShortcutGroup(){
         name: PLUGIN_DISPLAY_NAME,
         description: 'מדריך מאוחד לתנ״ך ומשנה/תלמוד'
       });
-      if (res == null){
-        // לא נתמך / ההרשאה לא ניתנה — מסתירים במקום להשאיר כפתור שלא עושה כלום
+      if (res == null || (res && res.success === false)){
+        // ההרשאה בוטלה בינתיים / הקריאה נדחתה — מודיעים, ולא נעלמים בשקט
         group.hidden = true;
+        await Otzaria.call('ui.showError', {
+          message: 'יצירת קיצור דרך אינה זמינה כרגע (ההרשאה לא ניתנה לתוסף).'
+        }).catch(()=>{});
         return;
       }
       await Otzaria.call('notifications.showInApp', {
