@@ -151,7 +151,7 @@ async function showParasha(parashaId){
   try {
     if (!parashaDataReady()) await ensureAllGuidesLoaded();
     const matches = entriesForParasha(parashaId);
-    showResults(matches, 'פרשת ' + p.name);
+    showResults(matches, 'פרשת ' + p.name, (typeof chapterScopeForParasha === 'function') ? chapterScopeForParasha(p) : null);
   } finally {
     if (parashaGoBtn){ parashaGoBtn.disabled = false; parashaGoBtn.textContent = label; }
   }

@@ -1211,7 +1211,7 @@ html, body {
   /* כל ה-chrome של התוסף — השער, הסרגלים, המסננים, הכפתורים, שכבות ה-overlay
      והגדרות התצוגה. נשאר רק #printRoot. */
   #landing, #frameWrap, #guideView, #talmudView, #personalView,
-  #entryOverlay, #resultsOverlay, .panel-overlay,
+  #entryOverlay, #resultsOverlay, .panel-overlay, #chapterMapOverlay,
   #settingsBtn, #settingsPanel, #settingsScrim,
   #homeSearchWrap, .hs-drop { display: none !important; }
 
@@ -1788,3 +1788,79 @@ button.ft-node:hover, button.ft-node:focus-visible { border-color: var(--color-p
 #printChooserOverlay .pc-fields { display: flex; flex-wrap: wrap; gap: 2px 14px; }
 #printChooserOverlay .pc-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; cursor: pointer; }
 #printChooserOverlay .pc-cat { display: inline; }
+
+/* ---- הפרק על המפה (4.18.0, shell/chapter-map.js) ---- */
+#resultsMapBtn[hidden], #cmPlay[hidden], #cmBase[hidden] { display: none; }
+#chapterMapOverlay {
+  position: fixed; inset: 0;
+  background: var(--color-scrim-light);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1150;
+  padding: 12px;
+}
+#chapterMapOverlay.open { display: flex; }
+#chapterMapOverlay .cm-box {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline-faint);
+  border-radius: var(--radius-lg);
+  width: 100%; max-width: 1180px;
+  height: 100%; max-height: 760px;
+  display: flex; flex-direction: column;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  animation: fadeIn .2s ease-out;
+}
+#chapterMapOverlay .cm-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+}
+#chapterMapOverlay .cm-head h2 { font-size: 1.08em; margin: 0; }
+#chapterMapOverlay .cm-actions { display: flex; gap: 8px; align-items: center; }
+#chapterMapOverlay .cm-close {
+  border: none; background: transparent; color: var(--color-on-surface-dim);
+  font-size: 1.2em; cursor: pointer; min-block-size: 36px; min-inline-size: 36px;
+  border-radius: var(--radius-sm);
+}
+#chapterMapOverlay .cm-close:hover { background: var(--color-surface-2); }
+#chapterMapOverlay .cm-body { flex: 1; display: flex; gap: 10px; min-height: 0; }
+#chapterMapOverlay .cm-list {
+  list-style: none; margin: 0; padding: 0;
+  width: 230px; flex: none; overflow-y: auto;
+  border: 1px solid var(--color-outline-faint);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+}
+#chapterMapOverlay .cm-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px; cursor: pointer;
+  border-bottom: 1px solid var(--color-outline-faint);
+}
+#chapterMapOverlay .cm-item:last-child { border-bottom: none; }
+#chapterMapOverlay .cm-item:hover { background: var(--color-primary-subtle); }
+#chapterMapOverlay .cm-item.active { background: var(--color-secondary-container); font-weight: 600; }
+#chapterMapOverlay .cm-num {
+  flex: none; inline-size: 22px; block-size: 22px; border-radius: 50%;
+  color: #FFF8E7; font-size: .78em; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#chapterMapOverlay .cm-txt { display: flex; flex-direction: column; min-width: 0; }
+#chapterMapOverlay .cm-name { font-size: .92em; }
+#chapterMapOverlay .cm-ref { font-size: .78em; color: var(--color-on-surface-dim); }
+#chapterMapOverlay .cm-map {
+  flex: 1; min-width: 0;
+  border: 1px solid var(--color-outline-faint);
+  border-radius: var(--radius-sm);
+}
+#chapterMapOverlay .cm-note { font-size: .78em; color: var(--color-on-surface-faint); margin-top: 6px; }
+.cm-pop b { font-size: 1.02em; }
+.cm-pop .cm-pop-ref { font-size: .86em; color: var(--color-secondary); margin-top: 2px; }
+.cm-pop .cm-pop-alt { font-size: .78em; color: var(--color-on-surface-dim); margin-top: 3px; }
+.cm-pop .cm-pop-btns { display: flex; gap: 6px; margin-top: 8px; }
+.cm-pop .panel-btn { min-block-size: 32px; padding: 0 10px; font-size: .8em; }
+.geo-pin.cm-pin-active svg { filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
+@media (max-width: 700px) {
+  #chapterMapOverlay .cm-body { flex-direction: column; }
+  #chapterMapOverlay .cm-list { width: auto; max-height: 30%; }
+}

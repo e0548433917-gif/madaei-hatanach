@@ -247,7 +247,8 @@ const STUDY_GATES = {
       for (let i = 1; i <= b.chapters; i++) list.push({ value: i, label: 'פרק ' + numToHeb(i) });
       return list;
     },
-    run: (name, unit) => ({ matches: entriesForTanakhChapter(name, unit), title: name + ' ' + numToHeb(unit) }),
+    run: (name, unit) => ({ matches: entriesForTanakhChapter(name, unit), title: name + ' ' + numToHeb(unit),
+      mapScope: (typeof chapterScopeForTanakh === 'function') ? chapterScopeForTanakh(name, unit) : null }),
   },
   mishna: {
     cardId: 'mishnaCard',
@@ -334,7 +335,7 @@ async function runStudyGate(){
   try {
     if (!parashaDataReady()) await ensureAllGuidesLoaded();
     const res = gate.run(name, unit);
-    showResults(res.matches, res.title);
+    showResults(res.matches, res.title, res.mapScope);
   } finally {
     if (studyGoBtn){ studyGoBtn.disabled = false; studyGoBtn.textContent = label; }
   }

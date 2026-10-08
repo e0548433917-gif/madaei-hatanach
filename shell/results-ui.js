@@ -43,7 +43,7 @@ function renderNikudStatus(){
   el.classList.toggle('on', connected);
 }
 
-function showResults(allMatches, selectedText){
+function showResults(allMatches, selectedText, mapScope){
   let activeResultsCat = 'all';
   // 4.5.0 (מנוע הזיהוי v2) — זיהויים בדרגת ״אפשרי״ מקופלים תחת כפתור, כדי שהרשימה
   // תראה רק את מה שהמנוע בטוח בו, בלי למחוק את הספק. תוצאות בלי confidence
@@ -52,6 +52,8 @@ function showResults(allMatches, selectedText){
   const possible = (allMatches || []).filter(m => m.confidence === 'אפשרי');
   let showPossible = false;
   printCtxResults = { matches: matches, selectedText: selectedText };   // ל״ייצוא כרטסת״ (print.js) — הגלויים בלבד
+  // 4.18.0 — ״הפרק על המפה״ (chapter-map.js): הכפתור מופיע רק כשיש מקום עם קואורדינטות
+  if (typeof updateChapterMapButton === 'function') updateChapterMapButton(matches, selectedText, mapScope || null);
 
   function render(){
     renderResultsChips(matches, activeResultsCat, (catId) => { activeResultsCat = catId; render(); });
