@@ -297,6 +297,31 @@ async function readOptFlag(key, def){
     return (typeof v === 'boolean') ? v : def;
   } catch(e){ return def; }
 }
+// ---- שולחן עבודה חדש עם מקורות הערך (תיקון 08/10/2026) ----
+// workspace.create+switchTo מחליף את הכרטיסיות — וכרטיסיית התוסף עצמה נשארת בשולחן
+// הקודם, כך שהלולאה שפותחת את הספרים נקטעת והשולחן החדש נפתח ריק. לכן הרשימה נמסרת
+// דרך האחסון: מנוע הרקע (שאינו כרטיסייה) מתעורר ל-workspace.changed כשהדגל דלוק
+// (activationEvents במניפסט) ופותח את המקורות. מי שמגיע ראשון מכבה את הדגל.
+const WS_PENDING_FLAG = 'mh_pending_ws_flag';
+const WS_PENDING_KEY  = 'mh_pending_ws';
+const WS_PENDING_TTL_MS = 2 * 60 * 1000;
+async function openPendingWorkspaceSources(){
+  if (!(await readOptFlag(WS_PENDING_FLAG, false))) return false;
+  await writeOptFlag(WS_PENDING_FLAG, false);
+  let job = null;
+  try {
+    const res = await Otzaria.call('storage.get', { key: WS_PENDING_KEY });
+    let v = res && (res.data !== undefined ? res.data : res);
+    if (v && typeof v === 'object' && 'value' in v) v = v.value;
+    job = typeof v === 'string' ? JSON.parse(v) : v;
+  } catch(e){ job = null; }
+  if (!job || !Array.isArray(job.refs) || Date.now() - (job.ts || 0) > WS_PENDING_TTL_MS) return false;
+  for (const p of job.refs){
+    await Otzaria.call('reader.openBookAtRef', { bookId: p.bookId, ref: p.ref, index: 0 }).catch(() => {});
+  }
+  return true;
+}
+
 function writeOptFlag(key, val){
   if (!(window.Otzaria && Otzaria.call)) return Promise.resolve();
   return Otzaria.call('storage.set', { key: key, value: !!val }).catch(()=>{});

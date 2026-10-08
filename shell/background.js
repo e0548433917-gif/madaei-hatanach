@@ -132,6 +132,12 @@ function bgWait(elapsed){
     Otzaria.call('plugin.openSelf', { param: { kind: 'guide', catId: g } }).catch(()=>{}).then(bgEnd, bgEnd);
   });
 
+  // מעבר לשולחן עבודה שנוצר מכרטיס ערך — פתיחת המקורות (ר׳ openPendingWorkspaceSources)
+  Otzaria.on('workspace.changed', () => {
+    bgStart();
+    openPendingWorkspaceSources().catch(()=>{}).then(bgEnd, bgEnd);
+  });
+
   Otzaria.on('plugin.boot', () => {
     publishGuidesToLibrary();
     bgStart();

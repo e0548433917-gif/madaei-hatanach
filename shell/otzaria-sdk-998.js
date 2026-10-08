@@ -92,10 +92,13 @@ async function openSourcesInWorkspace(entry, refs){
         + '. הכרטיסיות הפתוחות עכשיו נשמרות בשולחן הנוכחי.'
     }));
     if (!c || c.confirmed !== true) return;
+    // המשימה נכתבת לאחסון *לפני* המעבר — אחרי המעבר הכרטיסייה הזו כבר לא פעילה
+    await Otzaria.call('storage.set', { key: WS_PENDING_KEY,
+      value: JSON.stringify({ ts: Date.now(), refs: list.map(p => ({ bookId: p.bookId, ref: p.ref })) }) }).catch(() => {});
+    await writeOptFlag(WS_PENDING_FLAG, true);
     await Otzaria.call('workspace.create', { name, switchTo: true, reuseExisting: true });
-    for (const p of list){
-      await Otzaria.call('reader.openBookAtRef', { bookId: p.bookId, ref: p.ref, index: 0 }).catch(() => {});
-    }
+    // אם הדף הזה עדיין חי אחרי המעבר — פותח בעצמו (ומכבה את הדגל, כך שהרקע לא יכפיל)
+    await openPendingWorkspaceSources();
   } catch(e){
     Otzaria.call('ui.showError', { message: 'פתיחת שולחן העבודה נכשלה. ' + ((e && e.message) || '') }).catch(() => {});
   }
