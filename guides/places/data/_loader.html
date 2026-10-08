@@ -4,7 +4,7 @@
 <script src="places.js"></script>
 <script>
 try {
-  parent.postMessage({ __madaeiHatanachLoader: true, cat: 'places', ok: true, data: (typeof DATA !== 'undefined') ? DATA : [], cats: (typeof CATS !== 'undefined') ? CATS : [] }, '*');
+  parent.postMessage({ __madaeiHatanachLoader: true, cat: 'places', ok: true, data: (typeof DATA !== 'undefined') ? DATA : [], cats: (typeof CATS !== 'undefined') ? CATS : [], images: (typeof CARD_IMAGES !== 'undefined') ? CARD_IMAGES : {} }, '*');
 } catch(e) {
   parent.postMessage({ __madaeiHatanachLoader: true, cat: 'places', ok: false, error: String(e) }, '*');
 }

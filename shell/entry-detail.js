@@ -245,7 +245,7 @@ const LONG_FIELDS = new Set(['explanation','identification','note','modern']);
 
 const GUIDE_FIELDS = {
   people: ['gender','father','mother','spouses','children','siblings','roles','tribe','birthPlace','dwelling','deathPlace','burialPlace','age','note'],
-  places: ['region','explanation','modern','mapQuery','note'],
+  places: ['region','explanation','modern','mapQuery','note','credit'],
   animal: ['explanation','latin','wiki','confidence','note'],
   flora:  ['explanation','latin','wiki','confidence','note'],
   domem:  ['tribe','explanation','identification','note'],
