@@ -1,21 +1,25 @@
-# זמני: בניית רחובות מובנים לתוסף כיוון תפילה. רץ רק בענף kivun-streets-build, שיימחק אחרי השימוש.
-name: kivun-postcodes
+# זמני: מיקודי ישראל באריחים, לתוסף כיוון תפילה. רץ רק בענף kivun-postcodes-il.
+name: kivun-postcodes-il
 on:
   push:
-    branches: [kivun-postcodes-build]
-    paths: [kivun/build_streets.py, kivun/build_postcodes.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
+    branches: [kivun-postcodes-il]
+    paths: [kivun/build_postcodes_il.py, .github/workflows/kivun-streets.yml]
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
-      - run: python3 kivun/build_postcodes.py
-      - run: |
+      - run: python3 kivun/build_postcodes_il.py
+        timeout-minutes: 280
+        continue-on-error: true
+      - if: always()
+        run: |
           git config user.name Claude
           git config user.email noreply@anthropic.com
-          git add kivun/postcodes.js kivun/build-log.txt
-          git commit -m "kivun: postcodes.js (OSM)"
+          git add kivun/postcodes-il.js kivun/postcodes-il-state.json kivun/build-log.txt || true
+          git commit -m "kivun: postcodes-il.js (OSM, באריחים)" || exit 0
           git push
