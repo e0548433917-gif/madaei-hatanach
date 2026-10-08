@@ -551,10 +551,13 @@ function openDateEventForm(ev){
     const label = ev ? 'הצעת תיקון למאורע' : 'הצעת מאורע חדש';
     const lines = [];
     if (ev){
-      if (ev.day !== newEv.day || ev.month !== newEv.month) lines.push('תאריך: ' + ev.day + "' " + ev.month + ' ← ' + when);
-      if (ev.event !== newEv.event) lines.push('המאורע: ' + ev.event + ' ← ' + newEv.event);
-      if ((ev.source || '') !== newEv.source) lines.push('מקור: ' + (ev.source || '—') + ' ← ' + (newEv.source || '—'));
-      if ((ev.desc || '') !== newEv.desc) lines.push('הסבר: ' + (ev.desc || '—') + ' ← ' + (newEv.desc || '—'));
+      // #46 — רק מה שהשתנה בולט (markChangedWords, edit-forms.js)
+      const mk = (typeof markChangedWords === 'function') ? markChangedWords
+        : (l, b, a) => l + ': ' + (b || '—') + ' ← ' + (a || '—');
+      if (ev.day !== newEv.day || ev.month !== newEv.month) lines.push(mk('תאריך', ev.day + "' " + ev.month, when));
+      if (ev.event !== newEv.event) lines.push(mk('המאורע', ev.event, newEv.event));
+      if ((ev.source || '') !== newEv.source) lines.push(mk('מקור', ev.source || '', newEv.source || ''));
+      if ((ev.desc || '') !== newEv.desc) lines.push(mk('הסבר', ev.desc || '', newEv.desc || ''));
     } else {
       lines.push('תאריך: ' + when);
       lines.push('המאורע: ' + newEv.event);

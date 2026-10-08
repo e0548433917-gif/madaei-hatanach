@@ -32,6 +32,29 @@ function attachRefCheck(textareaId, statusId, kind){
 // ערך חדש לגמרי (openGenericProposeForm למטה בונה entry ריק ומעביר לכאן) — כך
 // שמקור/כינוי שנוסף בערך חדש עובר באותו צינור בדיוק (קישור לספרייה, "מוזכר יחד
 // עם" אחרי invalidateLookup) כמו עריכת ערך קיים, במקום להיות רק טיוטת הצעה.
+// #46 — שורת diff שבה בולט רק מה שהשתנה: החלק הזהה בתחילת השדה ובסופו נשאר
+// רגיל, והאמצע שהשתנה מסומן — הישן מחוק (~~), החדש מודגש (**). Markdown, כי
+// ההצעה נפתחת כ-Issue בגיטהאב; גם כטקסט פשוט (מערכת המשוב של אוצריא) הוא קריא.
+// ההשוואה לפי מילים, כדי שתיקון אות אחת יסמן את המילה כולה ולא חצי מילה.
+function markChangedWords(label, before, after){
+  const b = String(before == null ? '' : before), a = String(after == null ? '' : after);
+  if (!b) return '* **' + label + ':** — ← **' + a + '**';
+  if (!a) return '* **' + label + ':** ~~' + b + '~~ ← —';
+  const bw = b.split(/(\s+)/), aw = a.split(/(\s+)/);
+  let i = 0;
+  while (i < bw.length && i < aw.length && bw[i] === aw[i]) i++;
+  let j = 0;
+  while (j < bw.length - i && j < aw.length - i && bw[bw.length - 1 - j] === aw[aw.length - 1 - j]) j++;
+  const wrap = (parts, mark) => {
+    const mid = parts.slice(i, parts.length - j).join('');
+    const core = mid.trim();
+    if (!core) return parts.join('');
+    const lead = mid.slice(0, mid.indexOf(core)), trail = mid.slice(mid.indexOf(core) + core.length);
+    return parts.slice(0, i).join('') + lead + mark + core + mark + trail + parts.slice(parts.length - j).join('');
+  };
+  return '* **' + label + ':** ' + wrap(bw, '~~') + ' ← ' + wrap(aw, '**');
+}
+
 function openGenericEditForm(entry, catIdOverride){
   const catId = catIdOverride || (currentGuideCat ? currentGuideCat.id : null);
   const { base, custom } = guideFieldsFor(catId, entry);
@@ -196,14 +219,14 @@ function openGenericEditForm(entry, catIdOverride){
 
   function buildDiff(c){
     const lines = [];
-    if (c.fields.name !== entry.name) lines.push('שם: ' + entry.name + ' ← ' + c.fields.name);
+    if (c.fields.name !== entry.name) lines.push(markChangedWords('שם', entry.name, c.fields.name));
     const beforeAliases = (entry.aliases||[]).join(', ');
     const afterAliases = (c.fields.aliases||[]).join(', ');
-    if (beforeAliases !== afterAliases) lines.push('כינויים: ' + (beforeAliases||'—') + ' ← ' + (afterAliases||'—'));
+    if (beforeAliases !== afterAliases) lines.push(markChangedWords('כינויים', beforeAliases, afterAliases));
     base.forEach(k => {
       const b = Array.isArray(before[k]) ? before[k].join(', ') : (before[k]||'');
       const a = Array.isArray(c.fields[k]) ? c.fields[k].join(', ') : (c.fields[k]||'');
-      if (String(b) !== String(a)) lines.push((FIELD_LABELS[k]||k) + ': ' + (b||'—') + ' ← ' + (a||'—'));
+      if (String(b) !== String(a)) lines.push(markChangedWords(FIELD_LABELS[k]||k, b, a));
     });
     Object.keys(c.custom).forEach(k => lines.push('[קטגוריה חדשה] ' + k + ': ' + c.custom[k]));
     if (c.fields.customImage) lines.push('תמונה: ' + (c.fields.customImage.startsWith('data:') ? '(קובץ מצורף מהמחשב)' : c.fields.customImage));
