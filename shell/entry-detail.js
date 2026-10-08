@@ -443,12 +443,15 @@ function renderEntryDetailHTML(entry, catIdOverride){
     });
   }
 
+  // בקשת המשתמשת (08/10/2026): כל רשימות המקורות בסוף הכרטיס — אחרי הפרטים, העץ,
+  // ״פרטים שאינם במדריך״ והחיפוש בספרייה. נאספות ל-src ונוספות בסוף (ר׳ keepSourcesLast).
+  let src = '';
   const verseList = entry.verses || entry.makorot || [];
   if (verseList.length){
-    html += `<div class="field-label">מקורות בתנ״ך</div>`;
+    src += `<div class="field-label">מקורות בתנ״ך</div>`;
     verseList.forEach((v,i) => {
       const parsed = parseAnyRef(v.ref);
-      html += `<div class="verse-card${parsed?' clickable':''}" data-vref="${i}">
+      src += `<div class="verse-card${parsed?' clickable':''}" data-vref="${i}">
         <div class="verse-ref">${esc(v.ref)}${parsed?' <span class="open-hint">↗ פתח בספרייה</span>':''}</div>
         ${v.text ? `<div class="verse-text">${guardHolyNames(v.text)}</div>` : ''}
       </div>`;
@@ -473,20 +476,20 @@ function renderEntryDetailHTML(entry, catIdOverride){
   }
 
   if (entry.midrash && entry.midrash.length){
-    html += `<div class="field-label">מקורות חז״ל</div>`;
+    src += `<div class="field-label">מקורות חז״ל</div>`;
     entry.midrash.forEach((m,i) => {
-      const src = midrashSource(m), note = midrashNote(m);
-      if (!src && !note) return;   // בלי זה נוצרה תיבה ריקה לגמרי
-      const parsed = src ? parseMidrashRef(src) : null;
-      html += `<div class="src-item${parsed?' clickable':''}" data-mref="${i}">${src?`<div class="src-source">${esc(src)}${parsed?' <span class="open-hint">↗ פתח בספרייה</span>':''}</div>`:''}${note?`<div class="src-note">${esc(note)}</div>`:''}${m.link?`<a href="${esc(m.link)}" data-external-link="${esc(m.link)}" data-requires-net>קישור ↗</a>`:''}</div>`;
+      const msrc = midrashSource(m), note = midrashNote(m);
+      if (!msrc && !note) return;   // בלי זה נוצרה תיבה ריקה לגמרי
+      const parsed = msrc ? parseMidrashRef(msrc) : null;
+      src += `<div class="src-item${parsed?' clickable':''}" data-mref="${i}">${msrc?`<div class="src-source">${esc(msrc)}${parsed?' <span class="open-hint">↗ פתח בספרייה</span>':''}</div>`:''}${note?`<div class="src-note">${esc(note)}</div>`:''}${m.link?`<a href="${esc(m.link)}" data-external-link="${esc(m.link)}" data-requires-net>קישור ↗</a>`:''}</div>`;
     });
   }
   if (entry.academic && entry.academic.length){
-    html += `<div class="field-label">מקורות נוספים</div>`;
+    src += `<div class="field-label">מקורות נוספים</div>`;
     entry.academic.forEach(a => {
       const txt = (typeof a === 'string') ? a : (a.citation || a.note || a.text || a.ref || '');
       if (!txt) return;
-      html += `<div class="src-item">${esc(txt)}${a.link?` <a href="${esc(a.link)}" data-external-link="${esc(a.link)}" data-requires-net>קישור ↗</a>`:''}</div>`;
+      src += `<div class="src-item">${esc(txt)}${a.link?` <a href="${esc(a.link)}" data-external-link="${esc(a.link)}" data-requires-net>קישור ↗</a>`:''}</div>`;
     });
   }
   if (gallery.length){
@@ -516,6 +519,7 @@ function renderEntryDetailHTML(entry, catIdOverride){
       <p class="mini-note" style="margin:8px 0 0;">יש לך את המידע החסר? לחצו על ✏️ למעלה כדי להשלים אותו — ניתן לשמור במכשיר או לשלוח למפתח.</p>
     </div>`;
   }
+  if (src) html += `<div class="entry-sources">${src}</div>`;
   return maskDivineName(html);
 }
 
@@ -649,6 +653,20 @@ function wireEntryDetail(container, entry, onEdit){
   });
   // 3.8.0 — ביוגרפיה מאוצריא, "היכן עוד מוזכר", סימון מקורות לא נפתרים
   if (typeof enrichEntryDetail === 'function') enrichEntryDetail(container, entry);
+  keepSourcesLast(container);
+}
+
+// תוספות שמגיעות אחרי הרינדור (ביוגרפיה, ״היכן עוד מוזכר״, גימטריה) נוספות לסוף
+// הכרטיס — מזיזים את בלוק המקורות חזרה לסוף בכל פעם, כך שהוא תמיד אחרון.
+function keepSourcesLast(container){
+  const fix = () => {
+    const srcEl = container.querySelector(':scope > .entry-sources');
+    if (srcEl && container.lastElementChild !== srcEl) container.appendChild(srcEl);
+  };
+  fix();
+  if (container.__srcObserver || typeof MutationObserver === 'undefined') return;
+  container.__srcObserver = new MutationObserver(fix);
+  container.__srcObserver.observe(container, { childList: true });
 }
 
 // כרטיס עלול להיפתח לפני שכל המדריכים סיימו להיטען ברקע (preloadAllGuides טוען
