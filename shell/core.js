@@ -274,6 +274,21 @@ async function appVersionAtLeast(min){
   return cmpVersion(_appVersionCache, min) >= 0;
 }
 
+// #52 — plugin.openSelf({param}) + plugin.page_opened: קיימים מ-0.9.96
+// (docs/תאימות-SDK-אוצריא.md §ג.2). נקראים רק דרך callIfSupported.
+const OPEN_SELF_API = ['plugin', 'openSelf'];
+const OPEN_SELF_MIN = '0.9.96';
+function openSelfWith(param){
+  if (!hasOtzaria()) return Promise.resolve(null);
+  return callIfSupported(OPEN_SELF_API, OPEN_SELF_MIN, param ? { param: param } : {});
+}
+// האם ידוע בוודאות שהאפליקציה מוסרת plugin.page_opened (גרסה ידועה ≥ 0.9.96).
+// גרסה לא ידועה = לא ודאי, ולכן מנגנון ה-storage+פולינג נשאר פעיל.
+async function pageOpenedSupported(){
+  await appVersionAtLeast(OPEN_SELF_MIN);
+  return !!_appVersionCache && cmpVersion(_appVersionCache, OPEN_SELF_MIN) >= 0;
+}
+
 async function callIfSupported(parts, minVersion, payload){
   if (!(await appVersionAtLeast(minVersion))) return null;
   return Otzaria.call(parts.join('.'), payload || {}).catch(() => null);

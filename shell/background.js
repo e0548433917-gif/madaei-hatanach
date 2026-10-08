@@ -51,7 +51,7 @@ async function bgHandleIdentifyClick(payload){
       text: text, mode: mode, ts: Date.now(), origin: BG_INSTANCE_ID
     });
     // שם המתודה מורכב בזמן ריצה — אותו שיקול כמו ב-bridge.js.
-    Otzaria.call('plugin.openSelf', { param: { kind: 'identify', text: text, mode: mode, ts: Date.now(), origin: BG_INSTANCE_ID } }).catch(()=>{});
+    openSelfWith({ kind: 'identify', text: text, mode: mode, ts: Date.now(), origin: BG_INSTANCE_ID });
   };
 
   if (!matches.length){
@@ -129,7 +129,7 @@ function bgWait(elapsed){
     const g = guideIdFromProviderBook(d);
     if (!g) return;
     bgStart();
-    Otzaria.call('plugin.openSelf', { param: { kind: 'guide', catId: g } }).catch(()=>{}).then(bgEnd, bgEnd);
+    openSelfWith({ kind: 'guide', catId: g }).then(bgEnd, bgEnd);
   });
 
   // מעבר לשולחן עבודה שנוצר מכרטיס ערך — פתיחת המקורות (ר׳ openPendingWorkspaceSources)

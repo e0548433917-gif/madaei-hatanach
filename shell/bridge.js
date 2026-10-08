@@ -57,9 +57,7 @@ async function isModernApp(){
 // ישירות למופע הלשונית. המסירה דרך storage + הפולינג נשארים כרשת ביטחון בלבד,
 // והמופע שמקבל את ה-param מסמן את ה-ts כנצרך כדי שלא תוצג פעמיים.
 function bringToFront(param){
-  if (window.Otzaria && Otzaria.call){
-    Otzaria.call('plugin.openSelf', param ? { param: param } : {}).catch(()=>{});
-  }
+  openSelfWith(param);
 }
 
 // ---- מסירת הזיהוי בין מופעי התוסף (התיקון לבאג "נפתח דף השער במקום התוצאות") ----
@@ -121,9 +119,18 @@ function startPendingIdentifyPoll(){
   // document.hidden === true גם כשהלשונית בחזית, ולכן גידור כזה היה משבית את רשת
   // הביטחון בדיוק בארכיטקטורה שהיא נועדה לה. העלות היא קריאת IPC אחת שמחזירה null.
   // הגידור האמיתי הוא plugin.suspended/plugin.resumed של אוצריא — ר' למטה.
-  pendingPollTimer = setInterval(consumePendingIdentify, 1500);
+  // #52 — באוצריא שמוסרת plugin.page_opened (גרסה ידועה ≥ 0.9.96) הפולינג מיותר:
+  // הבקשה מגיעה באירוע, ו-focus/visibilitychange/boot נשארים כרשת ביטחון. בגרסה ישנה
+  // או לא ידועה — הפולינג חוזר להיות המסלול. pollWanted מונע מרוץ עם stop שבינתיים.
+  pollWanted = true;
+  pageOpenedSupported().then(ok => {
+    if (ok || !pollWanted || pendingPollTimer || pageOpenedSeen) return;
+    pendingPollTimer = setInterval(consumePendingIdentify, 1500);
+  }, () => {});
 }
+let pollWanted = false, pageOpenedSeen = false;
 function stopPendingIdentifyPoll(){
+  pollWanted = false;
   if (!pendingPollTimer) return;
   clearInterval(pendingPollTimer);
   pendingPollTimer = null;
@@ -357,6 +364,8 @@ function waitForOtzaria(elapsed){
       if (g){ bringToFront(); openGuide(g, null); }
     });
     Otzaria.on('plugin.page_opened', (data) => {
+      // האירוע הגיע — הוא עובד בגרסה הזו, והפולינג כבר אינו נחוץ
+      if (!pageOpenedSeen){ pageOpenedSeen = true; if (pendingPollTimer){ clearInterval(pendingPollTimer); pendingPollTimer = null; } }
       const p = data && data.param;
       if (p && p.kind === 'guide' && p.catId){ openGuide(p.catId, null); return; }
       if (!p || p.kind !== 'identify' || !p.text) return;
