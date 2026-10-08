@@ -1,5 +1,5 @@
 """בונה את streets-data.js: רחובות ריכוזי הקהילה מ-OpenStreetMap, להטמעה בתוסף כיוון תפילה."""
-import json, time, urllib.parse, urllib.request, datetime
+import json, math, os, re, time, urllib.parse, urllib.request, datetime
 
 SERVERS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.kumi.systems/api/interpreter",
@@ -16,7 +16,7 @@ def radius(name):
 
 def fetch(q):
     last = None
-    for _ in range(2):
+    for rnd in range(3):
         for s in SERVERS:
             try:
                 req = urllib.request.Request(
@@ -33,31 +33,68 @@ def fetch(q):
                 LOG.append(f"{s}: {e} {body}")
                 print("  retry", s, e, flush=True)
                 time.sleep(5)
+        time.sleep(30 * (rnd + 1))
     raise last
 
 
+# מצב השלמה: אם קיים קובץ נתונים, מורידים רק אזורים חסרים ושומרים את הקיימים.
 today = datetime.date.today().isoformat()
-areas = []
-for name, lat, lon in C:
-    r = radius(name)
-    q = f'[out:json][timeout:120];way["highway"~"{HW}"]["name"](around:{r},{lat},{lon});out tags geom;'
+have = {}
+if os.path.exists("kivun/streets-data.js"):
+    txt = open("kivun/streets-data.js", encoding="utf-8").read()
+    for a in json.loads(re.search(r"EMB_STREETS=(\[.*\]);", txt, re.S).group(1)):
+        have[a["name"]] = a
+LOG.append(f"existing areas: {len(have)}")
+
+
+def ways_of(els, lat, lon, r, seen):
     w = []
-    try:
-        els = fetch(q).get("elements", [])
-    except Exception as e:
-        LOG.append(f"FAILED {name}: {e}")
-        continue
     for e in els:
         g = e.get("geometry") or []
-        if e.get("type") != "way" or len(g) < 2:
+        if e.get("type") != "way" or len(g) < 2 or e.get("id") in seen:
             continue
+        if not any(math.hypot((p["lat"] - lat) * 110540, (p["lon"] - lon) * 111320 * math.cos(math.radians(lat))) <= r for p in g):
+            continue
+        seen.add(e.get("id"))
         t = e.get("tags", {})
         w.append([t.get("name:he") or t.get("name") or "", t.get("highway", ""),
                   [v for p in g for v in (round(p["lat"], 5), round(p["lon"], 5))]])
+    return w
+
+
+def get_area(lat, lon, r):
+    sel = f'way["highway"~"{HW}"]["name"]'
+    try:
+        return ways_of(fetch(f'[out:json][timeout:120];{sel}(around:{r},{lat},{lon});out tags geom;').get("elements", []), lat, lon, r, set())
+    except Exception as e:
+        LOG.append(f"whole area failed, trying tiles: {e}")
+    dla, dlo = r / 110540, r / (111320 * math.cos(math.radians(lat)))
+    seen, w = set(), []
+    for i in range(3):
+        for j in range(3):
+            s_, w_ = lat - dla + 2 * dla * i / 3, lon - dlo + 2 * dlo * j / 3
+            bb = f"{s_:.5f},{w_:.5f},{s_ + 2 * dla / 3:.5f},{w_ + 2 * dlo / 3:.5f}"
+            w += ways_of(fetch(f'[out:json][timeout:90];{sel}({bb});out tags geom;').get("elements", []), lat, lon, r, seen)
+            time.sleep(3)
+    return w
+
+
+areas = []
+for name, lat, lon in C:
+    if name in have:
+        areas.append(have[name])
+        continue
+    r = radius(name)
+    try:
+        w = get_area(lat, lon, r)
+    except Exception as e:
+        LOG.append(f"FAILED {name}: {e}")
+        continue
     areas.append({"v": 1, "k": f"emb_{lat:.3f}_{lon:.3f}_{r}", "lat": lat, "lon": lon, "r": r,
                   "d": today, "name": name, "emb": 1, "w": w})
+    LOG.append(f"{name}: {len(w)} ways")
     print(f"{name}: {len(w)} ways", flush=True)
-    time.sleep(3)
+    time.sleep(5)
 
 out = ("/* רחובות מובנים: © OpenStreetMap contributors, ODbL. נבנה ב-" + today + " */\nconst EMB_STREETS="
        + json.dumps(areas, ensure_ascii=False, separators=(",", ":")) + ";\n")
