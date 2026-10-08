@@ -274,14 +274,83 @@ function storageGetJson(key){
 // storageGetJson קורא בסובלנות גם ערך שנשמר כאובייקט/מערך ממש (כמו שהפורמט הישן
 // נשמר, לפני שהמעבר ל-storageSetJson) וגם מחרוזת JSON (הפורמט מ-2.16 ואילך) —
 // כך שאין צורך בקריאת storage כפולה כדי לתמוך בשני הפורמטים.
-async function getHtmlPagesIndex(){
-  const raw = await storageGetJson(HTML_PAGES_INDEX_KEY);
-  const list = Array.isArray(raw) ? raw : [];
-  return list.map(item => (typeof item === 'string')
-    ? { name: item, placement: 'home', masechet: null, icon: null }
-    : { name: item.name, placement: item.placement || 'home', masechet: item.masechet || null, icon: item.icon || null });
+//
+// #43 (4.9.0) — הדף "נעלם" מעמוד הבית אחרי סגירת אוצריא. שלוש סיבות, שלושה תיקונים:
+//  1. האיקון (data URI מלא) ישב *בתוך* רשומת האינדקס, והאינדקס תפח לעשרות-מאות KB —
+//     בדיוק מה ש-storage.set עלול לחתוך/לדחות. עכשיו האיקון נשמר במפתח נפרד
+//     (HTML_ICON_PREFIX + שם) ובאינדקס נשאר רק hasIcon:true. רשומות ישנות עם icon
+//     בתוך האינדקס נקראות כרגיל ומפוצלות בשמירה הבאה.
+//  2. אין מראה מקומית — עכשיו האינדקס, האיקונים ותוכן הדפים נכתבים גם ל-localStorage
+//     (כמו הסימניות), ובקריאה נופלים אליו כשאוצריא לא החזירה כלום.
+//  3. הכישלון נבלע — saveHtmlPagesIndex/setHtmlPageContent מחזירים הצלחה, והקורא
+//     מתריע במקום להודיע ״נשמר לצמיתות״.
+const HTML_PAGE_PREFIX = 'madaei_html_page__';
+const HTML_ICON_PREFIX = 'madaei_html_icon__';
+const htmlIconWritten = Object.create(null);   // שם → האיקון שכבר נכתב (חוסך כתיבות חוזרות)
+
+function lsGet(key){ try { return localStorage.getItem(key); } catch(e){ return null; } }
+function lsSet(key, value){
+  try {
+    if (value === null || value === undefined) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+    return true;
+  } catch(e){ return false; }   // מכסת localStorage מלאה — המראה היא רשת ביטחון, לא חובה
 }
 
-function saveHtmlPagesIndex(list){
-  return storageSetJson(HTML_PAGES_INDEX_KEY, list);
+async function getHtmlPagesIndex(){
+  let raw = await storageGetJson(HTML_PAGES_INDEX_KEY);
+  if (!Array.isArray(raw)){
+    try { raw = JSON.parse(lsGet(HTML_PAGES_INDEX_KEY) || 'null'); } catch(e){ raw = null; }
+  }
+  const list = (Array.isArray(raw) ? raw : []).map(item => (typeof item === 'string')
+    ? { name: item, placement: 'home', masechet: null, icon: null, hasIcon: false }
+    : { name: item.name, placement: item.placement || 'home', masechet: item.masechet || null,
+        icon: item.icon || null, hasIcon: !!(item.hasIcon || item.icon) });
+  for (const page of list){
+    if (page.icon || !page.hasIcon) continue;
+    let icon = await storageGet(HTML_ICON_PREFIX + page.name);
+    if (typeof icon !== 'string' || !icon) icon = lsGet(HTML_ICON_PREFIX + page.name);
+    page.icon = icon || null;
+    if (page.icon) htmlIconWritten[page.name] = page.icon;
+  }
+  return list;
+}
+
+// מחזיר true אם נשמר באחסון של אוצריא; false אם נשמר רק במראה המקומית (או בכלל לא).
+async function saveHtmlPagesIndex(list){
+  let ok = true;
+  const slim = [];
+  for (const page of list){
+    const icon = page.icon || null;
+    if (icon && htmlIconWritten[page.name] !== icon){
+      const iconOk = await storageSet(HTML_ICON_PREFIX + page.name, icon);
+      lsSet(HTML_ICON_PREFIX + page.name, icon);
+      if (iconOk) htmlIconWritten[page.name] = icon; else ok = false;
+    }
+    slim.push({ name: page.name, placement: page.placement || 'home', masechet: page.masechet || null, hasIcon: !!icon });
+  }
+  lsSet(HTML_PAGES_INDEX_KEY, JSON.stringify(slim));
+  if (!(await storageSetJson(HTML_PAGES_INDEX_KEY, slim))) ok = false;
+  return ok;
+}
+
+async function getHtmlPageContent(name){
+  const content = await storageGet(HTML_PAGE_PREFIX + name);
+  if (typeof content === 'string' && content) return content;
+  return lsGet(HTML_PAGE_PREFIX + name);
+}
+
+async function setHtmlPageContent(name, content){
+  lsSet(HTML_PAGE_PREFIX + name, content);
+  return storageSet(HTML_PAGE_PREFIX + name, content);
+}
+
+// מחיקה מלאה של דף: מהאינדקס, התוכן והאיקון — בשני האחסונים.
+async function deleteHtmlPage(name){
+  const idx = await getHtmlPagesIndex();
+  await saveHtmlPagesIndex(idx.filter(p => p.name !== name));
+  await setHtmlPageContent(name, null);
+  await storageSet(HTML_ICON_PREFIX + name, null);
+  lsSet(HTML_ICON_PREFIX + name, null);
+  delete htmlIconWritten[name];
 }

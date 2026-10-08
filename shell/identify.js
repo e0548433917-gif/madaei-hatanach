@@ -700,7 +700,7 @@ async function identifyInCustomPages(normalizedText){
   const results = [];
   for (const page of index){
     const name = page.name;
-    const content = await storageGet('madaei_html_page__' + name);
+    const content = await getHtmlPageContent(name);
     if (!content) continue;
     const plain = normalizeHeb(content.replace(/<[^>]*>/g, ' '));
     const pageTokens = tokenizeHeb(plain);

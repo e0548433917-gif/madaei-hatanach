@@ -1513,16 +1513,14 @@ async function renderPersonalPages(){
     personalBody.appendChild(personalRow(name, sub, [
       { label: 'פתיחה', onClick: () => { closePersonalArea(); openCustomHtmlPage(name); } },
       { label: 'שליחה', secondary: true, onClick: async () => {
-          const content = await storageGet('madaei_html_page__' + name);
+          const content = await getHtmlPageContent(name);
           sendToDev('דף HTML מצורף — ' + name,
             'המשתמש הוסיף דף HTML בשם "' + name + '".\n\nתוכן הדף:\n\n' + (content || ''),
             'דף HTML');
         } },
       { label: 'מחיקה', secondary: true, onClick: async () => {
           if (!window.confirm('למחוק את "' + name + '"?')) return;
-          const idx2 = await getHtmlPagesIndex();
-          await saveHtmlPagesIndex(idx2.filter(p => p.name !== name));
-          await storageSet('madaei_html_page__' + name, null);
+          await deleteHtmlPage(name);
           talmudRendered = false;
           renderCustomPageCards();
           renderPersonalBody();

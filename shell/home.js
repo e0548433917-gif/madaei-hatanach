@@ -82,7 +82,7 @@ async function renderSavedHtmlList(){
       </span>`;
     row.querySelector('[data-open]').addEventListener('click', () => openCustomHtmlPage(name));
     row.querySelector('[data-send]').addEventListener('click', async () => {
-      const content = await storageGet('madaei_html_page__' + name);
+      const content = await getHtmlPageContent(name);
       // 2.13.2 — דרך ממסר הדיווחים (sendToDev ב-personal.js), לא במייל.
       await sendToDev('דף HTML מצורף — ' + name,
         'המשתמש הוסיף דף HTML בשם "' + name + '".\n\nתוכן הדף מצורף למטה:\n\n' + (content || ''),
@@ -90,9 +90,7 @@ async function renderSavedHtmlList(){
     });
     row.querySelector('[data-del]').addEventListener('click', async () => {
       if (!window.confirm('למחוק את "' + name + '"?')) return;
-      const idx2 = await getHtmlPagesIndex();
-      await saveHtmlPagesIndex(idx2.filter(p => p.name !== name));
-      await storageSet('madaei_html_page__' + name, null);
+      await deleteHtmlPage(name);
       talmudRendered = false;   // ליד מסכת ייתכן שהיה מוצמד דף שנמחק - יש לבנות מחדש
       renderSavedHtmlList();
       renderCustomPageCards();
@@ -121,7 +119,7 @@ function injectOtzariaBridge(content){
 }
 
 async function openCustomHtmlPage(name){
-  const content = await storageGet('madaei_html_page__' + name);
+  const content = await getHtmlPageContent(name);
   if (content == null){ window.alert('לא נמצא תוכן שמור עבור "' + name + '"'); return; }
   guideFrame.removeAttribute('src');
   guideFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals');
@@ -173,9 +171,15 @@ document.getElementById('addHtmlSave').addEventListener('click', async () => {
   const entry = { name: name, placement: addHtmlPlacementVal, masechet: masechet, icon: pendingIconContent };
   const existingIdx = index.findIndex(p => p.name === name);
   if (existingIdx >= 0) index[existingIdx] = entry; else index.push(entry);
-  await saveHtmlPagesIndex(index);
-  await storageSet('madaei_html_page__' + name, pendingHtmlContent);
-  await Otzaria.call('notifications.showInApp', { message: 'הדף נשמר לצמיתות', type: 'success' }).catch(()=>{});
+  // #43 — לא להודיע ״נשמר לצמיתות״ כשהשמירה באוצריא נכשלה (עד 4.8 הכישלון נבלע).
+  const contentOk = await setHtmlPageContent(name, pendingHtmlContent);
+  const indexOk = await saveHtmlPagesIndex(index);
+  if (contentOk && indexOk){
+    await Otzaria.call('notifications.showInApp', { message: 'הדף נשמר לצמיתות', type: 'success' }).catch(()=>{});
+  } else {
+    window.alert('השמירה באחסון של אוצריא לא הצליחה במלואה (ייתכן שהקובץ או האיקון גדולים מדי).\n' +
+      'הדף נשמר בינתיים במחשב הזה בלבד. כדאי לנסות שוב עם איקון קטן יותר.');
+  }
   resetAddHtmlForm();
   addHtmlOverlay.classList.remove('open');   // מפרט 4.0 ג.3 — שמירה סוגרת את הפאנל
   renderSavedHtmlList();
