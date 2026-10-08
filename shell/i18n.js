@@ -79,7 +79,8 @@ function setLanguage(lang){
 }
 
 async function detectLanguage(bootPayload){
-  let lang = bootPayload && bootPayload.app && (bootPayload.app.language || bootPayload.app.locale);
+  const bp = bootPayload || {};
+  let lang = (bp.app && (bp.app.language || bp.app.locale)) || bp.locale || bp.language || null;
   if (!lang && window.Otzaria && typeof Otzaria.call === 'function'){
     try {
       const res = await Otzaria.call('app.getLocale');
