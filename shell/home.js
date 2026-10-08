@@ -130,6 +130,18 @@ async function openCustomHtmlPage(name){
   resultsOverlay.classList.remove('open');
 }
 
+// #65 (4.11): PDF כמדריך מלא — קורא ה-PDF המיובא (guides/pdf/viewer.html) נפתח
+// במסגרת המדריכים; המשתמש בוחר קובץ PDF מהמחשב בכפתור הפתיחה של הקורא עצמו.
+function openPdfGuide(){
+  guideFrame.removeAttribute('srcdoc');
+  guideFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals');
+  guideFrame.src = 'guides/pdf/viewer.html';
+  frameTitle.textContent = '📕 מדריך PDF';
+  frameWrap.classList.add('open');
+  addHtmlOverlay.classList.remove('open');
+  resultsOverlay.classList.remove('open');
+}
+
 function openAddHtmlPanel(){
   resetAddHtmlForm();
   addHtmlOverlay.classList.add('open');

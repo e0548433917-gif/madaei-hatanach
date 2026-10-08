@@ -1499,6 +1499,12 @@ async function renderPersonalPages(){
   addBtn.textContent = '➕ הוספת דף HTML';
   addBtn.addEventListener('click', openAddHtmlPanel);
   bulk.appendChild(addBtn);
+  const pdfBtn = document.createElement('button');
+  pdfBtn.type = 'button';
+  pdfBtn.className = 'panel-btn';
+  pdfBtn.textContent = '📕 פתיחת PDF כמדריך';
+  pdfBtn.addEventListener('click', () => { closePersonalArea(); openPdfGuide(); });
+  bulk.appendChild(pdfBtn);
   personalBody.appendChild(bulk);
 
   const index = await getHtmlPagesIndex();
