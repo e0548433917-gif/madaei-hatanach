@@ -276,6 +276,19 @@ jobs:
           unzip -q "$BASE_FILE" -d /tmp/plus/pkg
           unzip -q /tmp/prev-plus.zip 'guides/places/tiles/*' -d /tmp/plus/tilesrc
           cp -r /tmp/plus/tilesrc/guides/places/tiles /tmp/plus/pkg/guides/places/
+          # 08/10/2026 (באישור בעלת הפרויקט): האריחים מומרים מ-PNG ל-WebP (q75) — ~44MB → ~16MB,
+          # כדי שהחבילה תרד מתחת למגבלת 50MB של החנות. אריחים שכבר הומרו — אין מה להמיר.
+          python3 -m pip install -q pillow
+          python3 -c "
+          import pathlib
+          from PIL import Image
+          n = 0
+          for p in pathlib.Path('/tmp/plus/pkg/guides/places/tiles').rglob('*.png'):
+              Image.open(p).convert('RGB').save(p.with_suffix('.webp'), 'WEBP', quality=75, method=6); p.unlink(); n += 1
+          print('converted to webp:', n)
+          "
+          sed -i "s#tiles/{z}/{x}/{y}.png#tiles/{z}/{x}/{y}.webp#" /tmp/plus/pkg/guides/places/js/map.js
+          grep -q "tiles/{z}/{x}/{y}.webp" /tmp/plus/pkg/guides/places/js/map.js || { echo "::error::עדכון סיומת האריחים ב-map.js נכשל"; exit 1; }
           node -e '
             const fs = require("fs"), p = "/tmp/plus/pkg/manifest.json";
             const m = JSON.parse(fs.readFileSync(p, "utf8"));
