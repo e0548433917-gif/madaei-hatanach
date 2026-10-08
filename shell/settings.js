@@ -11,7 +11,7 @@
 const PREFS_KEY = 'madaei_hatanach_ui_prefs_v1';
 // pubEvents/pubChurban/pubAhead/pubBack — פרסום ליומן של אוצריא. ברירות המחדל
 // משמרות בדיוק את ההתנהגות שהייתה לפני 3.2.7, כדי לא לשנות בשקט למי שלא נגע.
-const DEFAULT_PREFS = { theme: 'otzaria', font: 'otzaria', scale: 100, density: 'normal', cardImg: true,
+const DEFAULT_PREFS = { theme: 'otzaria', font: 'otzaria', scale: 100, density: 'normal', cardImg: true, divineName: 'he',
   pubEvents: true, pubChurban: true, pubAhead: 365, pubBack: 7 };
 let uiPrefs = Object.assign({}, DEFAULT_PREFS);
 let otzariaTheme = null; // ה-theme האחרון שהתקבל מאוצריא (boot / theme.changed)
@@ -20,9 +20,55 @@ const FONT_STACKS = {
   default: "'Heebo', Arial, sans-serif",
   frank:   "'Frank Ruhl Libre', 'David', serif",
   david:   "'David', 'Times New Roman', serif",
-  arial:   "Arial, 'Segoe UI', sans-serif",
-  times:   "'Times New Roman', 'David', serif"
+  // #58 — במקום אריאל וטיימס (גופנים לטיניים; הניקוד יושב בהם לא במקום):
+  taamey:  "'Taamey Frank CLM', 'TaameyFrankCLM', 'David', serif",
+  shofar:  "'Shofar', 'David', serif"
 };
+// #58 — הגופן שכל אפשרות דורשת בפועל, לבדיקה אם הוא מותקן (״כמו באוצריא״ — תמיד זמין)
+const FONT_REQUIRES = { default: 'Heebo', frank: 'Frank Ruhl Libre', david: 'David', taamey: 'Taamey Frank CLM', shofar: 'Shofar' };
+// בחירות ישנות שהוסרו מהרשימה חוזרות ל״כמו באוצריא״
+const RETIRED_FONTS = { arial: true, times: true };
+
+// #58 — האם גופן מותקן: קודם הרשימה של אוצריא (fonts.listInstalled, 0.9.97),
+// ובלעדיה מדידה ב-canvas — רוחב מחרוזת בגופן המבוקש מול גופן נפילה; שונה = מותקן.
+let _installedFonts = null;
+async function installedFontSet(){
+  if (_installedFonts) return _installedFonts;
+  try {
+    if (window.Otzaria && Otzaria.call){
+      const res = await Otzaria.call('fonts.listInstalled');
+      const d = res && (res.data !== undefined ? res.data : res);
+      if (d && Array.isArray(d.families) && d.families.length){
+        _installedFonts = new Set(d.families.map(f => String(f.name || f).toLowerCase()));
+        return _installedFonts;
+      }
+    }
+  } catch(e){}
+  return null;
+}
+function fontLooksInstalled(name){
+  try {
+    const ctx = document.createElement('canvas').getContext('2d');
+    const probe = 'אבגדהוזחט שלום עולם mmmmmmmmmmlli 0123';
+    return ['monospace', 'serif', 'sans-serif'].some(base => {
+      ctx.font = '72px ' + base; const w0 = ctx.measureText(probe).width;
+      ctx.font = "72px '" + name + "', " + base; return ctx.measureText(probe).width !== w0;
+    });
+  } catch(e){ return true; }   // אי אפשר לבדוק — לא חוסמים
+}
+async function markInstalledFonts(){
+  const sel = document.getElementById('setFontSelect');
+  if (!sel) return;
+  const set = await installedFontSet();
+  Array.from(sel.options).forEach(o => {
+    const need = FONT_REQUIRES[o.value];
+    if (!need) return;
+    const ok = set ? (set.has(need.toLowerCase()) || set.has(need.replace(/\s+/g, '').toLowerCase())) : fontLooksInstalled(need);
+    if (!o.dataset.label) o.dataset.label = o.textContent;
+    o.disabled = !ok && o.value !== sel.value;
+    o.textContent = o.dataset.label + (ok ? '' : ' — לא מותקן במחשב');
+  });
+}
 const DENSITY = { compact: ['170px','9px'], normal: ['200px','12px'], roomy: ['250px','18px'] };
 
 // כל המשתנים שערכת "תואם לאוצריא" מזריקה — נשמרים כדי שאפשר יהיה לנקות אותם
@@ -122,6 +168,7 @@ function applyPrefs(){
   }
 
   // --- גופן ---
+  if (RETIRED_FONTS[uiPrefs.font]) uiPrefs.font = 'otzaria';
   let stack = FONT_STACKS[uiPrefs.font] || FONT_STACKS.default;
   if (uiPrefs.font === 'otzaria'){
     const fam = otzariaTheme && otzariaTheme.typography && otzariaTheme.typography.fontFamily;
@@ -159,6 +206,8 @@ function syncSettingsUI(){
   mark('setTheme', uiPrefs.theme);
   mark('setFont', uiPrefs.font);
   mark('setDensity', uiPrefs.density);
+  mark('setDivine', uiPrefs.divineName || 'he');
+  updateDivinePreview();
   const pe = document.getElementById('setPubEvents');
   if (pe) setOn(pe, uiPrefs.pubEvents !== false);
   const pc = document.getElementById('setPubChurban');
@@ -179,6 +228,13 @@ function setPref(key, val){
   uiPrefs[key] = val;
   savePrefs();
   applyPrefs();
+  if (key === 'divineName'){ syncSettingsUI(); }
+}
+
+// #58 — תצוגה מקדימה של שם ה׳ לפי הבחירה (אותה maskDivineName של הכרטיסים)
+function updateDivinePreview(){
+  const el = document.getElementById('setPreviewVerse');
+  if (el && typeof maskDivineName === 'function') el.textContent = maskDivineName('וַיֹּאמֶר יְהוָה אֶל אַבְרָם לֶךְ לְךָ מֵאַרְצְךָ וּמִמּוֹלַדְתְּךָ.');
 }
 
 // ---- הנקדן המקומי (2.17.2) ----
@@ -243,6 +299,7 @@ function openSettings(){
   document.getElementById('settingsPanel').classList.add('open');
   syncSettingsUI();
   syncNikudSettings();
+  markInstalledFonts();   // #58
   // 3.2.6 — נבדק בכל פתיחה ולא פעם אחת בטעינה: הגשר של אוצריא אינו בהכרח
   // מוכן ברגע שהסקריפט רץ, ואז הקבוצה נשארה מוסתרת לתמיד.
   if (typeof refreshShortcutGroup === 'function') refreshShortcutGroup();
@@ -261,7 +318,7 @@ function wireSettings(){
   const scrim = document.getElementById('settingsScrim');
   if (scrim) scrim.addEventListener('click', closeSettings);
 
-  [['setTheme','theme'], ['setFont','font'], ['setDensity','density']].forEach(([id, key]) => {
+  [['setTheme','theme'], ['setFont','font'], ['setDensity','density'], ['setDivine','divineName']].forEach(([id, key]) => {
     const g = document.getElementById(id);
     if (!g) return;
     const sel = g.querySelector('select');

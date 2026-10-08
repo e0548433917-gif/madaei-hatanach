@@ -121,6 +121,7 @@ function gregDateStr(d){
 // השם" (shell/holy-names-lib.js, מועתק כלשונו משם - ר' הערה בראש הקובץ).
 // נכשל בשקט לטקסט המקורי אם הספרייה לא נטענה או זרקה שגיאה.
 function guardHolyNames(text){
+  if (text && divineNameMode() === 'source') return text;   // #58 — ״ככתוב״
   if (!text || !(window.ShemShomrer && typeof ShemShomrer.replaceHolyNames === 'function')) return text;
   try { return ShemShomrer.replaceHolyNames(text, {}).result; }
   catch(e){ return text; }
@@ -205,8 +206,17 @@ function hyphenateFromEnd(match, fromEnd){
   return match;
 }
 
+// #58 — הבחירה בהגדרות (uiPrefs.divineName, settings.js): ה׳ (ברירת מחדל) · יְיָ ·
+// יְדֹוָד · ככתוב. ב-background.html אין settings.js, ולכן ברירת המחדל.
+const DIVINE_NAME_FORMS = { he: 'ה׳', yy: 'יְיָ', ydvd: 'יְדֹוָד' };
+function divineNameMode(){
+  return (typeof uiPrefs !== 'undefined' && uiPrefs && uiPrefs.divineName) || 'he';
+}
 function maskDivineName(html){
-  let out = String(html==null?'':html).replace(DIVINE_NAME_RE, (m, prefix) => prefix + 'ה׳');
+  const mode = divineNameMode();
+  if (mode === 'source') return String(html==null?'':html);
+  const form = DIVINE_NAME_FORMS[mode] || DIVINE_NAME_FORMS.he;
+  let out = String(html==null?'':html).replace(DIVINE_NAME_RE, (m, prefix) => prefix + form);
   OTHER_SACRED_NAMES.forEach(n => { out = out.replace(n.re, m => hyphenateFromEnd(m, n.fromEnd)); });
   return out;
 }
