@@ -1,10 +1,7 @@
-// הועתק כלשונו (בלי שום שינוי) מהתוסף "שומר השם" (com.yosikohn.shemshomrer,
-// v1.4.0, יוסי כהן) ב-25/08/26, לבקשת המשתמש - כדי שציטוטי פסוקים בעינים
-// למקרא יכבדו את אותה מוסכמה של המרת שמות קדושים לכינויים. שימוש: אם
-// window.ShemShomrer קיים, ShemShomrer.replaceHolyNames(text, {}).result.
-// ⚠️ אין להוסיף/לשנות דבר בקובץ הזה עצמו - הוא מכיל מלכודות regex מתועדות
-// (ר' ההערות למטה) שנבדקו ע"י המפתח המקורי; כל שינוי דורש הרצת הטסטים שלו
-// מחדש, שאינם זמינים כאן. שינויים שייכים לקובץ קורא חדש, לא לכאן.
+// הועתק כלשונו מהתוסף "שומר השם" (com.yosikohn.shemshomrer, v1.4.1, יוסי כהן) — עודכן
+// 08/10/2026 (#66) באישור המפתח; גרסה קודמת: v1.4.0 מ-25/08/26. נלקח רק names.js (ההגדרות
+// והמנוע), בלי הטסטים, ai-engine ו-jszip של התוסף. שימוש: ShemShomrer.replaceHolyNames(text, {}).result
+// (ר' shell/core.js). שינויים שלנו — בקובץ קורא, לא כאן, כדי שעדכון הבא יהיה החלפה פשוטה.
 
 /**
  * names.js — זיהוי והחלפת שמות קדושים
@@ -60,12 +57,23 @@
  * ═══════════════════════════════════════════════════════════════════════
  */
 
-// נרמול: הסרת ניקוד וטעמים לצורך השוואה
-const DIACRITICS_RE_GLOBAL = /[\u0591-\u05C7]/g;
-const DIACRITICS_RE_SINGLE = /[\u0591-\u05C7]/;
+// ⚠️ תוקן: טווח נקודות-עבריות היוניקוד המלא (\u0591-\u05C7) כולל, לצד ניקוד וטעמים אמיתיים,
+// גם כמה סימני *פיסוק* של מקרא/דפוס שאינם "שקופים" ואסור להתייחס אליהם כניקוד-שניתן-לדלג-עליו:
+//   \u05BE מקף (מפריד בין שתי מילים, לא ניקוד על אות!), \u05C0 פסק, \u05C3 סוף פסוק, \u05C6 נון הפוכה.
+// לפני התיקון, בדיקת גבול-מילה (wordStartWithPrefix) "ראתה מבעד" למקף - כלומר "כי־אל" (עם מקף)
+// לא זוהה כלל כשם, כי הבדיקה התייחסה לשתי המילים כמילה אחת ארוכה (אומת בפועל: "כי־אל" מול "כי אל"
+// עם רווח - עם רווח כן זוהה, עם מקף לא). אותה בעיה משפיעה גם על מיפוי האינדקסים (isDiacriticChar
+// קבע שמקף "לא נספר" כתו אמיתי). הוצאת ארבעת סימני-הפיסוק האלה מהטווח ה"שקוף" מתקנת את שניהם,
+// בלי לפגוע בטעמים/ניקוד האמיתיים (שנשארים "שקופים" כרגיל).
+const PUNCT_IN_HEBREW_POINTS_RANGE = '\u05BE\u05C0\u05C3\u05C6'; // מקף / פסק / סוף פסוק / נון הפוכה
+const HEBREW_SKIPPABLE_POINTS_RANGE = '\\u0591-\\u05BD\\u05BF\\u05C1\\u05C2\\u05C4\\u05C5\\u05C7';
+
+// נרמול: הסרת ניקוד וטעמים (לא כולל סימני הפיסוק שלעיל) לצורך השוואה
+const DIACRITICS_RE_GLOBAL = new RegExp('[' + HEBREW_SKIPPABLE_POINTS_RANGE + ']', 'g');
+const DIACRITICS_RE_SINGLE = new RegExp('[' + HEBREW_SKIPPABLE_POINTS_RANGE + ']');
 
 function stripDiacritics(str) {
-  // טווח יוניקוד של ניקוד עברי: \u05B0-\u05C7, טעמים: \u0591-\u05AF
+  // טווח יוניקוד של ניקוד עברי+טעמים ה"שקופים" (לא כולל מקף/פסק/סוף-פסוק/נון-הפוכה - ראו לעיל)
   return str.replace(DIACRITICS_RE_GLOBAL, '');
 }
 
@@ -73,8 +81,18 @@ function isDiacriticChar(ch) {
   return DIACRITICS_RE_SINGLE.test(ch);
 }
 
-// אות/ניקוד כיחידה אחת (לשימוש בבניית תבניות)
-const DIA_CLASS = '[\u05B0-\u05C7\u0591-\u05AF]';
+// אות/ניקוד כיחידה אחת (לשימוש בבניית תבניות) - לא כולל סימני הפיסוק שלעיל, ראו הערה למעלה
+const DIA_CLASS = '[' + HEBREW_SKIPPABLE_POINTS_RANGE + ']';
+
+// טעמים (\u0591-\u05AF) ומֶתֶג (\u05BD) - לשימוש בהסרה-לצורך-זיהוי-בלבד (ראו stripCantillation).
+// ⚠️ המתג נוסף כאן בעקבות בדיקה על "אֶֽהְיֶ֖ה" (שמות ג, יד - "אהיה אשר אהיה"): התבנית של השם
+// 'אהיה' דורשת סגול צמוד-ממש לפני ה-ה"א ("[\u05B6]?[\u05D4]", בלי מקום לתו נוסף ביניהם) - אבל
+// בכתיב תנ"כי אמיתי כמעט תמיד יש מתג צמוד לסגול הראשון (בין הא' לה"א) במילה הזו בדיוק, ומתג הוא
+// לא-דיפרנציאלי (לעולם לא קובע איזו תנועה זו - רק מסמן טעם-משני) בדיוק כמו טעם, אז אין סיבה
+// שיפריע לזיהוי. באותה שיטה בדיוק כמו הטעמים: הוא לא נעלם מהפלט (הוחלף רק הטווח שבאמת זוהה
+// כשם, כרגיל), רק לא "מפריע" לזיהוי עצמו.
+const CANTILLATION_RE_GLOBAL = /[\u0591-\u05AF\u05BD]/g;
+const CANTILLATION_RE_SINGLE = /[\u0591-\u05AF\u05BD]/;
 
 // אותיות תחילית עבריות מוכרות (ו,ב,כ,ל,מ,ש,ה) - "ו-החיבור", "ב/כ/ל/מ" השימוש, "ה" הידיעה/השאלה
 const PREFIX_LETTERS = '\u05D5\u05D1\u05DB\u05DC\u05DE\u05E9\u05D4';
@@ -398,6 +416,47 @@ function buildOriginalToStrippedMap(text) {
 }
 
 /**
+ * ⚠️ חדש - מתקן את "באג הטעמים" (זיהוי שמות נכשל בפסוקים עם טעמי מקרא): כמה מהתבניות למעלה
+ * (בעיקר 'adnut' - "אדני") דורשות ניקוד-מבחין בתו *ספציפי* וצמוד ממש לאות שלידה (למשל
+ * "[\u05E0][\u05B8][\u05D9]" - נו"ן, קמץ, יו"ד ברצף ממש) בלי מקום לתו טעם שיכול לשבת בדיוק שם
+ * (למשל "אֲדֹנָ֣י" - יש שם טעם מוּנַח בין הקמץ ליו"ד). טעם כזה "שובר" את הרצף הצמוד ומבטל את
+ * ההתאמה - למרות שהניקוד עצמו (שהוא הדבר שבאמת קובע אם זה השם או לא) תקין לגמרי.
+ * הפתרון (בהשראת רעיון המשתמש): מסירים טעמים *בלבד* (לא ניקוד!) לפני שמריצים את תבניות הזיהוי,
+ * ומשתמשים במיפוי אינדקסים (באותה טכניקה בדיוק כמו buildVocalizedToOriginalMap למטה) כדי להחזיר
+ * את ההתאמות למיקומים הנכונים בטקסט המקורי (עם הטעמים) לצורך ההחלפה בפועל - כך שהטעמים לא
+ * "נעלמים" מהפלט, הם רק לא מפריעים לזיהוי עצמו.
+ */
+function stripCantillation(str) {
+  return str.replace(CANTILLATION_RE_GLOBAL, '');
+}
+
+/**
+ * ממפה אינדקס בטקסט-בלי-טעמים (stripCantillation(originalText)) לאינדקס המקביל בטקסט המקורי
+ * (עם הטעמים). לשימוש בהחזרת התאמות שנמצאו על הטקסט המנוקה-מטעמים חזרה לטקסט האמיתי.
+ */
+function buildCantillationStrippedToOriginalMap(originalText) {
+  const map = [];
+  for (let i = 0; i < originalText.length; i++) {
+    if (!CANTILLATION_RE_SINGLE.test(originalText[i])) map.push(i);
+  }
+  map.push(originalText.length);
+  return map;
+}
+
+/**
+ * בדיקה גסה האם בטקסט יש כבר ניקוד *אמיתי* (לא טעמים, לא סימני פיסוק) במידה משמעותית - כלומר
+ * שמדובר כנראה בטקסט שהודבק כבר-מנוקד (כגון פסוק מהמקרא) ולא בטקסט חולין רגיל. סף קטן (3) כדי
+ * לא להיגרר מתו ניקוד בודד/מקרי. ראו שימוש ב-processor.js (detectAndReplace) - טקסט כזה מדלג
+ * במכוון על מסלול ה-AI, כי מיפוי-האינדקסים של מסלול ה-AI (buildVocalizedToOriginalMap) מניח
+ * שהטקסט המקורי היה *חסר* ניקוד לגמרי, הנחה שקורסת כשיש כבר ניקוד מלכתחילה.
+ */
+const REAL_NIKUD_RE_GLOBAL = /[\u05B0-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7]/g;
+function hasSignificantNikud(text) {
+  const m = text.match(REAL_NIKUD_RE_GLOBAL);
+  return !!m && m.length >= 3;
+}
+
+/**
  * בודק אם מיקום נתון (אינדקסים בטקסט המקורי) נמצא בתוך מילת exception.
  * originalToStrippedMap הוא המיפוי המתאים לטקסט הזה (ראו buildOriginalToStrippedMap).
  */
@@ -410,7 +469,15 @@ function isException(text, matchStart, matchEnd, originalToStrippedMap) {
     let idx = stripped.indexOf(exc);
     while (idx !== -1) {
       const excEnd = idx + exc.length;
-      if (sStart < excEnd && sEnd > idx) return true;
+      // ⚠️ תוקן: התבחין החדש (בעברית: הכלה מלאה) התגלה תוך כדי בדיקה על פסוקים אמיתיים -
+      // "לה'" (=ל+יהוה, מהצירופים הכי נפוצים בתנ"ך, "עֹלָה לַֽיהֹוָה" וכד') נחסם בטעות! הסיבה:
+      // ה-exception "ליה" (=לו, ארמית) *חופף חלקית* להתאמה "יהוה" (חולקות את ה-"יה" הראשונות
+      // של "ליהוה") - התבחין הישן (כל חפיפה חוסמת) תפס את זה כאילו "יהוה" הוא רק ה-"יה" שבתוך
+      // "ליה". התיקון: חוסמים רק אם ההתאמה *כלולה במלואה* בתוך תחום ה-exception (לא רק חופפת
+      // לו חלקית) - זה עדיין מגן על כל המקרים המתועדים (למשל "אל" בתוך "ישראל"/"שמאל", "יה" בתוך
+      // "ליה"/"ביה" עצמן), אבל לא חוסם התאמה אמיתית שמשתרעת *מעבר* לתחום ה-exception (כמו "יהוה"
+      // שממשיכה אחרי ה-"ליה" שרק "משתלבת" בתחילתה).
+      if (sStart >= idx && sEnd <= excEnd) return true;
       idx = stripped.indexOf(exc, idx + 1);
     }
   }
@@ -462,15 +529,24 @@ function replaceHolyNames(text, settings) {
   const { mode = 'hyphen' } = settings;
   const names = namesForSettings(settings);
 
+  // ⚠️ ראו הערה מפורטת ליד stripCantillation למעלה: מזהים על טקסט בלי-טעמים (הניקוד עצמו נשאר!)
+  // כדי שטעם שיושב בין אותיות/ניקוד לא ישבור תבניות עם ניקוד-מבחין קשיח (כמו "אדני"), ואז ממפים
+  // את ההתאמות בחזרה למיקומים בטקסט המקורי (עם הטעמים) לצורך ההחלפה בפועל.
+  const noCantillation = stripCantillation(text);
+  const c2o = buildCantillationStrippedToOriginalMap(text);
+  const matches = findMatches(noCantillation, names).map(mm => ({
+    start: c2o[mm.start], end: c2o[mm.end], name: mm.name,
+  }));
+
   const o2s = buildOriginalToStrippedMap(text);
-  const matches = findMatches(text, names).filter(
+  const filtered = matches.filter(
     mm => !isException(text, mm.start, mm.end, o2s)
   );
 
   let result = text;
   let count = 0;
-  for (let i = matches.length - 1; i >= 0; i--) {
-    const { start, end, name } = matches[i];
+  for (let i = filtered.length - 1; i >= 0; i--) {
+    const { start, end, name } = filtered[i];
     const repl = resolveReplacement(name, mode, text.slice(start, end));
     result = result.slice(0, start) + repl + result.slice(end);
     count++;
@@ -516,8 +592,18 @@ function replaceHolyNamesWithVocalized(originalText, vocalizedText, settings) {
   const { mode = 'hyphen' } = settings;
   const names = namesForSettings(settings);
 
+  // ⚠️ ראו הערה מפורטת ליד stripCantillation למעלה בקובץ: אותה בעיית "טעם שובר תבנית-ניקוד-קשיח"
+  // רלוונטית גם כאן, כי הטקסט המנוקד ע"י ה-AI עשוי להכיל (לרשת) טעמים שכבר היו בטקסט המקורי.
+  // מזהים על vocalizedText בלי-טעמים, וממפים את ההתאמות חזרה ל-vocalizedText המלא (כדי לשמר את
+  // ה-vocalizedMatch המדויק, כולל טעמים, למטה) לפני המיפוי הרגיל לטקסט המקורי.
+  const vocalizedNoCantillation = stripCantillation(vocalizedText);
+  const c2v = buildCantillationStrippedToOriginalMap(vocalizedText);
+  const vocMatches = findMatches(vocalizedNoCantillation, names).map(mm => ({
+    start: c2v[mm.start], end: c2v[mm.end], name: mm.name,
+  }));
+
   const map = buildVocalizedToOriginalMap(vocalizedText);
-  const rawMatches = findMatches(vocalizedText, names).map(mm => ({
+  const rawMatches = vocMatches.map(mm => ({
     start: map[mm.start],
     end: map[mm.end],
     name: mm.name,
@@ -556,4 +642,6 @@ window.ShemShomrer = window.ShemShomrer || {};
 window.ShemShomrer.replaceHolyNames = replaceHolyNames;
 window.ShemShomrer.replaceHolyNamesWithVocalized = replaceHolyNamesWithVocalized;
 window.ShemShomrer.stripDiacritics = stripDiacritics;
+window.ShemShomrer.stripCantillation = stripCantillation;
+window.ShemShomrer.hasSignificantNikud = hasSignificantNikud;
 window.ShemShomrer.HOLY_NAMES = HOLY_NAMES;
