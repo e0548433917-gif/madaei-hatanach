@@ -53,6 +53,7 @@
   "network": {
     "enabled": true,
     "allowlist": [
+      "https://tiles.maps.eox.at/",
       "https://raw.githubusercontent.com/e0548433917-gif/madaei-hatanach/main/manifest.json",
       "https://api.github.com/repos/e0548433917-gif/madaei-hatanach/contents/manifest.json",
       "https://github.com/e0548433917-gif/madaei-hatanach/releases",
