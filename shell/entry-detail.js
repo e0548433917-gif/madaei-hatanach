@@ -504,6 +504,9 @@ function renderEntryDetailHTML(entry, catIdOverride){
     if (!(entry.midrash && entry.midrash.length)) missing.push('מקורות חז״ל');
   }
 
+  // 2.6 (#59): עץ משפחה — רק לאדם עם relIds (ת.1ב)
+  if (typeof familyTreeHTML === 'function' && isPersonEntry(entry)) html += familyTreeHTML(entry);
+
   // מה חסר בכרטיס - כדי שיידעו איזה מידע עוד אפשר להשלים (ולהציע אותו דרך ✏️).
   // בערך הבחנה אין מה להשלים: אין לו אב, שבט או גיל מעצם טבעו.
   if (missing.length && !disambig){
@@ -542,6 +545,7 @@ function renderOfflineMiniMap(container, lat, lng, zoom, cat){
 // מחבר התנהגות (קליק על פסוק, הדפסה, עריכה) לתוכן שכבר סופק ע"י renderEntryDetailHTML,
 // בכל קונטיינר שהוא (המודל הראשי, או שורת תוצאה שמתרחבת) - כדי לא לשכפל לוגיקה.
 function wireEntryDetail(container, entry, onEdit){
+  if (typeof wireFamilyTree === 'function') wireFamilyTree(container, entry);
   const verseList = entry.verses || entry.makorot || [];
   container.querySelectorAll('.verse-card.clickable').forEach(el => {
     const i = parseInt(el.dataset.vref);
