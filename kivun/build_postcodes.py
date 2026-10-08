@@ -29,9 +29,12 @@ def fetch(q):
 
 
 import re
+import os
+ABROAD_ONLY = os.environ.get("ABROAD_ONLY") == "1"
 els = []
 try:
-    els = fetch(Q).get("elements", [])
+    if not ABROAD_ONLY:
+        els = fetch(Q).get("elements", [])
 except Exception as e:
     print("israel failed", e)
 full, pre = collections.defaultdict(list), collections.defaultdict(list)
@@ -84,7 +87,7 @@ F = {k: mean(v) for k, v in full.items()}
 P = {k: mean(v) for k, v in pre.items()}
 X = {k: mean(v) for k, v in abroad.items()}
 today = datetime.date.today().isoformat()
-open("kivun/postcodes.js", "w", encoding="utf-8").write(
+open("kivun/postcodes-abroad.js" if ABROAD_ONLY else "kivun/postcodes.js", "w", encoding="utf-8").write(
     "/* מיקודים: © OpenStreetMap contributors, ODbL. נבנה ב-" + today + " */\nPC_PUT("
     + json.dumps({"d": today, "f": F, "p": P, "x": X}, separators=(",", ":")) + ");\n")
 print(f"israel elements {len(els)}, full {len(F)}, prefix {len(P)}, abroad {len(X)}")

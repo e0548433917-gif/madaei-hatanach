@@ -1,8 +1,8 @@
 # זמני: בניית רחובות מובנים לתוסף כיוון תפילה. רץ רק בענף kivun-streets-build, שיימחק אחרי השימוש.
-name: kivun-postcodes
+name: kivun-postcodes-abroad
 on:
   push:
-    branches: [kivun-postcodes-build]
+    branches: [kivun-postcodes-abroad]
     paths: [kivun/build_streets.py, kivun/build_postcodes.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
 permissions:
   contents: write
@@ -13,9 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 kivun/build_postcodes.py
+        env:
+          ABROAD_ONLY: "1"
       - run: |
           git config user.name Claude
           git config user.email noreply@anthropic.com
-          git add kivun/postcodes.js kivun/build-log.txt
+          git add kivun/postcodes-abroad.js kivun/build-log.txt
           git commit -m "kivun: postcodes.js (OSM)"
           git push
