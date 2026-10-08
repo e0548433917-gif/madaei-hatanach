@@ -323,10 +323,12 @@
 
 <div class="panel-overlay" id="addHtmlOverlay">
   <div class="panel-box">
-    <h2>➕ הוספת דף HTML</h2>
-    <p class="panel-hint">בחרו קובץ HTML מהמחשב — הוא יישמר לצמיתות (גם אחרי סגירת אוצריא) ויופיע כאן ברשימה.</p>
-    <input type="text" id="addHtmlName" placeholder="שם לזיהוי הדף (למשל: לוח שנה אישי)">
-    <input type="file" id="addHtmlFile" accept=".html,.htm,text/html">
+    <h2>➕ הוספת מדריך אישי</h2>
+    <p class="panel-hint">בחרו קובץ HTML או PDF מהמחשב — הוא יישמר לצמיתות (גם אחרי סגירת אוצריא) ויופיע כאן ברשימה.</p>
+    <input type="text" id="addHtmlName" placeholder="שם לזיהוי המדריך (למשל: לוח שנה אישי)">
+    <input type="file" id="addHtmlFile" accept=".html,.htm,text/html,.pdf,application/pdf">
+    <p class="panel-hint">או: מדריך כרטסות משלכם (חידוש, טעם, מקור…) — כתבו ערך אחרי ערך, שורה ריקה בין ערכים. השורה הראשונה של כל ערך היא הכותרת, והשאר — התוכן.</p>
+    <textarea id="addCardsText" rows="6" placeholder="רש״י&#10;רבי שלמה יצחקי, פרשן התורה והתלמוד.&#10;&#10;רמב״ם&#10;רבי משה בן מימון."></textarea>
     <div class="set-group">
       <label class="set-title">מיקום הדף</label>
       <div class="set-opts" id="addHtmlPlacement">

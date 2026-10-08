@@ -45,8 +45,6 @@
 * [#61 — ציר זמן כעץ (במקום רשימה) במדריך אישים ואנשי התלמוד](https://github.com/e0548433917-gif/madaei-hatanach/issues/61)
 * [#64 — כפתור ℹ️ במפה — לפתוח את מיקום התיקייה לאריחים, לא רק להסביר](https://github.com/e0548433917-gif/madaei-hatanach/issues/64)
 * [#66 — שאיבת הגדרות המרת שמות הקדושה מהתוסף "שומר השם"](https://github.com/e0548433917-gif/madaei-hatanach/issues/66)
-* [#90 — מדריכים/קטגוריות בהגדרת משתמש (הרחבה של Issue #24)](https://github.com/e0548433917-gif/madaei-hatanach/issues/90)
-* [#24 — אפשרות להוסיף קטגוריות](https://github.com/e0548433917-gif/madaei-hatanach/issues/24)
 
 ### 🎨 עיצוב — נספח ב׳
 

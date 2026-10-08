@@ -55,6 +55,7 @@ function resetAddHtmlForm(){
   addHtmlName.value = '';
   addHtmlFile.value = '';
   pendingHtmlContent = null;
+  const cardsTa = document.getElementById('addCardsText'); if (cardsTa) cardsTa.value = '';
   if (addHtmlIconInput) addHtmlIconInput.value = '';
   pendingIconContent = null;
   addHtmlPlacementVal = 'home';
@@ -121,6 +122,7 @@ function injectOtzariaBridge(content){
 async function openCustomHtmlPage(name){
   const content = await getHtmlPageContent(name);
   if (content == null){ window.alert('לא נמצא תוכן שמור עבור "' + name + '"'); return; }
+  if (/^data:application\/pdf/i.test(content)){ openPdfGuide(name, content); return; }
   guideFrame.removeAttribute('src');
   guideFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals');
   guideFrame.srcdoc = injectOtzariaBridge(content);
@@ -132,14 +134,54 @@ async function openCustomHtmlPage(name){
 
 // #65 (4.11): PDF כמדריך מלא — קורא ה-PDF המיובא (guides/pdf/viewer.html) נפתח
 // במסגרת המדריכים; המשתמש בוחר קובץ PDF מהמחשב בכפתור הפתיחה של הקורא עצמו.
-function openPdfGuide(){
+// עם dataUrl (PDF שמור) — הבייטים נשלחים לקורא ב-postMessage אחרי שהוא מודיע madaei-pdf-ready.
+let pendingPdfForViewer = null;
+window.addEventListener('message', (ev) => {
+  const d = ev && ev.data;
+  if (!d || d.type !== 'madaei-pdf-ready' || !pendingPdfForViewer) return;
+  const p = pendingPdfForViewer; pendingPdfForViewer = null;
+  try {
+    const b64 = p.dataUrl.slice(p.dataUrl.indexOf(',') + 1);
+    const bin = atob(b64); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    ev.source.postMessage({ type: 'madaei-pdf-open', bytes: bytes.buffer, name: p.name + '.pdf' }, '*');
+  } catch(e){ window.alert('לא ניתן לפתוח את קובץ ה-PDF השמור'); }
+});
+function openPdfGuide(name, dataUrl){
+  pendingPdfForViewer = dataUrl ? { name: name, dataUrl: dataUrl } : null;
   guideFrame.removeAttribute('srcdoc');
   guideFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals');
   guideFrame.src = 'guides/pdf/viewer.html';
-  frameTitle.textContent = '📕 מדריך PDF';
+  frameTitle.textContent = '📕 ' + (name || 'מדריך PDF');
   frameWrap.classList.add('open');
   addHtmlOverlay.classList.remove('open');
   resultsOverlay.classList.remove('open');
+}
+
+// #90 (4.11): מדריך כרטסות בהגדרת משתמש — הטקסט הופך לדף HTML עצמאי (חיפוש + כרטיסים
+// נפתחים), ונשמר ונפתח באותו מסלול של דפי HTML אישיים. המקור מוטבע ב-JSON בתוך הדף.
+function parseCardsText(text){
+  return String(text).replace(/\r/g, '').split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean).map(b => {
+    const lines = b.split('\n');
+    return { title: lines[0].trim(), body: lines.slice(1).join('\n').trim() };
+  });
+}
+function buildCardsGuideHtml(name, text){
+  const cards = parseCardsText(text);
+  const json = JSON.stringify({ name: name, cards: cards }).replace(/</g, '\\u003c');
+  return '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(name) + '</title>'
+    + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#fff;color:#222;}'
+    + 'h1{font-size:20px;margin:0 0 12px;}input{width:100%;box-sizing:border-box;padding:8px;font-size:15px;margin-bottom:12px;border:1px solid #bbb;border-radius:6px;}'
+    + 'details{border:1px solid #ddd;border-radius:8px;padding:8px 12px;margin-bottom:8px;}summary{font-weight:bold;cursor:pointer;}'
+    + '.b{white-space:pre-wrap;margin-top:6px;line-height:1.6;}.n{color:#777;font-size:13px;}'
+    + '@media (prefers-color-scheme: dark){body{background:#1e1e1e;color:#eee;}details{border-color:#444;}input{background:#2a2a2a;color:#eee;border-color:#555;}}'
+    + '</style></head><body><h1>' + esc(name) + '</h1><input id="q" type="search" placeholder="חיפוש בכרטסות…"><div id="list"></div><p class="n" id="n"></p>'
+    + '<script type="application/json" id="cards-data">' + json + '<\/script>'
+    + '<script>(function(){var d=JSON.parse(document.getElementById("cards-data").textContent).cards;var L=document.getElementById("list"),N=document.getElementById("n");'
+    + 'function e(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}'
+    + 'function r(q){var m=d.filter(function(c){return !q||(c.title+" "+c.body).indexOf(q)>=0;});'
+    + 'L.innerHTML=m.map(function(c){return "<details><summary>"+e(c.title)+"</summary><div class=\\"b\\">"+e(c.body)+"</div></details>";}).join("");'
+    + 'N.textContent=m.length+" ערכים";}document.getElementById("q").addEventListener("input",function(){r(this.value.trim());});r("");})();<\/script></body></html>';
 }
 
 function openAddHtmlPanel(){
@@ -153,10 +195,12 @@ document.getElementById('addHtmlClose').addEventListener('click', () => {
 addHtmlFile.addEventListener('change', () => {
   const file = addHtmlFile.files && addHtmlFile.files[0];
   if (!file) return;
-  if (!addHtmlName.value.trim()) addHtmlName.value = file.name.replace(/\.html?$/i, '');
+  if (!addHtmlName.value.trim()) addHtmlName.value = file.name.replace(/\.(html?|pdf)$/i, '');
   const reader = new FileReader();
   reader.onload = () => { pendingHtmlContent = reader.result; };
-  reader.readAsText(file);
+  // 4.11 (#65): PDF נשמר כ-data URL באותו מסלול אחסון של דפי HTML, ונפתח בקורא ה-PDF.
+  if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') reader.readAsDataURL(file);
+  else reader.readAsText(file);
 });
 if (addHtmlPlacementWrap) addHtmlPlacementWrap.addEventListener('click', (e) => {
   const b = e.target.closest('.set-opt');
@@ -175,7 +219,9 @@ if (addHtmlIconInput) addHtmlIconInput.addEventListener('change', () => {
 document.getElementById('addHtmlSave').addEventListener('click', async () => {
   const name = addHtmlName.value.trim();
   if (!name){ window.alert('יש לתת שם לדף'); return; }
-  if (!pendingHtmlContent){ window.alert('יש לבחור קובץ HTML'); return; }
+  const cardsText = (document.getElementById('addCardsText') || {}).value || '';
+  if (!pendingHtmlContent && cardsText.trim()) pendingHtmlContent = buildCardsGuideHtml(name, cardsText);
+  if (!pendingHtmlContent){ window.alert('יש לבחור קובץ HTML/PDF או לכתוב ערכים למדריך כרטסות'); return; }
   if (!hasOtzaria()){ window.alert('שמירה קבועה דורשת פתיחה בתוך אוצריא.'); return; }
   const masechet = (addHtmlPlacementVal === 'masechet') ? (addHtmlMasechetSel && addHtmlMasechetSel.value) : null;
   if (addHtmlPlacementVal === 'masechet' && !masechet){ window.alert('יש לבחור מסכת'); return; }
