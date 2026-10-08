@@ -1842,7 +1842,7 @@ button.ft-node:hover, button.ft-node:focus-visible { border-color: var(--color-p
 #chapterMapOverlay .cm-item.active { background: var(--color-secondary-container); font-weight: 600; }
 #chapterMapOverlay .cm-num {
   flex: none; inline-size: 22px; block-size: 22px; border-radius: 50%;
-  color: #FFF8E7; font-size: .78em; font-weight: 700;
+  color: var(--color-on-primary); font-size: .78em; font-weight: 700;
   display: inline-flex; align-items: center; justify-content: center;
 }
 #chapterMapOverlay .cm-txt { display: flex; flex-direction: column; min-width: 0; }
@@ -1859,7 +1859,7 @@ button.ft-node:hover, button.ft-node:focus-visible { border-color: var(--color-p
 .cm-pop .cm-pop-alt { font-size: .78em; color: var(--color-on-surface-dim); margin-top: 3px; }
 .cm-pop .cm-pop-btns { display: flex; gap: 6px; margin-top: 8px; }
 .cm-pop .panel-btn { min-block-size: 32px; padding: 0 10px; font-size: .8em; }
-.geo-pin.cm-pin-active svg { filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
+.geo-pin.cm-pin-active svg { filter: drop-shadow(0 2px 3px var(--color-shadow-strong)); }
 @media (max-width: 700px) {
   #chapterMapOverlay .cm-body { flex-direction: column; }
   #chapterMapOverlay .cm-list { width: auto; max-height: 30%; }
