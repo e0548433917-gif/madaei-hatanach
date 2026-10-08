@@ -27,7 +27,6 @@
 
 ### 🔌 SDK ותשתית
 * [#52 — 4.18 — plugin.openSelf({param}) + plugin.page_opened במקום פולינג — ✅ בוצע ב-3.8.0 (הפולינג נשאר כגיבוי)](https://github.com/e0548433917-gif/madaei-hatanach/issues/52)
-* [#53 — 4.13 — שפת ממשק (i18n) — להערכה מחדש, כנראה לא כדאי](https://github.com/e0548433917-gif/madaei-hatanach/issues/53)
 * [#54 — 2.11 — טעינה עצלה של הדאטה (19MB בפתיחה)](https://github.com/e0548433917-gif/madaei-hatanach/issues/54)
 * [#55 — 5.3 (שארית) — ✅ ולידציה בלי פרסום על ענפים ו-PR-ים בוצעה ב-4.13.0; נשאר: לבדוק אם הפרסום מעדכן את תיאור התוסף בחנות](https://github.com/e0548433917-gif/madaei-hatanach/issues/55)
 * [#124 — 4.7 — אוצריא 0.9.99: לחיצה ימנית בלי סימון + הדפסת הפרק — ✅ בקוד, ממתין לשחרור 0.9.99 ולאימות](https://github.com/e0548433917-gif/madaei-hatanach/issues/124)
@@ -81,7 +80,7 @@
 * [#100 — 0.9.9.7 יצאה: מעבר לחבילה אחת + אימוץ ה-API החדש — ✅ החלק הראשון בוצע ב-3.7.0; ה-API החדש של 0.9.97–0.9.98 אומץ ב-4.4.0](https://github.com/e0548433917-gif/madaei-hatanach/issues/100)
 
 ### נוספות
-* [#94 — i18n: שכבת שפת ממשק אנגלית (ROADMAP 4.13)](https://github.com/e0548433917-gif/madaei-hatanach/issues/94)
+* [#94 — i18n: שכבת שפת ממשק אנגלית (ROADMAP 4.13) — ✅ שלב א׳ (תשתית + ~140 מחרוזות) בוצע ב-4.13.0; נשאר: ב׳ השלמת המחרוזות, ג׳ מעבר שפה חי (חסום עד שחרור אוצריא עם #758)](https://github.com/e0548433917-gif/madaei-hatanach/issues/94)
 * [#96 — שאלה ל-@Y-PLONI ו-@palmoni5: האם תרצו לקבל את ניהול הפרויקט?](https://github.com/e0548433917-gif/madaei-hatanach/issues/96)
 
 ---
