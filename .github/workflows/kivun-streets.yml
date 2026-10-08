@@ -1,13 +1,13 @@
 # זמני: מיקודי חו"ל לפי אזור, עם שמות רחובות. רץ רק בענף kivun-postcodes-abroad2.
-name: kivun-postcodes-abroad2
+name: kivun-postcodes-abroad3
 on:
   push:
-    branches: [kivun-postcodes-abroad2]
-    paths: [kivun/build_postcodes_abroad2.py, .github/workflows/kivun-streets.yml]
+    branches: [kivun-postcodes-abroad3]
+    paths: [kivun/build_postcodes_abroad2.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
 permissions:
   contents: write
 concurrency:
-  group: kivun-postcodes-abroad2
+  group: kivun-postcodes-abroad3
   cancel-in-progress: true
 jobs:
   build:

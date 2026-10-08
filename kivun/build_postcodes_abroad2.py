@@ -8,6 +8,10 @@ SERVERS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.private.coffee/api/interpreter"]
 C = json.load(open("kivun/centers.json", encoding="utf-8"))
 Y = collections.defaultdict(list)
+import os
+if os.path.exists("kivun/postcodes-abroad2.js"):
+    for k, v in json.loads(re.search(r"PC_PUT\((.*)\);", open("kivun/postcodes-abroad2.js", encoding="utf-8").read(), re.S).group(1))["y"].items():
+        Y[k] = v
 T0 = [time.time()]
 
 
