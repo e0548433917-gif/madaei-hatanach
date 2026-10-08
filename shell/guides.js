@@ -270,6 +270,51 @@ function timelineBranchOf(entry){
   const c = guideCatOf(entry.cat);
   return (c && c.label) || '';
 }
+// #61: בתוך ענף — שושלת לפי relIds (ת.1ב, #67) בלבד, לא לפי שמות. ילד שהורהו (father,
+// ואם אין — mother) נמצא באותו ענף מקונן תחתיו; הורה מקושר שבענף אחר מוצג כקישור קטן;
+// הורה שקיים בשם אך לא הוכרע (null ב-relIds) = שם אפור בלי קישור. O(n) — Map אחד לענף.
+function tlParentRef(entry){
+  const r = entry.relIds || {};
+  for (const f of ['father', 'mother']){
+    if (entry[f] === undefined && r[f] === undefined) continue;
+    const name = Array.isArray(entry[f]) ? entry[f][0] : entry[f];
+    const pid = Array.isArray(r[f]) ? r[f][0] : r[f];
+    if (name || pid) return { name: name || '', pid: pid || null };
+  }
+  return null;
+}
+function timelineLineageHTML(items, flatIdx){
+  const byId = new Map();
+  items.forEach(e => { if (e.id) byId.set(e.id, e); });
+  const kids = new Map(), refOf = new Map(), roots = [];
+  items.forEach(e => {
+    const ref = tlParentRef(e);
+    refOf.set(e, ref);
+    if (ref && ref.pid && ref.pid !== e.id && byId.has(ref.pid)){
+      if (!kids.has(ref.pid)) kids.set(ref.pid, []);
+      kids.get(ref.pid).push(e);
+    } else roots.push(e);
+  });
+  const seen = new Set();
+  const leaf = (e, nested) => {
+    seen.add(e);
+    let h = `<button type="button" class="tl-leaf" data-idx="${flatIdx.length}">${esc(e.name)}</button>`;
+    flatIdx.push(e);
+    const ref = refOf.get(e);
+    if (!nested && ref){
+      const p = ref.pid && typeof findPersonById === 'function' ? findPersonById(ref.pid) : null;
+      if (p) h += `<button type="button" class="tl-parent" data-pid="${esc(p.id)}" title="הורה">${esc(p.name)}</button>`;
+      else if (ref.name) h += `<span class="tl-parent tl-none" title="אין קישור ודאי">${esc(ref.name)}</span>`;
+    }
+    const ks = (e.id && kids.get(e.id) || []).filter(k => !seen.has(k));
+    if (!ks.length) return `<span class="tl-node">${h}</span>`;
+    return `<div class="tl-lin"><span class="tl-node">${h}</span><div class="tl-kids">${ks.map(k => leaf(k, true)).join('')}</div></div>`;
+  };
+  let out = roots.map(e => leaf(e, false)).join('');
+  // שארית (מעגל ב-relIds) — לא נבלעת
+  items.forEach(e => { if (!seen.has(e)) out += leaf(e, false); });
+  return out;
+}
 function renderGuideTimeline(list){
   const eras = guideErasInOrder();
   if (!eras.length){
@@ -288,7 +333,7 @@ function renderGuideTimeline(list){
     items.forEach(e => { const b = timelineBranchOf(e); let br = branches.find(x => x.name === b); if (!br){ br = { name: b, items: [] }; branches.push(br); } br.items.push(e); });
     branches.forEach(br => {
       html += `<details class="tl-branch" open><summary><span class="tl-branch-name">${esc(br.name || '—')}</span><span class="timeline-count">${br.items.length}</span></summary><div class="tl-leaves">`;
-      br.items.forEach(entry => { html += `<button type="button" class="tl-leaf" data-idx="${flatIdx.length}">${esc(entry.name)}</button>`; flatIdx.push(entry); });
+      html += timelineLineageHTML(br.items, flatIdx);
       html += '</div></details>';
     });
     html += `</div></div>`;
@@ -298,6 +343,9 @@ function renderGuideTimeline(list){
   guideGrid.querySelectorAll('.tl-leaf').forEach(btn => {
     const entry = flatIdx[parseInt(btn.dataset.idx, 10)];
     btn.addEventListener('click', () => openEntryDetail(entry));
+  });
+  guideGrid.querySelectorAll('button.tl-parent').forEach(btn => {
+    btn.addEventListener('click', () => { const p = findPersonById(btn.dataset.pid); if (p) openEntryDetail(p); });
   });
 }
 if (guideTimelineToggle) guideTimelineToggle.addEventListener('click', () => {

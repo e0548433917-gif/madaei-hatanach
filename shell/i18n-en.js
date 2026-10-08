@@ -214,6 +214,7 @@ window.TRANSLATIONS.en = {
   'הוספה לסימניות (האזור האישי)': 'Add to bookmarks (personal area)',
   'טעות בתוכן': 'Content error',
   'אין קישור ודאי': 'No certain link',
+  'הורה': 'Parent',
   'סבים': 'Grandparents',
   'הורים': 'Parents',
   'הכל': 'All',

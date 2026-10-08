@@ -756,6 +756,19 @@ html, body {
   color: var(--color-on-surface); cursor: pointer;
 }
 .tl-leaf:hover, .tl-leaf:focus-visible { border-color: var(--color-primary); color: var(--color-primary); }
+.tl-node { display: inline-flex; align-items: baseline; gap: 4px; }
+.tl-lin { flex-basis: 100%; }
+.tl-kids {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+  padding-inline-start: 14px; border-inline-start: 2px solid var(--color-outline-faint);
+}
+.tl-kids > .tl-lin { flex-basis: 100%; }
+.tl-parent {
+  font-family: var(--font-main); font-size: .76em; padding: 0 6px;
+  border: 0; background: transparent; color: var(--color-primary); cursor: pointer;
+}
+.tl-parent::before { content: "\2190  "; }
+.tl-parent.tl-none { color: var(--color-on-surface-faint); cursor: default; }
 .timeline-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
