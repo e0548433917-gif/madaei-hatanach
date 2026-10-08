@@ -1753,3 +1753,14 @@ button.ft-node:hover, button.ft-node:focus-visible { border-color: var(--color-p
   border-radius: var(--radius-pill); border: 1px solid var(--color-primary);
   background: transparent; color: var(--color-primary);
 }
+
+/* שורת הפעולות בכרטיס פסוק (מפרשים · הדפסת הפרק · הערה בספר) */
+.verse-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.verse-act-btn {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-family: var(--font-main); font-size: .8em; line-height: 1.4;
+  padding: 3px 10px; border-radius: var(--radius-pill);
+  border: 1px solid var(--color-outline); background: var(--color-surface);
+  color: var(--color-on-surface-dim); cursor: pointer;
+}
+.verse-act-btn:hover, .verse-act-btn:focus-visible { border-color: var(--color-primary); color: var(--color-primary); }

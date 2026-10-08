@@ -128,10 +128,12 @@ async function wireVersePrintRange(container, entry){
     const v = verses[parseInt(card.dataset.vref, 10)];
     if (!v || !v.ref) return;
     const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'tool-btn otz-print-chapter-btn'; btn.textContent = '🖨 הדפסת הפרק';
+    btn.type = 'button'; btn.className = 'verse-act-btn otz-print-chapter-btn'; btn.textContent = '🖨 הדפסת הפרק';
     btn.title = 'פתיחת מסך ההדפסה של אוצריא על הפרק של הפסוק';
     btn.addEventListener('click', (ev) => { ev.stopPropagation(); printChapterOfRef(btn, v.ref); });
     const comm = card.querySelector('.otz-comm-btn');
-    if (comm) comm.insertAdjacentElement('afterend', btn); else card.appendChild(btn);
+    if (comm) comm.insertAdjacentElement('afterend', btn);
+    else if (typeof verseActionsRow === 'function') verseActionsRow(card).appendChild(btn);
+    else card.appendChild(btn);
   });
 }

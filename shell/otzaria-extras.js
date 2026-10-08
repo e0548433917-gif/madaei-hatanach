@@ -165,6 +165,19 @@ async function loadCommentary(ref, box){
 }
 function guardHolyNamesSafe(t){ return (typeof guardHolyNames === 'function') ? guardHolyNames(esc(t)) : esc(t); }
 
+// שורת פעולות אחת לכל כרטיס פסוק (מפרשים · הדפסת הפרק · הערה בספר). עד 4.13.0 כל
+// כפתור נוסף ישר לכרטיס עם .tool-btn — עיגול 38px שנועד לאייקון בלבד — והטקסט
+// נשפך מחוצה לו ונערם בעמודה. התיבות שנפתחות (מפרשים/הערה) יושבות מתחת לשורה.
+function verseActionsRow(card){
+  let row = card.querySelector(':scope > .verse-actions');
+  if (!row){
+    row = document.createElement('div'); row.className = 'verse-actions';
+    row.addEventListener('click', ev => ev.stopPropagation());
+    card.appendChild(row);
+  }
+  return row;
+}
+
 function wireVerseCommentaries(container, entry){
   const verses = entry.verses || entry.makorot || [];
   container.querySelectorAll('.verse-card[data-vref]').forEach(card => {
@@ -172,7 +185,7 @@ function wireVerseCommentaries(container, entry){
     const v = verses[parseInt(card.dataset.vref, 10)];
     if (!v || !v.ref) return;
     const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'tool-btn otz-comm-btn'; btn.textContent = '📚 מפרשים';
+    btn.type = 'button'; btn.className = 'verse-act-btn otz-comm-btn'; btn.textContent = '📚 מפרשים';
     btn.title = 'מפרשים על הפסוק מתוך הספרייה של אוצריא';
     const box = document.createElement('div'); box.className = 'otz-comm';
     btn.addEventListener('click', (ev) => {
@@ -181,7 +194,7 @@ function wireVerseCommentaries(container, entry){
       box.dataset.loaded = '1'; loadCommentary(v.ref, box);
     });
     box.addEventListener('click', ev => ev.stopPropagation());
-    card.appendChild(btn); card.appendChild(box);
+    verseActionsRow(card).appendChild(btn); card.appendChild(box);
   });
 }
 
@@ -336,7 +349,7 @@ function wireVerseNotes(container, entry){
     const v = verses[parseInt(card.dataset.vref, 10)];
     if (!v || !v.ref) return;
     const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'tool-btn otz-note-btn'; btn.textContent = '📝 הערה בספר';
+    btn.type = 'button'; btn.className = 'verse-act-btn otz-note-btn'; btn.textContent = '📝 הערה בספר';
     btn.title = 'הוספת הערה אישית על הפסוק — תופיע בספר עצמו באוצריא';
     const box = document.createElement('div'); box.hidden = true;
     box.innerHTML = `<textarea class="f-textarea" rows="2" style="width:100%;margin-top:6px;"></textarea>
@@ -356,6 +369,6 @@ function wireVerseNotes(container, entry){
         msg.textContent = ok === false ? 'השמירה נכשלה.' : '✅ נשמרה בספר';
       } catch(e){ msg.textContent = 'השמירה נכשלה.'; }
     });
-    card.appendChild(btn); card.appendChild(box);
+    verseActionsRow(card).appendChild(btn); card.appendChild(box);
   });
 }

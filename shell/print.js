@@ -32,7 +32,7 @@ function printableEntryEl(entry, catId, num){
   const box = document.createElement('article');
   box.className = 'print-entry';
   box.innerHTML = renderEntryDetailHTML(entry, cid);
-  box.querySelectorAll('.entry-tool-btn, .open-hint, .offline-map, .missing-box, .edited-note, [data-wiki-lazy]')
+  box.querySelectorAll('.entry-tool-btn, .verse-actions, .otz-comm, .open-hint, .offline-map, .missing-box, .edited-note, [data-wiki-lazy]')
      .forEach(el => el.remove());
   box.querySelectorAll('a').forEach(a => a.remove());
   // פסקאות שנשארו ריקות אחרי הסרת הקישורים (״הצג במפה הראשית / פתח במפות גוגל״)
