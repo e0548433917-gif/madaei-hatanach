@@ -88,7 +88,7 @@ jobs:
         continue-on-error: true
         run: node tools/identify-bench.js
       - name: ולידציה וקיפול של אוצריא (בלי פרסום)
-        timeout-minutes: 8
+        timeout-minutes: 2
         continue-on-error: true
         uses: Otzaria/otzaria-plugin-validator@v1
         with:
@@ -126,11 +126,11 @@ jobs:
       # ופרסום לחנות. אין שלב build — קבצי הנתונים כבר בגיט.
       # #91 (07/10/2026): ה-Action מושך בזמן ריצה את ה-API reference משרת otzaria.org, וכשהשרת
       # לא עונה הוא נתקע עד שכל ה-job נהרג — ואז גם ה-Release בגיטהאב לא נוצר.
-      # מגבילים אותו ל-8 דקות וממשיכים: ה-Release נוצר בכל מקרה (עם חבילה
+      # מגבילים אותו ל-2 דקות (קוצר מ-8 ב-08/10/2026, לבקשת בעלת הפרויקט) וממשיכים: ה-Release נוצר בכל מקרה (עם חבילה
       # מקופלת כאן, שלב ״קיפול חלופי״ למטה), והפרסום לחנות ייעשה בהרצה ידנית.
       - name: ולידציה, קיפול ופרסום
         id: otzaria
-        timeout-minutes: 8
+        timeout-minutes: 2
         continue-on-error: true
         uses: Otzaria/otzaria-plugin-validator@v1
         with:
