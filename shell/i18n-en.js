@@ -416,4 +416,13 @@ window.TRANSLATIONS.en = {
   'לפי אוצריא (ברירת מחדל)': 'Follow Otzaria (default)',
   'עברית': 'עברית',
   'בחירת שפת ממשק': 'Choose interface language',
+  // #62 — חלון ״מה לייצא?״
+  '🖨 מה לייצא?': '🖨 What to export?',
+  'סמן הכל': 'Select all',
+  'נקה הכל': 'Clear all',
+  'שדות': 'Fields',
+  'לפי הסינון הפעיל.': 'Following the active filter.',
+  'הורידו את הסימון ממה שאינו נחוץ.': 'Uncheck anything you do not need.',
+  'ערכים — לבחירה פרטנית צמצמו קודם בסינון.': 'entries — narrow the filter first to pick individually.',
+  'ביטול': 'Cancel',
 };

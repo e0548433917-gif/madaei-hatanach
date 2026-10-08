@@ -27,7 +27,7 @@ function printDateStr(){
 // כרטיס מוכן לנייר: אותו renderEntryDetailHTML של המסך (ולכן maskDivineName כבר
 // הוחל עליו), פחות כל מה שאין לו מובן מודפס — כפתורי הכלים, המפה האינטראקטיבית,
 // ״↗ פתח בספרייה״, הקישורים החיצוניים ותיבת ״פרטים שאינם במדריך״.
-function printableEntryEl(entry, catId, num){
+function printableEntryEl(entry, catId, num, exclude){
   const cid = catId || catIdOfEntry(entry);
   const box = document.createElement('article');
   box.className = 'print-entry';
@@ -37,6 +37,7 @@ function printableEntryEl(entry, catId, num){
   box.querySelectorAll('a').forEach(a => a.remove());
   // פסקאות שנשארו ריקות אחרי הסרת הקישורים (״הצג במפה הראשית / פתח במפות גוגל״)
   box.querySelectorAll('p').forEach(p => { if (!p.textContent.trim() && !p.querySelector('img')) p.remove(); });
+  if (exclude && exclude.size) printDropFields(box, exclude);
   const h2 = box.querySelector('h2');
   if (h2){
     if (num) h2.insertAdjacentHTML('afterbegin', '<span class="print-num">' + num + '.</span> ');
@@ -46,8 +47,35 @@ function printableEntryEl(entry, catId, num){
   return box;
 }
 
+// #62 — שדות: כל .field-label בכרטיס פותח שדה שנמשך עד ה-.field-label הבא באותו הורה.
+// ״תמונות״ מוריד גם את התמונה הראשית — מי שלא רוצה תמונות לא רוצה אף אחת.
+const PRINT_IMG_FIELD = 'תמונות';
+function printFieldName(el){ return (el.firstChild && el.firstChild.textContent || el.textContent).trim(); }
+function printDropFields(box, exclude){
+  box.querySelectorAll('.field-label').forEach(lab => {
+    if (!exclude.has(printFieldName(lab))) return;
+    let n = lab.nextElementSibling;
+    while (n && !n.classList.contains('field-label')){ const nx = n.nextElementSibling; n.remove(); n = nx; }
+    lab.remove();
+  });
+  if (exclude.has(PRINT_IMG_FIELD)) box.querySelectorAll('img').forEach(i => i.remove());
+}
+function printFieldsOf(items){
+  const seen = [];
+  const add = n => { if (n && !seen.includes(n)) seen.push(n); };
+  items.slice(0, 120).forEach(it => {
+    const box = document.createElement('div');
+    box.innerHTML = renderEntryDetailHTML(it.entry, it.catId || catIdOfEntry(it.entry));
+    box.querySelectorAll('.missing-box').forEach(el => el.remove());
+    box.querySelectorAll('.field-label').forEach(l => add(printFieldName(l)));
+    if (box.querySelector('img')) add(PRINT_IMG_FIELD);
+  });
+  return seen;
+}
+let printExcludedFields = new Set(); // נזכר בין ייצואים באותה הפעלה
+
 // items: [{entry, catId}]
-function buildPrintSheet(sourceLabel, items){
+function buildPrintSheet(sourceLabel, items, exclude){
   printRoot.innerHTML = '';
   const head = document.createElement('header');
   head.className = 'print-head';
@@ -66,7 +94,7 @@ function buildPrintSheet(sourceLabel, items){
     printRoot.appendChild(toc);
   }
   items.forEach((it, i) => {
-    printRoot.appendChild(printableEntryEl(it.entry, it.catId, items.length > 1 ? i + 1 : 0));
+    printRoot.appendChild(printableEntryEl(it.entry, it.catId, items.length > 1 ? i + 1 : 0, exclude));
   });
 }
 
@@ -122,28 +150,35 @@ function chooseItemsToExport(sourceLabel, items){
       ov.setAttribute('dir', 'rtl');
       document.body.appendChild(ov);
     }
+    const listEntries = items.length > 1 && items.length <= PRINT_CHOOSER_MAX;
+    const fields = printFieldsOf(items);
     const label = it => esc(it.entry.name || '') + ((typeof catLabelOf === 'function' && it.catId)
-      ? ' <span class="mini-note" style="display:inline">· ' + esc(catLabelOf(it.catId)) + '</span>' : '');
+      ? ' <span class="mini-note pc-cat">· ' + esc(catLabelOf(it.catId)) + '</span>' : '');
+    const row = (attr, text, on) => '<label class="pc-row"><input type="checkbox" ' + attr + (on ? ' checked' : '') + '> <span>' + text + '</span></label>';
     ov.innerHTML = '<div class="panel-box">'
       + '<h2>🖨 מה לייצא?</h2>'
-      + '<p class="panel-hint">' + esc(sourceLabel) + ' — הורידו את הסימון מערכים שאינם נחוצים.</p>'
-      + '<div class="panel-actions" style="margin:0 0 8px">'
-      +   '<button type="button" class="panel-btn secondary" data-pc="all">סמן הכל</button>'
-      +   '<button type="button" class="panel-btn secondary" data-pc="none">נקה הכל</button>'
-      + '</div>'
-      + '<div class="pc-list" style="max-height:50vh;overflow-y:auto;border:1px solid var(--color-outline-faint);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:10px">'
-      +   items.map((it, i) => '<label style="display:flex;gap:8px;align-items:baseline;padding:3px 0;cursor:pointer">'
-          + '<input type="checkbox" data-i="' + i + '" checked> <span>' + label(it) + '</span></label>').join('')
-      + '</div>'
+      + '<p class="panel-hint">' + esc(sourceLabel) + ' — ' + (items.length > 1 ? '<span>לפי הסינון הפעיל.</span> ' : '') + '<span>הורידו את הסימון ממה שאינו נחוץ.</span></p>'
+      + (listEntries
+        ? '<div class="pc-head">ערכים</div><div class="panel-actions pc-acts">'
+          +   '<button type="button" class="panel-btn secondary" data-pc="all">סמן הכל</button>'
+          +   '<button type="button" class="panel-btn secondary" data-pc="none">נקה הכל</button>'
+          + '</div><div class="pc-list">' + items.map((it, i) => row('data-i="' + i + '"', label(it), true)).join('') + '</div>'
+        : (items.length > 1 ? '<p class="mini-note">' + items.length + ' <span>ערכים — לבחירה פרטנית צמצמו קודם בסינון.</span></p>' : ''))
+      + (fields.length
+        ? '<div class="pc-head">שדות</div><div class="pc-list pc-fields">'
+          + fields.map(f => row('data-f="' + esc(f) + '"', esc(f), !printExcludedFields.has(f))).join('') + '</div>'
+        : '')
       + '<div class="panel-actions">'
       +   '<button type="button" class="panel-btn" data-pc="go"></button>'
       +   '<button type="button" class="panel-btn secondary" data-pc="cancel">ביטול</button>'
       + '</div></div>';
-    const boxes = Array.from(ov.querySelectorAll('input[type=checkbox]'));
+    const boxes = Array.from(ov.querySelectorAll('input[data-i]'));
+    const fboxes = Array.from(ov.querySelectorAll('input[data-f]'));
     const go = ov.querySelector('[data-pc="go"]');
+    const picked = () => listEntries ? boxes.filter(b => b.checked).map(b => items[Number(b.dataset.i)]) : items;
     const refresh = () => {
-      const n = boxes.filter(b => b.checked).length;
-      go.textContent = '🖨 ייצוא ' + n + ' מתוך ' + items.length;
+      const n = picked().length;
+      go.textContent = '🖨 ייצוא ' + (items.length > 1 ? n + ' מתוך ' + items.length : '');
       go.disabled = !n;
     };
     const finish = (val) => { ov.classList.remove('open'); ov.innerHTML = ''; resolve(val); };
@@ -152,7 +187,10 @@ function chooseItemsToExport(sourceLabel, items){
       const act = e.target && e.target.getAttribute && e.target.getAttribute('data-pc');
       if (act === 'all' || act === 'none'){ boxes.forEach(b => { b.checked = act === 'all'; }); refresh(); }
       else if (act === 'cancel') finish(null);
-      else if (act === 'go') finish(boxes.filter(b => b.checked).map(b => items[Number(b.dataset.i)]));
+      else if (act === 'go'){
+        printExcludedFields = new Set(fboxes.filter(b => !b.checked).map(b => b.dataset.f));
+        finish({ items: picked(), exclude: printExcludedFields });
+      }
     };
     ov.onchange = refresh;
     refresh();
@@ -162,20 +200,16 @@ function chooseItemsToExport(sourceLabel, items){
 
 function printItems(sourceLabel, items, pdfName){
   if (!items.length){ window.alert('אין ערכים לייצוא.'); return; }
-  if (items.length > 1 && items.length <= PRINT_CHOOSER_MAX){
-    chooseItemsToExport(sourceLabel, items).then(chosen => {
-      if (!chosen || !chosen.length) return;
-      const label = chosen.length < items.length ? sourceLabel + ' (' + chosen.length + ' מתוך ' + items.length + ')' : sourceLabel;
-      buildPrintSheet(label, chosen);
-      runPrintSheet(pdfName);
-    });
-    return;
-  }
-  if (items.length > PRINT_CONFIRM_OVER &&
-      !window.confirm('ייצוא ' + items.length + ' ערכים יפיק דף הדפסה ארוך מאוד (עשרות עמודים) '
-        + 'ועלול לקחת זמן. אפשר לצמצם עם הסינון שלמעלה.\n\nלהמשיך בכל זאת?')) return;
-  buildPrintSheet(sourceLabel, items);
-  runPrintSheet(pdfName);
+  chooseItemsToExport(sourceLabel, items).then(res => {
+    if (!res || !res.items.length) return;
+    const chosen = res.items;
+    if (chosen.length > PRINT_CONFIRM_OVER &&
+        !window.confirm('ייצוא ' + chosen.length + ' ערכים יפיק דף הדפסה ארוך מאוד (עשרות עמודים) '
+          + 'ועלול לקחת זמן. אפשר לצמצם עם הסינון שלמעלה.\n\nלהמשיך בכל זאת?')) return;
+    const label = chosen.length < items.length ? sourceLabel + ' (' + chosen.length + ' מתוך ' + items.length + ')' : sourceLabel;
+    buildPrintSheet(label, chosen, res.exclude);
+    runPrintSheet(pdfName);
+  });
 }
 
 // ---- ההקשרים ----

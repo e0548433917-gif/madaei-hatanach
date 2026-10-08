@@ -1777,3 +1777,14 @@ button.ft-node:hover, button.ft-node:focus-visible { border-color: var(--color-p
   color: var(--color-on-surface-dim); cursor: pointer;
 }
 .verse-act-btn:hover, .verse-act-btn:focus-visible { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* #62 — חלון ״מה לייצא?״: ערכים ושדות */
+#printChooserOverlay .pc-head { font-weight: 600; margin: 6px 0 4px; color: var(--color-on-surface); }
+#printChooserOverlay .pc-acts { margin: 0 0 8px; }
+#printChooserOverlay .pc-list {
+  max-height: 34vh; overflow-y: auto; margin-bottom: 10px; padding: 6px 10px;
+  border: 1px solid var(--color-outline-faint); border-radius: var(--radius-sm);
+}
+#printChooserOverlay .pc-fields { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+#printChooserOverlay .pc-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; cursor: pointer; }
+#printChooserOverlay .pc-cat { display: inline; }
