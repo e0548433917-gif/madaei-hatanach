@@ -96,6 +96,28 @@ for name, lat, lon in C:
     print(f"{name}: {len(w)} ways", flush=True)
     time.sleep(5)
 
+# בתי כנסת לכל אזור (שאילתה קטנה, נקודת מרכז בלבד)
+for a in areas:
+    if "s" in a:
+        continue
+    q = f'[out:json][timeout:90];nwr["amenity"="place_of_worship"]["religion"="jewish"](around:{a["r"]},{a["lat"]},{a["lon"]});out center tags;'
+    try:
+        els = fetch(q).get("elements", [])
+    except Exception as e:
+        LOG.append(f"SYN FAILED {a['name']}: {e}")
+        continue
+    sy = []
+    for e in els:
+        la, lo = (e.get("lat"), e.get("lon")) if "lat" in e else ((e.get("center") or {}).get("lat"), (e.get("center") or {}).get("lon"))
+        if la is None:
+            continue
+        t = e.get("tags", {})
+        sy.append([t.get("name:he") or t.get("name") or "", round(la, 5), round(lo, 5)])
+    a["s"] = sy
+    LOG.append(f"syn {a['name']}: {len(sy)}")
+    print(f"syn {a['name']}: {len(sy)}", flush=True)
+    time.sleep(2)
+
 out = ("/* רחובות מובנים: © OpenStreetMap contributors, ODbL. נבנה ב-" + today + " */\nconst EMB_STREETS="
        + json.dumps(areas, ensure_ascii=False, separators=(",", ":")) + ";\n")
 open("kivun/streets-data.js", "w", encoding="utf-8").write(out)
