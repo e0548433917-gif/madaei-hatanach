@@ -1,0 +1,21 @@
+# זמני: בניית רחובות מובנים לתוסף כיוון תפילה. רץ רק בענף kivun-streets-build, שיימחק אחרי השימוש.
+name: kivun-streets
+on:
+  push:
+    branches: [kivun-streets-build]
+    paths: [kivun/build_streets.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 kivun/build_streets.py
+      - run: |
+          git config user.name Claude
+          git config user.email noreply@anthropic.com
+          git add kivun/streets-data.js
+          git commit -m "kivun: streets-data.js (OSM)"
+          git push
