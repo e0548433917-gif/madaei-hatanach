@@ -45,6 +45,8 @@ function loadEngine(enginePath) {
   vm.runInContext(coreSrc.match(/const HEB_POINT_SRC[\s\S]*?const PREFIXES = \[.*?\];/)[0], ctx);
   const lexPath = path.join(ROOT, 'guides/_shared/identify-lexicon.js');
   if (fs.existsSync(lexPath)) vm.runInContext(fs.readFileSync(lexPath, 'utf8'), ctx);
+  const vocalPath = path.join(ROOT, 'guides/_shared/vocal-lexicon.js');
+  if (fs.existsSync(vocalPath)) vm.runInContext(fs.readFileSync(vocalPath, 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(path.resolve(ROOT, enginePath), 'utf8'), ctx);
   return ctx;
 }

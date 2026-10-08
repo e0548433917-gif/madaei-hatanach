@@ -52,6 +52,8 @@ vm.runInContext(coreSrc.match(/const HEB_POINT_SRC[\s\S]*?const PREFIXES = \[.*?
 // הלקסיקון של v2 (#39) — נטען לפני המנוע, כמו ב-index.html. מנוע ישן מתעלם ממנו.
 const LEXICON = path.join(ROOT, 'guides/_shared/identify-lexicon.js');
 if (fs.existsSync(LEXICON)) vm.runInContext(fs.readFileSync(LEXICON, 'utf8'), ctx);
+const VOCAL_LEX = path.join(ROOT, 'guides/_shared/vocal-lexicon.js');
+if (fs.existsSync(VOCAL_LEX)) vm.runInContext(fs.readFileSync(VOCAL_LEX, 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(path.resolve(ROOT, ENGINE), 'utf8'), ctx);
 
 const testset = JSON.parse(fs.readFileSync(path.join(__dirname, 'identify-testset.json'), 'utf8'));

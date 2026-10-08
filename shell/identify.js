@@ -341,6 +341,12 @@ function buildLookup(data, catId){
     (entry.aliases || []).forEach(a => registerKey(a, entry, false));
     harvestVocalForms(entry, vocal);
   });
+  // 3.3 (#40): לקסיקון מנוקד סטטי — רק למפתחות שהקציר העצמי לא נתן להם צורה.
+  const staticVocal = (typeof VOCAL_LEXICON !== 'undefined' && VOCAL_LEXICON[catId]) || null;
+  if (staticVocal) Object.keys(staticVocal).forEach(k => {
+    if (vocal.has(k) && vocal.get(k).size) return;
+    vocal.set(k, new Set(staticVocal[k]));
+  });
   const extra = (LEX.EXTRA_KEYS && LEX.EXTRA_KEYS[catId]) || {};
   Object.keys(extra).forEach(k => {
     const entry = data.find(e => e.name === extra[k]);
