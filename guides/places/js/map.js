@@ -62,7 +62,8 @@ const BLANK_TILE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAA
 const OSM_WIDE_BOUNDS = [[9,17],[42.5,58]];
 const OSM_FINE_BOUNDS = [[27.4,30.3],[40.5,49.2]];
 // אריח-בדיקה ברמת עולם (z1) — כמעט תמיד קיים בכל עותק סביר של tiles/, גם חלקי
-const OSM_PROBE_URL = 'guides/places/tiles/1/1/0.png';
+// נגזר מ-OSM_LOCAL_URL כדי שהמרת האריחים ל-WebP ב-CI (sed על הסיומת) תחול גם על אריח-הבדיקה
+const OSM_PROBE_URL = OSM_LOCAL_URL.replace('{z}', '1').replace('{x}', '1').replace('{y}', '0');
 
 let baseMode = 'vector'; // 'vector' | 'osm' | 'sat'
 let satAvailable = false, osmAvailable = false;
