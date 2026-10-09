@@ -94,7 +94,9 @@ async function findImage(e, radius, used) {
   const list = pool.filter(e => MODE === 'embed' ? isArch(e) : (!isArch(e) && /^(cities|villages|stations|mountains|water|valleys|deserts|regions)$/.test(e.cat))).slice(0, LIMIT);
   let text = src; const added = [], skipped = [], used = new Set();
   let credits = {};
-  if (MODE === 'collect') { fs.mkdirSync(OUTDIR, { recursive: true }); try { credits = JSON.parse(fs.readFileSync(path.join(OUTDIR, 'credits.json'), 'utf8')); } catch (_) {} }
+  if (MODE === 'collect') { fs.mkdirSync(OUTDIR, { recursive: true }); try { credits = JSON.parse(fs.readFileSync(path.join(OUTDIR, 'credits.json'), 'utf8')); } catch (_) {}
+    // נפסלו בבדיקה בעין (בני אדם, בתי תפילה של דתות אחרות, פסיפסים בדמויות, רחוב מודרני) — לא לאסוף שוב
+    try { Object.keys(JSON.parse(fs.readFileSync(path.join(OUTDIR, 'rejected.json'), 'utf8'))).forEach(n => SKIP_NAMES.add(n)); } catch (_) {} }
   const sharp = MODE === 'collect' ? require('sharp') : null;
   for (const e of list) {
     if (SKIP_NAMES.has(e.name)) { skipped.push(`${e.name}: נפסל בבדיקה`); continue; }
