@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הגדרות מערכת</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <h1>הגדרות מערכת</h1>
+      <span id="bridge-chip" class="topbar-chip"><i class="dot"></i>מתחבר…</span>
+      <span class="topbar-spacer"></span>
+      <button class="topbar-btn" id="top-refresh" title="רענון" aria-label="רענון">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg>
+      </button>
+    </header>
+
+    <div class="shell-body" id="shell-body" hidden>
+      <nav class="sidenav" id="nav" aria-label="קטגוריות"></nav>
+      <main class="app-content" id="content"></main>
+    </div>
+
+    <div class="offline" id="offline" hidden></div>
+  </div>
+
+  <div id="dialogs"></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="js/ui.js"></script>
+  <script src="js/bridge.js"></script>
+  <script src="js/sections/audio.js"></script>
+  <script src="js/sections/display.js"></script>
+  <script src="js/sections/bluetooth.js"></script>
+  <script src="js/sections/wifi.js"></script>
+  <script src="js/sections/kiosk.js"></script>
+  <script src="js/sections/system.js"></script>
+  <script src="js/sections/about.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
