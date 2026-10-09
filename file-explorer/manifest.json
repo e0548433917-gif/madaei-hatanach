@@ -1,0 +1,18 @@
+{
+  "id": "com.chadbedera.fileexplorer",
+  "name": "סייר קבצים",
+  "version": "1.0.0",
+  "description": "סייר קבצים מתוך אוצריא: עיון, העתקה, גזירה, הדבקה, מחיקה, שינוי שם, תצוגה מקדימה וחיפוש קבצים. דורש את גשר אוצריא; בלעדיו עובד על תיקיות שאושרו.",
+  "author": "חד בדרא",
+  "schemaVersion": 1,
+  "sdkVersion": "1.x",
+  "stability": "beta",
+  "minAppVersion": "0.9.98",
+  "entrypoint": "index.html",
+  "icon": "icon/icon.png",
+  "permissions": ["network.localhost", "app.open_url", "fs.user_files.read"],
+  "network": { "enabled": true, "allowlist": ["127.0.0.1", "localhost"] },
+  "contributes": {
+    "toolTab": { "title": "סייר קבצים", "order": 910, "defaultPinned": false, "iconName": "fluent:folder_24_regular" }
+  }
+}

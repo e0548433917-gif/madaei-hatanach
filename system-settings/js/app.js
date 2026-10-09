@@ -5,7 +5,7 @@
   var ui = SS.ui;
   SS.sections = SS.sections || [];
   SS.VERSION = '1.0.0';
-  SS.BRIDGE_URL = "https://github.com/e0548433917-gif/otzaria/tree/%D7%9B%D7%9C%D7%99-%D7%9E%D7%A2%D7%A8%D7%9B%D7%AA/bridge";
+  SS.BRIDGE_URL = "https://github.com/e0548433917-gif/madaei-hatanach/tree/%D7%9B%D7%9C%D7%99-%D7%9E%D7%A2%D7%A8%D7%9B%D7%AA";
 
   var state = { current: null, connected: false, probeTimer: null, suspended: false, booted: false };
 
