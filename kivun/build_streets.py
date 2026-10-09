@@ -11,6 +11,9 @@ C = json.load(open("kivun/centers.json", encoding="utf-8"))
 
 
 def radius(name):
+    a = next(c for c in C if c[0] == name)
+    if not (29 < a[1] < 34 and 34 < a[2] < 36):
+        return 3500
     return 1500 if name.startswith("ירושלים") else 2000
 
 

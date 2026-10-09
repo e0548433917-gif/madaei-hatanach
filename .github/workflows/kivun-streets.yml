@@ -1,8 +1,8 @@
 # זמני: בניית רחובות מובנים לתוסף כיוון תפילה. רץ רק בענף kivun-streets-build, שיימחק אחרי השימוש.
-name: kivun-vacation3
+name: kivun-vacation4
 on:
   push:
-    branches: [kivun-vacation3-build]
+    branches: [kivun-vacation4-build]
     paths: [kivun/build_streets.py, kivun/centers.json, .github/workflows/kivun-streets.yml]
 permissions:
   contents: write
