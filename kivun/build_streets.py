@@ -6,6 +6,7 @@ SERVERS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.private.coffee/api/interpreter",
            "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 LOG = []
+HW_ALL = "^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road|service|track|path|footway|steps|cycleway)(_link)?$"
 HW = "^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road)(_link)?$"
 C = json.load(open("kivun/centers.json", encoding="utf-8"))
 
@@ -14,7 +15,7 @@ def radius(name):
     a = next(c for c in C if c[0] == name)
     if not (29 < a[1] < 34 and 34 < a[2] < 36):
         return 3500
-    return 1500 if name.startswith("ירושלים") else 2000
+    return 1200  # יישובים קטנים: רדיוס קטן, כולל מבנים ושבילים
 
 
 def fetch(q):
@@ -60,15 +61,16 @@ def ways_of(els, lat, lon, r, seen):
             continue
         seen.add(e.get("id"))
         t = e.get("tags", {})
-        w.append([t.get("name:he") or t.get("name") or "", t.get("highway", ""),
+        w.append([t.get("name:he") or t.get("name") or "", t.get("highway") or ("building" if "building" in t else ""),
                   [v for p in g for v in (round(p["lat"], 5), round(p["lon"], 5))]])
     return w
 
 
 def get_area(lat, lon, r):
-    sel = f'way["highway"~"{HW}"]["name"]'
+    """יישובים קטנים: כל הדרכים והשבילים (גם בלי שם) וקווי המתאר של המבנים."""
+    q = lambda A: f'[out:json][timeout:120];(way["highway"~"{HW_ALL}"]({A});way["building"]({A}););out tags geom;'
     try:
-        return ways_of(fetch(f'[out:json][timeout:120];{sel}(around:{r},{lat},{lon});out tags geom;').get("elements", []), lat, lon, r, set())
+        return ways_of(fetch(q(f"around:{r},{lat},{lon}")).get("elements", []), lat, lon, r, set())
     except Exception as e:
         LOG.append(f"whole area failed, trying tiles: {e}")
     dla, dlo = r / 110540, r / (111320 * math.cos(math.radians(lat)))
@@ -77,9 +79,21 @@ def get_area(lat, lon, r):
         for j in range(3):
             s_, w_ = lat - dla + 2 * dla * i / 3, lon - dlo + 2 * dlo * j / 3
             bb = f"{s_:.5f},{w_:.5f},{s_ + 2 * dla / 3:.5f},{w_ + 2 * dlo / 3:.5f}"
-            w += ways_of(fetch(f'[out:json][timeout:90];{sel}({bb});out tags geom;').get("elements", []), lat, lon, r, seen)
+            w += ways_of(fetch(q(bb)).get("elements", []), lat, lon, r, seen)
             time.sleep(3)
     return w
+
+
+# מיקום יישוב שלא ידוע מראש (למשל בית חלקיה): לפי צומת place ב-OpenStreetMap
+for c in C:
+    if c[1] is None:
+        try:
+            el = fetch(f'[out:json][timeout:60];node["place"]["name"="{c[0]}"](29,34,34,36);out;').get("elements", [])
+            c[1], c[2] = round(el[0]["lat"], 4), round(el[0]["lon"], 4)
+            LOG.append(f"geocoded {c[0]}: {c[1]},{c[2]}")
+        except Exception as e:
+            LOG.append(f"geocode failed {c[0]}: {e}")
+C = [c for c in C if c[1] is not None]
 
 
 areas = []
