@@ -709,7 +709,7 @@ function renderDailyEventBody(){
     html += `<details class="month-details"><summary>${esc(month)} (${items.length})</summary>`
       + items.map(ev => dateEventRow(ev, month)).join('') + '</details>';
   });
-  html += '<p class="mini-note" style="margin-top:14px;">'
+  html += '<p class="mini-note" style="margin-top:14px;" data-i18n="dailyEventsNote">'
     + 'הרשימה התחילה על בסיס תוסף ״ביוגרפיות״ מאת Yair Daniel, ונוספה עליה '
     + '<b>מסכת בכורות</b> לטובת לומדי הדף היומי. חלק מהרשומות ממקורות נוספים '
     + '(ר׳ מקור בכל רשומה).<br>'

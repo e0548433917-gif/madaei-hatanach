@@ -161,6 +161,8 @@ html, body {
   background: var(--color-bg);
   color: var(--color-on-surface);
 }
+/* #94: בממשק אנגלי i18n.js קובע dir="ltr" על html — בלי זה הכלל שלמעלה גובר עליו */
+html[dir="ltr"] body { direction: ltr; }
 
 /* אנימציית כניסה עדינה (לפי מדריך העיצוב) */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }

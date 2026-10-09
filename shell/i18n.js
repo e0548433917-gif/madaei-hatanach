@@ -18,16 +18,124 @@
 const I18N = { lang: 'he', dict: null };
 const I18N_DICTS = (typeof window !== 'undefined' && window.TRANSLATIONS) || {};
 
+const I18N_PATTERN_SRC = (typeof window !== 'undefined' && window.TRANSLATION_PATTERNS) || {};
+let I18N_PATTERNS = [];   // [{ re, lit, out }] — לשפה הפעילה
+
+// #94 שלב ג׳-א (4.19.0): תבניות למחרוזות שנבנות משרשור — ״הכל (41)״, ״נבחר: "…"״.
+// המפתח הוא המחרוזת העברית עם {0} {1}… במקום החלקים המשתנים. החלקים עצמם
+// עוברים שוב במילון המדויק (למשל ״הפרק״ בתוך ״{0} על המפה ({1})״).
+function i18nCompilePatterns(src){
+  return Object.keys(src || {}).map(k => {
+    const parts = k.split(/\{(t?\d)\}/);
+    let re = '^', lits = [];
+    const order = [];
+    parts.forEach((p, i) => {
+      if (i % 2){ re += '([\\s\\S]+?)'; order.push(p); }
+      else { re += p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); if (p.trim()) lits.push(p.trim()); }
+    });
+    const lit = lits.sort((a, b) => b.length - a.length)[0] || '';
+    return { re: new RegExp(re + '$'), lit, order, out: src[k] };
+  }).filter(p => p.lit);   // תבנית בלי שום טקסט קבוע הייתה תופסת הכל
+}
+
+function i18nExact(key){
+  const hit = I18N.dict && I18N.dict[key];
+  return hit || null;
+}
+
 function i18nT(s){
   if (!I18N.dict || s == null) return s;
-  const key = String(s).trim();
-  const hit = I18N.dict[key];
-  return hit ? String(s).replace(key, hit) : s;
+  const str = String(s);
+  const key = str.trim();
+  if (!key) return s;
+  const hit = i18nExact(key);
+  if (hit) return str.replace(key, hit);
+  if (!/[א-ת]/.test(key)) return s;
+  for (const p of I18N_PATTERNS){
+    if (key.indexOf(p.lit) === -1) continue;
+    const m = key.match(p.re);
+    if (!m) continue;
+    let out = p.out;
+    p.order.forEach((n, i) => {
+      const v = m[i + 1];
+      const tr = n[0] === 't' && i18nExact(v.trim());
+      out = out.split('{' + n + '}').join(tr ? v.replace(v.trim(), tr) : v);
+    });
+    if (out === key) continue;   // תבנית כללית שלא הייתה לה מה לתרגם — ממשיכים לחפש
+    return str.replace(key, out);
+  }
+  return s;
+}
+
+// הודעות שעוברות מחוץ ל-DOM (דיאלוגים של אוצריא, alert/confirm): קודם כמחרוזת
+// שלמה, ואם אין — שורה אחר שורה, כי רוב ההודעות מורכבות מכמה פסקאות.
+function i18nMsg(s){
+  if (!I18N.dict || typeof s !== 'string' || !/[א-ת]/.test(s)) return s;
+  const whole = i18nT(s);
+  if (whole !== s) return whole;
+  return s.split('\n').map(line => i18nT(line)).join('\n');
+}
+
+// דיאלוגים שאינם חלק מה-DOM של התוסף. עטיפה אחת, כשהשפה אינה עברית.
+const I18N_CALL_FIELDS = ['message', 'title', 'content', 'label', 'text', 'confirmText', 'cancelText'];
+function i18nCallNeedsText(method){
+  return /^(ui|notifications)\./.test(method) || /^fs\.(pick|save)/.test(method)
+    || method === 'reader.updateToolbarItem' || method === 'reader.addContextMenuItem';
+}
+function i18nWrapDialogs(){
+  try {
+    if (!window.__i18nAlerts){
+      window.__i18nAlerts = true;
+      ['alert', 'confirm', 'prompt'].forEach(fn => {
+        const orig = window[fn];
+        if (typeof orig !== 'function') return;
+        window[fn] = function(msg, ...rest){ return orig.call(window, i18nMsg(msg), ...rest); };
+      });
+    }
+    const O = window.Otzaria;
+    if (O && typeof O.call === 'function' && !O.__i18nWrapped){
+      const origCall = O.call.bind(O);
+      O.call = function(method, params, ...rest){
+        if (I18N.dict && params && typeof params === 'object' && i18nCallNeedsText(String(method))){
+          const p = Object.assign({}, params);
+          I18N_CALL_FIELDS.forEach(f => { if (typeof p[f] === 'string') p[f] = i18nMsg(p[f]); });
+          return origCall(method, p, ...rest);
+        }
+        return origCall(method, params, ...rest);
+      };
+      O.__i18nWrapped = true;
+    }
+  } catch(e){ /* לעולם לא שוברים את התוסף בגלל תרגום */ }
+}
+
+// פסקאות עם תגיות בתוכן (<b>, <a>) מסומנות data-i18n="מפתח" — התרגום הוא HTML שלם
+// ומחליף את התוכן. קישורים וכפתורים בתוך הפסקה שומרים על ה-id שלהם בתרגום.
+function i18nBlocks(root){
+  if (!I18N.dict || !root || !root.querySelectorAll) return;
+  const list = [];
+  if (root.matches && root.matches('[data-i18n]')) list.push(root);
+  root.querySelectorAll('[data-i18n]').forEach(el => list.push(el));
+  list.forEach(el => {
+    if (el.dataset.i18nDone === I18N.lang) return;
+    const html = I18N.dict[el.getAttribute('data-i18n')];
+    if (!html) return;
+    el.dataset.i18nDone = I18N.lang;
+    // אלמנטים עם id (קישור, כפתור) מוחזרים כמו שהם — עם המאזינים שכבר חוברו אליהם
+    const keep = {};
+    el.querySelectorAll('[id]').forEach(c => { keep[c.id] = c; });
+    el.innerHTML = html;
+    el.querySelectorAll('[id]').forEach(n => {
+      const old = keep[n.id];
+      if (!old) return;
+      old.innerHTML = n.innerHTML;
+      n.replaceWith(old);
+    });
+  });
 }
 
 function i18nTranslateNode(root){
   if (!I18N.dict || !root) return;
-  const ATTRS = ['placeholder', 'title', 'aria-label'];
+  const ATTRS = ['placeholder', 'title', 'aria-label', 'label'];   // label — optgroup
   const fixEl = (el) => {
     ATTRS.forEach(a => {
       const v = el.getAttribute && el.getAttribute(a);
@@ -39,6 +147,7 @@ function i18nTranslateNode(root){
     return;
   }
   if (root.nodeType !== 1) return;
+  i18nBlocks(root);
   // לא נוגעים בתוכן תורני: פסוקים וכרטיסי טקסט מסומנים כך בקוד הקיים
   if (root.closest && root.closest('script,style,textarea,[contenteditable],.verse,.verse-text,.no-i18n')) return;
   fixEl(root);
@@ -63,6 +172,8 @@ function setLanguage(lang){
   I18N.lang = dict ? code : 'he';
   I18N.dict = dict || null;
   if (!I18N.dict) return false;
+  I18N_PATTERNS = i18nCompilePatterns(I18N_PATTERN_SRC[code]);
+  i18nWrapDialogs();
   try {
     document.documentElement.setAttribute('lang', code);
     document.documentElement.setAttribute('dir', 'ltr');   // זמן ריצה בלבד
@@ -74,6 +185,9 @@ function setLanguage(lang){
       }));
       i18nObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
     }
+    // פריטי תפריט ההקשר נרשמו כבר בעלייה, לפני שהשפה זוהתה — רישום חוזר על אותו id מחליף
+    if (typeof registerUnifiedMenuItem === 'function') registerUnifiedMenuItem();
+    if (typeof registerParagraphMenuItem === 'function') registerParagraphMenuItem();
   } catch(e){ /* בעיה בתרגום לעולם לא שוברת את התוסף — נשארים בעברית */ }
   return true;
 }
